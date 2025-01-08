@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Administrador</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Perfil de Administrador: {{ usuario.nombre }} {{ usuario.apellido }}</h1>
+    
+    <p><strong>Correo:</strong> {{ usuario.correo }}</p>
+    
+    {% if usuario.foto_perfil %}
+        <img src="{{ url_for('static', filename='uploads/' + usuario.foto_perfil) }}" alt="Foto de perfil" style="width: 150px; height: 150px;">
+    {% else %}
+        <p>No has subido una foto de perfil.</p>
+    {% endif %}
+
+    <h2>Editar Perfil</h2>
+    <form action="{{ url_for('perfil') }}" method="post" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        
+        <label for="nombre">Nombre:</label>
+        {{ form.nombre(size=32) }}
+        
+        <label for="apellido">Apellido:</label>
+        {{ form.apellido(size=32) }}
+        
+        <label for="correo">Correo electrónico:</label>
+        {{ form.correo(size=32) }}
+        
+        <label for="password">Nueva Contraseña:</label>
+        {{ form.password() }}
+        
+        <label for="confirm_password">Confirmar Contraseña:</label>
+        {{ form.confirm_password() }}
+        
+        <label for="profile_pic">Foto de perfil:</label>
+        {{ form.profile_pic() }}
+        
+        <button type="submit">Guardar Cambios</button>
+    </form>
+
+    <h2>Opciones de Administrador</h2>
+    <p>Aquí puedes administrar usuarios y realizar otras tareas administrativas.</p>
+    <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+</body>
+</html>

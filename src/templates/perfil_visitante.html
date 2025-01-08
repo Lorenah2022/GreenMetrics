@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil de Visitante</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <h1>Perfil de Visitante</h1>
+    <p>No tiene permisos para ver esta sección. Por favor inicia sesión.</p>
+    <a href="{{ url_for('login') }}">Iniciar sesión</a> | <a href="{{ url_for('register') }}">Registrarse</a>
+</body>
+</html>
