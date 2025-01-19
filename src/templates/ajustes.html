@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil de Visitante</title>
+    <title>Ajustes</title>
+
     <style>
         /* Estilo general para la página */
         body {
@@ -28,7 +29,6 @@
             z-index: -1; /* Asegura que el overlay esté detrás del contenido */
         }
 
-        
         .form-container {
             background-color: rgba(255, 255, 255, 0.9); 
             padding: 20px 40px;
@@ -42,23 +42,19 @@
             transform: translate(-50%, -50%);
         }
 
-        /* Barra de navegación */
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
             background-color: #006400;
             color: white;
-            padding: 10px 20px; /* Unificación del grosor */
-           
-            z-index: 1;
+            padding: 10px 20px;
         }
 
         .navbar h1 {
             margin: 0;
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
-
 
         /* Contenedor del menú */
         .dropdown {
@@ -71,7 +67,7 @@
             color: white;
             border: none;
             padding: 10px 15px;
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
             cursor: pointer;
             border-radius: 5px;
         }
@@ -111,74 +107,56 @@
         .dropdown:hover .dropdown-content {
             display: block;
         }
+        /* Estilos de los formularios */
+        .form-group {
+            margin-bottom: 20px;
+        }
 
-        /* Estilo del contenido principal */
-        .main-content {
-            padding: 20px;
+        .form-group label {
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
             color: #333;
-            text-align: center;
-            flex: 1;
-            margin-top: 80px; /* Para no solaparse con la barra de navegación */
         }
 
-        .main-content h2 {
-            color: #006400;
-            top: 0px;
-            margin-bottom: 20px;
-        }
-
-        .main-content p {
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
-            color: #555;
-            margin-bottom: 20px;
-        }
-
-        /* Estilo de los enlaces */
-        .form-container .link {
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .form-container .link a {
-            color: #006400;
-            text-decoration: none;
-        }
-
-        .form-container .link a:hover {
-            text-decoration: underline;
-            color: #8fbc8f;
-        }
-        /* Estilo para el enlace "Volver atrás" convertido en botón */
-        .form-container .back-button {
-            display: inline-block;
-            padding: 12px 30px;
-            margin-top: 15px;
-            background-color: #8fbc8f;
-            color: white;
-            text-decoration: none;
+        .form-group select {
+            padding: 10px;
+            width: 100%;
             border-radius: 5px;
-            font-weight: bold;
-            transition: background-color 0.3s ease, color 0.3s ease;
-           
-
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+            border: 1px solid #ccc;
         }
 
-        .form-container .back-button:hover {
-            background-color: #006400;  /* Color de fondo al pasar el ratón */
-            color: #ffffff;
-        }
+        /* Contenedor para alinear los botones horizontalmente y distribuirlos equidistantemente */
+    .button-container {
+        display: flex;
+        justify-content: space-between; /* Espacio entre los botones */
+        gap: 20px; /* Espacio entre los botones */
+        margin-top: 20px;
+        padding: 0 20px; /* Añadir un poco de relleno a los lados del contenedor */
+    }
 
-        /* Mejorar la visualización en pantallas pequeñas */
-        @media (max-width: 600px) {
-            .navbar h1 {
-                font-size: 18px;
-            }
+    /* Estilo común para ambos botones (button y a) */
+    .form-container .back-button {
+        display: inline-block;
+        padding: 12px 30px;
+        background-color: #8fbc8f;
+        color: #006400;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        border: none;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        text-align: center;
+        font-size: 16px;
+        width: 45%;  /* Ajusta el ancho para que ambos botones ocupen el 45% del contenedor */
+    }
 
-            .main-content {
-                padding: 15px;
-            }
-        }
+    .form-container .back-button:hover {
+        background-color: #006400;
+        color: #ffffff;
+    }
+    
 
+        
     </style>
 </head>
 <body>
@@ -189,26 +167,44 @@
         <div class="dropdown">
             <button>≡</button>
             <div class="dropdown-content">
-                <a href="{{ url_for('ajustes') }}">Ajustes</a>
-                
+                <a href="{{ url_for('perfil') }}">Perfil</a>
                 <a href="{{ url_for('logout') }}">Cerrar Sesión</a> 
             </div>
         </div>
     </div>
+
     <div class="form-container">
         <!-- Contenido principal -->
         <div class="main-content">
-            <h2>Perfil de Visitante</h2>
-            <p>Contenido solo visible para visitantes.</p>
+            <h2>Ajustes</h2>
         </div>
-    
-        <div class="link">
-            <a href="{{ url_for('login') }}">Iniciar sesión.</a>
-            <a href="{{ url_for('register') }}">Crear cuenta.</a>
-        </div>
-        <div class="link">
-            <a href="{{ url_for('pagina_principal') }}" class="back-button"> ← Volver atrás</a>
-        </div>
+
+        <!-- Formulario de cambio de idioma -->
+        <form action="{{ url_for('ajustes') }}" method="POST">
+            <div class="form-group">
+                <label for="idioma">Seleccionar Idioma:</label>
+                <select name="idioma" id="idioma">
+                    <option value="ingles" {% if session.get('idioma') == 'ingles' %}selected{% endif %}>Inglés</option>
+                    <option value="es" {% if session.get('idioma') == 'es' %}selected{% endif %}>Español</option>
+                </select>
+            </div>
+
+            <!-- Formulario de cambio de tamaño de texto -->
+            <div class="form-group">
+                <label for="tamano_texto">Seleccionar Tamaño de Letra:</label>
+                <select name="tamano_texto" id="tamano_texto">
+                    <option value="pequeño" {% if session.get('tamano_texto') == 'pequeño' %}selected{% endif %}>Pequeño</option>
+                    <option value="normal" {% if session.get('tamano_texto') == 'normal' %}selected{% endif %}>Normal</option>
+                    <option value="grande" {% if session.get('tamano_texto') == 'grande' %}selected{% endif %}>Grande</option>
+                </select>
+            </div>
+            
+            <div class="button-container">
+                <button type="submit" class="back-button">Guardar Cambios</button>
+                <button type="button" onclick="window.location.href='{{ url_for('pagina_principal') }}'" class="back-button"> ← Volver atrás</button>
+            </div>
+        </form>
+      
     </div>
 
 </body>

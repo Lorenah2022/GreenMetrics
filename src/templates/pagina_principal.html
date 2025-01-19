@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" {% if session.get('idioma') == 'ingles' %}lang="en"{% else %}lang="es"{% endif %}>
+<html lang="{{ 'en' if session.get('idioma') == 'ingles' else 'es' }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,6 +17,8 @@
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+
 
         }
 
@@ -31,7 +33,7 @@
 
         .navbar h1 {
             margin: 0;
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
 
         /* Contenedor del menú */
@@ -45,7 +47,7 @@
             color: white;
             border: none;
             padding: 10px 15px;
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
             cursor: pointer;
             border-radius: 5px;
         }
@@ -124,7 +126,7 @@
             <button>≡</button>
             <div class="dropdown-content">
                 <a href="{{ url_for('perfil') }}">Perfil</a>
-                
+                <a href="{{ url_for('ajustes') }}">Ajustes</a>
                 <a href="{{ url_for('logout') }}">Cerrar Sesión</a> 
             </div>
         </div>
