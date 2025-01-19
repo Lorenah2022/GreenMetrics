@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" {% if session.get('idioma') == 'ingles' %}lang="en"{% else %}lang="es"{% endif %}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,52 +10,63 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-image:url('/static/images/fondo.webp');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+
         }
 
-        /* Barra superior */
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #333;
+            background-color: #006400;
             color: white;
             padding: 10px 20px;
         }
 
         .navbar h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
         }
 
         /* Contenedor del menú */
         .dropdown {
-            position: relative;
-            display: inline-block;
+            position: relative; /* Importante para posicionar el menú desplegable */
         }
 
         /* Botón del menú */
         .dropdown button {
-            background-color: #333;
+            background-color: #006400;
             color: white;
             border: none;
             padding: 10px 15px;
-            font-size: 16px;
+            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
             cursor: pointer;
+            border-radius: 5px;
         }
 
         .dropdown button:hover {
-            background-color: #444;
+            background-color: #8fbc8f;
         }
 
         /* Elementos del menú desplegable */
         .dropdown-content {
             display: none;
             position: absolute;
+            top: 100%; /* Alineado justo debajo del botón */
+            right: 0; /* Alinea el texto al borde derecho del contenedor */
             background-color: white;
             color: black;
             min-width: 150px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            box-shadow: #8fbc8f;
             z-index: 1;
+            border-radius: 5px;
+            overflow: hidden;
         }
 
         .dropdown-content a {
@@ -66,12 +77,41 @@
         }
 
         .dropdown-content a:hover {
-            background-color: #ddd;
+            background-color: #8fbc8f;
+            color: white;
         }
 
         /* Mostrar el menú al pasar el ratón */
         .dropdown:hover .dropdown-content {
             display: block;
+        }
+
+        /* Contenedor principal */
+        .main-content {
+            padding: 20px;
+            color: #333;
+            text-align: center;
+            flex: 1;
+        }
+
+        .main-content h2 {
+            color: #006400;
+            margin-bottom: 20px;
+        }
+
+        .main-content p {
+            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            color: #555;
+        }
+        /* Mejorar la visualización en pantallas pequeñas */
+        @media (max-width: 600px) {
+            .navbar h1 {
+                font-size: 18px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
         }
     </style>
 </head>
@@ -83,23 +123,19 @@
         <div class="dropdown">
             <button>≡</button>
             <div class="dropdown-content">
-                {% if session['rol'] == 'admin' %}
-                    <a href="{{ url_for('perfil') }}">Perfil</a>
-                {% elif session['rol'] == 'user' %}
-                    <a href="{{ url_for('perfil') }}">Perfil</a>
-                {% else %}
-                    <a href="{{ url_for('perfil') }}">Perfil</a>
-                {% endif %}
-                <a href="#ajustes">Ajustes</a>
-                <a href="{{ url_for('login') }}">Cerrar Sesión</a>
+                <a href="{{ url_for('perfil') }}">Perfil</a>
+                
+                <a href="{{ url_for('logout') }}">Cerrar Sesión</a> 
             </div>
         </div>
     </div>
 
     <!-- Contenido principal -->
-    <div style="padding: 20px;">
-        <h2>Bienvenido a la página principal</h2>
-        <p>Este es el contenido de la página.</p>
+    <div class="main-content">
+        <h2>Bienvenido a Greenmetrics</h2>
+        <label for="anho"> Introduzca el año del que desea extraer las métricas.</label>
+        <input type="text" id="anho" name="anho" required>
+       
     </div>
 
 </body>
