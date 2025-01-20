@@ -1,47 +1,310 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" {% if session.get('idioma') == 'ingles' %}lang="en"{% else %}lang="es"{% endif %}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil de Usuario</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        /* Estilo general para la página */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-image:url('/static/images/fondo.webp');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+
+        }
+
+        /* Filtro translúcido para mejorar la visibilidad del contenido */
+        .background-overlay {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.4); /* Negro con 40% de opacidad */
+            z-index: -1; /* Asegura que el overlay esté detrás del contenido */
+        }
+
+        /* Barra de navegación */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #006400;
+            color: white;
+            padding: 10px 20px; /* Unificación del grosor */
+            z-index: 1;
+        }
+
+        .navbar h1 {
+            margin: 0;
+            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+        }
+
+        /* Contenedor del menú */
+        .dropdown {
+            position: relative; /* Importante para posicionar el menú desplegable */
+        }
+
+        /* Botón del menú */
+        .dropdown button {
+            background-color: #006400;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .dropdown button:hover {
+            background-color: #8fbc8f;
+        }
+
+        /* Elementos del menú desplegable */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%; /* Alineado justo debajo del botón */
+            right: 0; /* Alinea el texto al borde derecho del contenedor */
+            background-color: white;
+            color: black;
+            min-width: 150px;
+            box-shadow: #8fbc8f;
+            z-index: 1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 10px 15px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #8fbc8f;
+            color: white;
+        }
+
+        /* Mostrar el menú al pasar el ratón */
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+
+        /* Contenedor principal */
+        .container {
+            background-color: rgba(255, 255, 255, 0.9); 
+            padding: 20px 40px;
+            border: 5px solid #006400;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Título */
+        h1.text-center {
+            color: #006400;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        /* Estilo de los formularios */
+        .form-label {
+            font-size: 1rem;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        /* Estilo de los botones */
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 30px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Botón de actualizar. */
+        .btn-success {
+            background-color: #006400;  /* Verde */
+            color: white;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-success:hover {
+            background-color: #8fbc8f;  /* Verde oscuro al pasar el ratón */
+            transform: scale(1.05);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Botón de cancelar */
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;  
+            transform: scale(1.05);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        
+        }
+
+        /* Mejorar la visualización en pantallas pequeñas */
+        @media (max-width: 600px) {
+            .navbar h1 {
+                font-size: 18px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+        }
+
+        /* Estilos para el modal */
+        .modal {
+            display: none; /* Oculto por defecto */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .close {
+            margin-top: 10px;
+            cursor: pointer;
+            color: white;
+            background-color: #006400;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+    </style>
 </head>
-<body>
-    <h1>Perfil de {{ usuario.nombre }} {{ usuario.apellido }}</h1>
-    
-    <p><strong>Correo:</strong> {{ usuario.correo }}</p>
-    
-    {% if usuario.foto_perfil %}
-        <img src="{{ url_for('static', filename='uploads/' + usuario.foto_perfil) }}" alt="Foto de perfil" style="width: 150px; height: 150px;">
-    {% else %}
-        <p>No has subido una foto de perfil.</p>
-    {% endif %}
+<body class="bg-light">
+    <!-- Barra de navegación -->
+    <div class="navbar">
+        <h1>Greenmetrics</h1>
+        <div class="dropdown">
+            <button>≡</button>
+            <div class="dropdown-content">
+                <a href="{{ url_for('ajustes') }}">Ajustes</a>
+                <a href="{{ url_for('logout') }}">Cerrar Sesión</a> 
+            </div>
+        </div>
+    </div>
 
-    <h2>Editar Perfil</h2>
-    <form action="{{ url_for('perfil') }}" method="post" enctype="multipart/form-data">
-        {{ form.hidden_tag() }}
-        
-        <label for="nombre">Nombre:</label>
-        {{ form.nombre(size=32) }}
-        
-        <label for="apellido">Apellido:</label>
-        {{ form.apellido(size=32) }}
-        
-        <label for="correo">Correo electrónico:</label>
-        {{ form.correo(size=32) }}
-        
-        <label for="password">Nueva Contraseña:</label>
-        {{ form.password() }}
-        
-        <label for="confirm_password">Confirmar Contraseña:</label>
-        {{ form.confirm_password() }}
-        
-        <label for="profile_pic">Foto de perfil:</label>
-        {{ form.profile_pic() }}
-        
-        <button type="submit">Guardar Cambios</button>
-    </form>
+    <div class="container">
+        <h1 class="text-center">Perfil de Usuario</h1>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Nombre de usuario</label>
+                        {{ form.username(class="form-control", id="username") }}
+                        {% if form.username.errors %}
+                            <div class="text-danger small">{{ form.username.errors[0] }}</div>
+                        {% endif %}
+                    </div>
 
-    <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Correo electrónico</label>
+                        {{ form.email(class="form-control", id="email") }}
+                        {% if form.email.errors %}
+                            <div class="text-danger small">{{ form.email.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Nueva contraseña</label>
+                        {{ form.password(class="form-control", id="password") }}
+                        {% if form.password.errors %}
+                            <div class="text-danger small">{{ form.password.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirmar Contraseña</label>
+                        {{ form.confirm_password(class="form-control", id="confirm_password") }}
+                        {% if form.confirm_password.errors %}
+                            <div class="text-danger small">{{ form.confirm_password.errors[0] }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-success">Actualizar perfil</button>
+                        <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <p id="modalMessage"></p>
+            <button class="close" onclick="closeModal()">Aceptar</button>
+        </div>
+    </div>
+
+    <script>
+        // Mostrar el modal si hay mensajes flash
+        document.addEventListener('DOMContentLoaded', () => {
+            const flashMessage = "{{ get_flashed_messages()[0] if get_flashed_messages() else '' }}";
+            if (flashMessage) {
+                const modal = document.getElementById('successModal');
+                const modalMessage = document.getElementById('modalMessage');
+                modalMessage.textContent = flashMessage;
+                modal.style.display = 'flex';
+            }
+        });
+
+        // Cerrar el modal
+        function closeModal() {
+            const modal = document.getElementById('successModal');
+            modal.style.display = 'none';
+        }
+    </script>
 </body>
 </html>
