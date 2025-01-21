@@ -109,6 +109,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
 
         /* Título */
@@ -121,8 +122,8 @@
 
         /* Estilo de los formularios */
         .form-label {
-            font-size: 1rem;
             color: #555;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
 
         .form-control {
@@ -146,6 +147,7 @@
             text-decoration: none;
             cursor: pointer;
             transition: all 0.3s ease-in-out;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
 
         /* Botón de actualizar. */
@@ -201,6 +203,7 @@
             background-color: rgba(0, 0, 0, 0.5);
             justify-content: center;
             align-items: center;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
         .modal-content {
             background-color: white;
@@ -217,7 +220,7 @@
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
-            font-size: 16px;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
     </style>
 </head>
@@ -240,7 +243,7 @@
                 <form method="POST" enctype="multipart/form-data">
                     {{ form.hidden_tag() }}
                     
-                    <div class="mb-3">
+                    <div>
                         <label for="username" class="form-label">Nombre de usuario</label>
                         {{ form.username(class="form-control", id="username") }}
                         {% if form.username.errors %}
@@ -248,7 +251,7 @@
                         {% endif %}
                     </div>
 
-                    <div class="mb-3">
+                    <div>
                         <label for="email" class="form-label">Correo electrónico</label>
                         {{ form.email(class="form-control", id="email") }}
                         {% if form.email.errors %}
@@ -256,7 +259,7 @@
                         {% endif %}
                     </div>
 
-                    <div class="mb-3">
+                    <div>
                         <label for="password" class="form-label">Nueva contraseña</label>
                         {{ form.password(class="form-control", id="password") }}
                         {% if form.password.errors %}
@@ -264,7 +267,7 @@
                         {% endif %}
                     </div>
                     
-                    <div class="mb-3">
+                    <div>
                         <label for="confirm_password" class="form-label">Confirmar Contraseña</label>
                         {{ form.confirm_password(class="form-control", id="confirm_password") }}
                         {% if form.confirm_password.errors %}

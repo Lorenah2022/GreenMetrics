@@ -50,7 +50,6 @@
             background-color: #006400;
             color: white;
             padding: 10px 20px; /* Unificación del grosor */
-           
             z-index: 1;
         }
 
@@ -154,13 +153,10 @@
             padding: 12px 30px;
             margin-top: 15px;
             background-color: #8fbc8f;
-            color: white;
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
-            transition: background-color 0.3s ease, color 0.3s ease;
-           
-
+            transition: background-color 0.3s ease, color 0.3s ease;      
         }
 
         .form-container .back-button:hover {
@@ -190,11 +186,11 @@
             <button>≡</button>
             <div class="dropdown-content">
                 <a href="{{ url_for('ajustes') }}">Ajustes</a>
-                
                 <a href="{{ url_for('logout') }}">Cerrar Sesión</a> 
             </div>
         </div>
     </div>
+
     <div class="form-container">
         <!-- Contenido principal -->
         <div class="main-content">

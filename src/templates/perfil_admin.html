@@ -217,7 +217,7 @@
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
-            font-size: 16px;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
     </style>
 </head>
