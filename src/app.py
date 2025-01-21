@@ -2,11 +2,12 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 import secrets
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, EmailField, FileField, SubmitField
+from wtforms import StringField, PasswordField, EmailField, FileField, SubmitField, ValidationError
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms.validators import DataRequired, Length, Email, EqualTo  # IMPORTACIÓN CORREGIDA
 import os
+
 
 app = Flask(__name__)
 
@@ -16,12 +17,6 @@ app.secret_key = secrets.token_hex(32)
 # Configuración de la base de datos PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'static/uploads'  # Ruta donde se guardarán los archivos subidos
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}  # Extensiones permitidas
-
-# Asegúrate de que la carpeta de uploads exista
-if not os.path.exists(app.config['UPLOAD_FOLDER']):
-    os.makedirs(app.config['UPLOAD_FOLDER'])
 
 db = SQLAlchemy(app)
 
@@ -31,17 +26,12 @@ class User(db.Model):
     username = db.Column(db.String(50), nullable=False , unique=True)
     email = db.Column(db.String(100), nullable=False , unique=True)
     password = db.Column(db.String(200), nullable=False)
-    foto_perfil = db.Column(db.String(200), nullable=True)
-    rol = db.Column(db.String(50), nullable=False, default='usuario')  # Default es 'usuario'
+    rol = db.Column(db.String(50), nullable=False, default='visitante')  # Default es 'usuario'
 
 # Ruta principal
 @app.route('/')
 def index():
-    return redirect(url_for('register'))
-
-# Función para verificar si el archivo tiene una extensión permitida
-def allowed_file(filename):
-     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+    return redirect(url_for('login'))
 
 # Ruta principal: Login
 @app.route('/login', methods=['GET', 'POST'])
@@ -60,7 +50,8 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             session['rol'] = user.rol
-            return redirect(url_for('pagina_principal'))
+            return redirect(url_for('pagina_principal', 
+                               rol=user.rol))
     
     return render_template('login.html')
 
@@ -69,8 +60,8 @@ def login():
 def register():
     if request.method == 'POST':
             # Obtener datos del formulario
-            username = request.form['username']  # Coincide con name="usuario" en el HTML
-            email = request.form['email']  # Coincide con name="correo" en el HTML
+            username = request.form['username'] 
+            email = request.form['email']  
             password = request.form['password']
             confirm_password = request.form['confirm_password']
 
@@ -95,7 +86,7 @@ def register():
                     try:
                         # Hash de la contraseña con pbkdf2:sha256
                         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-                        new_user = User(username=username, email=email, password=hashed_password)  # Se corrigió 'contrasena' a 'password'
+                        new_user = User(username=username, email=email, password=hashed_password, rol ='usuario')  
                         db.session.add(new_user)
                         db.session.commit()
                         flash('Cuenta creada exitosamente', 'success')
@@ -104,10 +95,10 @@ def register():
                         db.session.rollback()
                         flash(f'Error al guardar el usuario: {str(e)}', 'error')
                         print(f"Error al guardar el usuario: {str(e)}")
-
+            
     return render_template('register.html')
 
-# Ruta para la página principal
+
 # Ruta para la página principal
 @app.route('/pagina_principal')
 def pagina_principal():
@@ -132,7 +123,6 @@ def pagina_principal():
             'volver_atras': '← Volver atrás',
         }
     }
-
     # Comprobar si el usuario está autenticado
     if 'user_id' not in session:
         return render_template('pagina_principal.html', 
@@ -145,8 +135,6 @@ def pagina_principal():
                                rol=rol, 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto)  # Contenido según el rol
-
-
 # Cerrar sesión
 @app.route('/logout')
 def logout():
@@ -162,69 +150,63 @@ class ProfileForm(FlaskForm):
     email = EmailField('Correo electrónico', validators=[
         DataRequired(), Email()
     ])
-    password = PasswordField('Nueva Contraseña', validators=[
-        Length(min=6), EqualTo('confirm_password', message='Las contraseñas deben coincidir.')
+    password = PasswordField('Nueva Contraseña', validators=[])
+    confirm_password = PasswordField('Confirmar Contraseña', validators=[
+        EqualTo('password', message='Las contraseñas deben coincidir.')
     ])
-    confirm_password = PasswordField('Confirmar Contraseña')
-    profile_pic = FileField('Foto de perfil')
     submit = SubmitField('Guardar Cambios')
 
-
+    # Validación personalizada para la contraseña
+    def validate_password(form, field):
+        if field.data:  # Solo valida si el campo no está vacío
+            if len(field.data) < 6:
+                raise ValidationError('La contraseña debe tener al menos 6 caracteres.')
 
 # Ruta para editar el perfil
 @app.route('/perfil', methods=['GET', 'POST'])
 def perfil():
+    tamano_texto = session.get('tamano_texto', 'normal')
+    rol = session.get('rol')
     # Verificación de si el usuario está logueado en la sesión
     if 'user_id' not in session:
-        tamano_texto = session.get('tamano_texto', 'normal')
         # Página que muestra el perfil de visitante
         return render_template('perfil_visitante.html', tamano_texto=tamano_texto)
     
-    # Obtén el rol y el usuario actual desde la sesión
-    rol = session.get('rol')
+    # Obtiene el usuario actual desde la sesión
     usuario = User.query.get(session['user_id'])  # Usar 'user_id' en lugar de 'id'
-
+    
     # Crear el formulario de perfil
     form = ProfileForm()
 
-    # Si el formulario se envía y es válido, actualiza los datos del perfil
-    if request.method == 'POST' and form.validate_on_submit():
-        usuario.username = form.username.data
-        usuario.email = form.email.data
+    if request.method == 'POST':  # Validación explícita del método POST
+        if form.validate():  # Valida los datos del formulario sin necesidad de submit
+            # Actualizar solo los campos que se llenaron
+            usuario.username = form.username.data
+            usuario.email = form.email.data
 
-        # Si se proporciona una nueva contraseña, actualízala
-        if form.password.data:
-            usuario.password = generate_password_hash(form.password.data)
-
-        # Si hay una nueva foto de perfil, procesarla
-        if form.profile_pic.data:
-            file = form.profile_pic.data
-            if file and allowed_file(file.filename):  # Verificar si la imagen es válida
-                filename = secure_filename(file.filename)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                
-                # Verificar si el archivo ya existe
-                if not os.path.exists(filepath):
-                    file.save(filepath)
-                    usuario.foto_perfil = filename  # Guardar el nombre de la imagen en la base de datos
-                else:
-                    flash("El archivo ya existe. Por favor, elige otro archivo.", "error")
-        
-        # Guardar los cambios en la base de datos
-        db.session.commit()
-        flash("Perfil actualizado correctamente.", "success")
-        return redirect(url_for('perfil'))
+            # Si el campo de contraseña no está vacío, actualiza la contraseña
+            if form.password.data:
+                usuario.password = generate_password_hash(form.password.data)
+           
+            # Guardar los cambios en la base de datos
+            try:
+                db.session.commit()
+                flash("Perfil actualizado correctamente.", "success")
+                return redirect(url_for('pagina_principal'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error al actualizar el perfil: {str(e)}", "error")
+        else:
+            flash("Hay errores en el formulario. Por favor, corrígelos.", "error")
 
     # Rellenar los campos del formulario con los datos actuales del usuario
     form.username.data = usuario.username
     form.email.data = usuario.email
+
     # Pasar el tamaño de texto a las plantillas
-    tamano_texto = session.get('tamano_texto', 'normal')
-    # Si el rol es admin, mostrar más opciones
     if rol == 'admin':
         return render_template('perfil_admin.html', form=form, usuario=usuario, tamano_texto=tamano_texto)
     else:
-        # Si no es admin, mostrar el perfil estándar
         return render_template('perfil_usuario.html', form=form, usuario=usuario, tamano_texto=tamano_texto)
 
 @app.route('/ajustes', methods=['GET', 'POST'])
@@ -238,6 +220,7 @@ def ajustes():
     idioma = session.get('idioma', 'ingles')
     tamano_texto = session.get('tamano_texto', 'normal')
     return render_template('ajustes.html', idioma=idioma, tamano_texto=tamano_texto)
+
 
 if __name__ == '__main__':
     # Crear las tablas de la base de datos
