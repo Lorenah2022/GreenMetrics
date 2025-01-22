@@ -26,7 +26,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #006400;
+            background-color:{% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
             padding: 10px 20px;
         }
@@ -43,7 +43,7 @@
 
         /* Botón del menú */
         .dropdown button {
-            background-color: #006400;
+            background-color:{% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
             border: none;
             padding: 10px 15px;
@@ -53,7 +53,7 @@
         }
 
         .dropdown button:hover {
-            background-color: #8fbc8f;
+            background-color:  {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
         }
 
         /* Elementos del menú desplegable */
@@ -65,7 +65,7 @@
             background-color: white;
             color: black;
             min-width: 150px;
-            box-shadow: #8fbc8f;
+            box-shadow:  {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
             z-index: 1;
             border-radius: 5px;
             overflow: hidden;
@@ -79,7 +79,7 @@
         }
 
         .dropdown-content a:hover {
-            background-color: #8fbc8f;
+            background-color:  {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
             color: white;
         }
 
@@ -97,7 +97,7 @@
         }
 
         .main-content h2 {
-            color: #006400;
+            color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
             margin-bottom: 20px;
         }
 
@@ -138,7 +138,7 @@
             margin-top: 10px;
             cursor: pointer;
             color: white;
-            background-color: #006400;
+            background-color:{% if daltonismo %}#800080{% else %}#006400{% endif %};
             border: none;
             padding: 10px 20px;
             border-radius: 5px;

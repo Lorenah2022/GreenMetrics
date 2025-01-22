@@ -49,7 +49,9 @@ textos = {
         'sel_idioma': 'Select language:',
         'sel_letra':'Select Font Size:',
         'guardar':'Save changes',
-        'tit_admin': 'Administrator profile'
+        'tit_admin': 'Administrator profile',
+        'modo_daltonismo': 'Daltonism'
+
     },
     'es': {
         'perfil': 'Perfil',
@@ -79,7 +81,8 @@ textos = {
         'sel_idioma':'Seleccionar Idioma:',
         'sel_letra':'Seleccionar Tamaño de Letra:',
         'guardar':'Guardar cambios.',
-        'tit_admin':'Perfil de administrador'
+        'tit_admin':'Perfil de administrador',
+        'modo_daltonismo': 'Modo Daltonismo'
     }
 }
 
@@ -172,18 +175,19 @@ def pagina_principal():
     # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
     # Comprobar si el usuario está autenticado
     if 'user_id' not in session:
         return render_template('pagina_principal.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto)  # Contenido para visitantes
+                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido para visitantes
     else:
         rol = session['rol']
         return render_template('pagina_principal.html', 
                                rol=rol, 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto)  # Contenido según el rol
+                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
 # Cerrar sesión
 @app.route('/logout')
 def logout():
@@ -215,13 +219,13 @@ class ProfileForm(FlaskForm):
 @app.route('/perfil', methods=['GET', 'POST'])
 def perfil():
     idioma = session.get('idioma', 'es')
-
+    daltonismo = session.get('daltonismo', False)
     tamano_texto = session.get('tamano_texto', 'normal')
     rol = session.get('rol')
     # Verificación de si el usuario está logueado en la sesión
     if 'user_id' not in session:
         # Página que muestra el perfil de visitante
-        return render_template('perfil_visitante.html', tamano_texto=tamano_texto,textos=textos[idioma])
+        return render_template('perfil_visitante.html', tamano_texto=tamano_texto,textos=textos[idioma],daltonismo=daltonismo)
     
     # Obtiene el usuario actual desde la sesión
     usuario = User.query.get(session['user_id'])  # Usar 'user_id' en lugar de 'id'
@@ -260,9 +264,9 @@ def perfil():
 
     # Pasar el tamaño de texto a las plantillas
     if rol == 'admin':
-        return render_template('perfil_admin.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma])
+        return render_template('perfil_admin.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma],daltonismo=daltonismo)
     else:
-        return render_template('perfil_usuario.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma])
+        return render_template('perfil_usuario.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma],daltonismo=daltonismo)
 
 @app.route('/ajustes', methods=['GET', 'POST'])
 def ajustes():
@@ -271,12 +275,15 @@ def ajustes():
     if request.method == 'POST':
         idioma = request.form.get('idioma')
         tamano_texto = request.form.get('tamano_texto')
+        daltonismo = request.form.get('daltonismo') == 'on'  # Verificamos si el checkbox está seleccionado
         session['idioma'] = idioma
         session['tamano_texto'] = tamano_texto
+        session['daltonismo'] = daltonismo  # Guardamos la opción de daltonismo en la sesión
         return redirect(url_for('ajustes'))  # Redirige para actualizar la página con los nuevos valores
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
-    return render_template('ajustes.html', idioma=idioma, tamano_texto=tamano_texto, textos=textos[idioma])
+    daltonismo = session.get('daltonismo', False)  # Por defecto, el daltonismo está desactivado
+    return render_template('ajustes.html', idioma=idioma, tamano_texto=tamano_texto,  daltonismo=daltonismo,textos=textos[idioma])
 
 
 if __name__ == '__main__':

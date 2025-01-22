@@ -32,7 +32,7 @@
         .form-container {
             background-color: rgba(255, 255, 255, 0.9); 
             padding: 20px 40px;
-            border: 5px solid #006400;
+            border: 5px solid{% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             width: 400px;
@@ -46,7 +46,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #006400;
+            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
             padding: 10px 20px;
         }
@@ -63,7 +63,7 @@
 
         /* Botón del menú */
         .dropdown button {
-            background-color: #006400;
+            background-color:{% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
             border: none;
             padding: 10px 15px;
@@ -73,7 +73,7 @@
         }
 
         .dropdown button:hover {
-            background-color: #8fbc8f;
+            background-color:{% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
         }
 
         /* Elementos del menú desplegable */
@@ -85,7 +85,7 @@
             background-color: white;
             color: black;
             min-width: 150px;
-            box-shadow: #8fbc8f;
+            box-shadow: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
             z-index: 1;
             border-radius: 5px;
             overflow: hidden;
@@ -99,7 +99,7 @@
         }
 
         .dropdown-content a:hover {
-            background-color: #8fbc8f;
+            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
             color: white;
         }
 
@@ -126,36 +126,36 @@
         }
 
         /* Contenedor para alinear los botones horizontalmente y distribuirlos equidistantemente */
-    .button-container {
-        display: flex;
-        justify-content: space-between; /* Espacio entre los botones */
-        gap: 20px; /* Espacio entre los botones */
-        margin-top: 20px;
-        padding: 0 20px; /* Añadir un poco de relleno a los lados del contenedor */
-    }
+        .button-container {
+            display: flex;
+            justify-content: space-between; /* Espacio entre los botones */
+            gap: 20px; /* Espacio entre los botones */
+            margin-top: 20px;
+            padding: 0 20px; /* Añadir un poco de relleno a los lados del contenedor */
+        }
 
-    /* Estilo común para ambos botones (button y a) */
-    .form-container .back-button {
-        display: inline-block;
-        padding: 12px 30px;
-        background-color: #8fbc8f;
-        color: #006400;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-        border: none;
-        transition: background-color 0.3s ease, color 0.3s ease;
-        text-align: center;
-        font-size: 16px;
-        font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %}; /* Tamaño dinámico */
+        /* Estilo común para ambos botones (button y a) */
+        .form-container .back-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+            color:  {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            border: none;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            text-align: center;
+            font-size: 16px;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %}; /* Tamaño dinámico */
 
-        width: 45%;  /* Ajusta el ancho para que ambos botones ocupen el 45% del contenedor */
-    }
+            width: 45%;  /* Ajusta el ancho para que ambos botones ocupen el 45% del contenedor */
+        }
 
-    .form-container .back-button:hover {
-        background-color: #006400;
-        color: #ffffff;
-    }
+        .form-container .back-button:hover {
+            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            color: #ffffff;
+        }
     
 
         
@@ -199,6 +199,12 @@
                     <option value="normal" {% if session.get('tamano_texto') == 'normal' %}selected{% endif %}>{{ textos.normal}}</option>
                     <option value="grande" {% if session.get('tamano_texto') == 'grande' %}selected{% endif %}>{{ textos.grande}}</option>
                 </select>
+            </div>
+            
+            <!-- Opción de daltonismo -->
+            <div class="form-group">
+                <label for="daltonismo">{{ textos.modo_daltonismo }}:</label>
+                <input type="checkbox" name="daltonismo" id="daltonismo" {% if session.get('daltonismo') %}checked{% endif %}>
             </div>
             
             <div class="button-container">

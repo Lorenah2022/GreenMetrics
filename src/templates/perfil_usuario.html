@@ -33,7 +33,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #006400;
+            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
             padding: 10px 20px; /* Unificación del grosor */
             z-index: 1;
@@ -51,7 +51,7 @@
 
         /* Botón del menú */
         .dropdown button {
-            background-color: #006400;
+            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
             border: none;
             padding: 10px 15px;
@@ -61,7 +61,7 @@
         }
 
         .dropdown button:hover {
-            background-color: #8fbc8f;
+            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
         }
 
         /* Elementos del menú desplegable */
@@ -73,7 +73,7 @@
             background-color: white;
             color: black;
             min-width: 150px;
-            box-shadow: #8fbc8f;
+            box-shadow: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
             z-index: 1;
             border-radius: 5px;
             overflow: hidden;
@@ -87,7 +87,7 @@
         }
 
         .dropdown-content a:hover {
-            background-color: #8fbc8f;
+            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
             color: white;
         }
 
@@ -101,7 +101,7 @@
         .container {
             background-color: rgba(255, 255, 255, 0.9); 
             padding: 20px 40px;
-            border: 5px solid #006400;
+            border: 5px solid{% if daltonismo %}#800080{% else %}#006400{% endif %};
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             width: 400px;
@@ -115,7 +115,7 @@
 
         /* Título */
         h1.text-center {
-            color: #006400;
+            color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
             margin-bottom: 30px;
             font-size: 2rem;
             font-weight: 600;
@@ -156,14 +156,14 @@
 
         /* Botón de actualizar. */
         .btn-success {
-            background-color: #006400;  /* Verde */
+            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
             border: none;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
 
         .btn-success:hover {
-            background-color: #8fbc8f;  /* Verde oscuro al pasar el ratón */
+            background-color:{% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
             transform: scale(1.05);
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
         }
