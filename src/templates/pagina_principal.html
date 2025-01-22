@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ 'en' if session.get('idioma') == 'ingles' else 'es' }}">
+<html >
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -154,17 +154,17 @@
         <div class="dropdown">
             <button>≡</button>
             <div class="dropdown-content">
-                <a href="{{ url_for('perfil') }}">Perfil</a>
-                <a href="{{ url_for('ajustes') }}">Ajustes</a>
-                <a href="{{ url_for('logout') }}">Cerrar Sesión</a> 
+                <a href="{{ url_for('perfil') }}">{{ textos.perfil}}</a>
+                <a href="{{ url_for('ajustes') }}">{{ textos.ajustes}}</a>
+                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion}}</a> 
             </div>
         </div>
     </div>
 
     <!-- Contenido principal -->
     <div class="main-content">
-        <h2>Bienvenido a Greenmetrics</h2>
-        <label for="anho"> Introduzca el año del que desea extraer las métricas.</label>
+        <h2>{{ textos.texto_bienvenida}}</h2>
+        <label for="anho">{{ textos.introducir_anho}}</label>
         <input type="text" id="anho" name="anho" required>
        
     </div>
@@ -172,7 +172,7 @@
      <div id="successModal" class="modal">
         <div class="modal-content">
             <p id="modalMessage"></p>
-            <button class="close" onclick="closeModal()">Aceptar</button>
+            <button class="close" onclick="closeModal()">{{ textos.aceptar}}</button>
         </div>
     </div>
 

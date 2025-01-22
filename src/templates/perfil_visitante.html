@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" {% if session.get('idioma') == 'ingles' %}lang="en"{% else %}lang="es"{% endif %}>
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -55,7 +55,7 @@
 
         .navbar h1 {
             margin: 0;
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
 
 
@@ -70,7 +70,7 @@
             color: white;
             border: none;
             padding: 10px 15px;
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
             cursor: pointer;
             border-radius: 5px;
         }
@@ -127,7 +127,7 @@
         }
 
         .main-content p {
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
             color: #555;
             margin-bottom: 20px;
         }
@@ -185,8 +185,8 @@
         <div class="dropdown">
             <button>≡</button>
             <div class="dropdown-content">
-                <a href="{{ url_for('ajustes') }}">Ajustes</a>
-                <a href="{{ url_for('logout') }}">Cerrar Sesión</a> 
+                <a href="{{ url_for('ajustes') }}">{{ textos.ajustes}}</a>
+                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion}}</a> 
             </div>
         </div>
     </div>
@@ -194,16 +194,16 @@
     <div class="form-container">
         <!-- Contenido principal -->
         <div class="main-content">
-            <h2>Perfil de Visitante</h2>
-            <p>Contenido solo visible para visitantes.</p>
+            <h2>{{ textos.titulo_visit}}</h2>
+            <p>{{ textos.text_visit}}<p>
         </div>
     
         <div class="link">
-            <a href="{{ url_for('login') }}">Iniciar sesión.</a>
-            <a href="{{ url_for('register') }}">Crear cuenta.</a>
+            <a href="{{ url_for('login') }}">{{ textos.iniciar_sesion}}</a>
+            <a href="{{ url_for('register') }}">{{ textos.crear_cuenta}}.</a>
         </div>
         <div class="link">
-            <a href="{{ url_for('pagina_principal') }}" class="back-button"> ← Volver atrás</a>
+            <a href="{{ url_for('pagina_principal') }}" class="back-button"> {{ textos.volver_atras}}</a>
         </div>
     </div>
 

@@ -13,12 +13,79 @@ app = Flask(__name__)
 
 # Protege la aplicación Flask contra manipulaciones y ataques
 app.secret_key = secrets.token_hex(32)
-
 # Configuración de la base de datos PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
+ # Diccionario de traducciones
+textos = {
+    'en': {
+        'perfil': 'Profile',
+        'contenido': 'Content visible only for visitors.',
+        'ajustes': 'Settings',
+        'cerrar_sesion': 'Logout',
+        'iniciar_sesion': 'Login',
+        'crear_cuenta': 'Create account',
+        'volver_atras': '← Go Back',
+        'texto_bienvenida': 'Welcome to Greenmetrics',
+        'introducir_anho': 'Enter the year from which you want to extract the metrics.',
+        'aceptar': 'Accept',
+        'titulo_visit': 'Visitor profile',
+        'text_visit': 'Content visible only to visitors.',
+        'cancelar': 'Cancel',
+        'actualizar_perfil': 'Update profile',
+        'confirmar_contrasenha': 'Confirm password',
+        'nueva_contrasenha': 'New password.',
+        'correo': 'Email.',
+        'usuario': 'User name.',
+        'tit_user': 'User profile.',
+        'ingles':'English',
+        'espanol':'Spanish',
+        'pequeno':'Small',
+        'normal': 'Medium',
+        'grande':'Big',
+        'sel_idioma': 'Select language:',
+        'sel_letra':'Select Font Size:',
+        'guardar':'Save changes',
+        'tit_admin': 'Administrator profile'
+    },
+    'es': {
+        'perfil': 'Perfil',
+        'contenido': 'Contenido solo visible para visitantes.',
+        'ajustes': 'Ajustes',
+        'cerrar_sesion': 'Cerrar sesión',
+        'iniciar_sesion': 'Iniciar sesión',
+        'crear_cuenta': 'Crear cuenta',
+        'volver_atras': '← Volver atrás',
+        'texto_bienvenida': 'Bienvenido a Greenmetrics',
+        'introducir_anho': 'Introduzca el año del que desea extraer las métricas.',
+        'aceptar': 'Aceptar',
+        'titulo_visit': 'Perfil de Visitante',
+        'text_visit': 'Contenido solo visible para visitantes.',
+        'cancelar': 'Cancelar',
+        'actualizar_perfil': 'Actualizar perfil.',
+        'confirmar_contrasenha': 'Confirmar contraseña',
+        'nueva_contrasenha': 'Nueva contraseña.',
+        'correo': 'Correo electrónico.',
+        'usuario': 'Nombre de usuario',
+        'tit_user': 'Perfil de usuario',
+        'ingles':'Inglés',
+        'espanol':'Español',
+        'pequeno':'Pequeño',
+        'normal':'Medio',
+        'grande':'Grande',
+        'sel_idioma':'Seleccionar Idioma:',
+        'sel_letra':'Seleccionar Tamaño de Letra:',
+        'guardar':'Guardar cambios.',
+        'tit_admin':'Perfil de administrador'
+    }
+}
+
+
+
+
 
  # Modelo de Usuario
 class User(db.Model):
@@ -102,27 +169,9 @@ def register():
 # Ruta para la página principal
 @app.route('/pagina_principal')
 def pagina_principal():
-    # Comprobar el idioma seleccionado en la sesión, por defecto 'ingles'
-    idioma = session.get('idioma', 'ingles')
+    # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
+    idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
-
-    # Diccionario de traducciones
-    textos = {
-        'ingles': {
-            'perfil': 'Visitor Profile',
-            'contenido': 'Content visible only for visitors.',
-            'iniciar_sesion': 'Login',
-            'crear_cuenta': 'Create account',
-            'volver_atras': '← Go Back',
-        },
-        'es': {
-            'perfil': 'Perfil de Visitante',
-            'contenido': 'Contenido solo visible para visitantes.',
-            'iniciar_sesion': 'Iniciar sesión',
-            'crear_cuenta': 'Crear cuenta',
-            'volver_atras': '← Volver atrás',
-        }
-    }
     # Comprobar si el usuario está autenticado
     if 'user_id' not in session:
         return render_template('pagina_principal.html', 
@@ -165,12 +214,14 @@ class ProfileForm(FlaskForm):
 # Ruta para editar el perfil
 @app.route('/perfil', methods=['GET', 'POST'])
 def perfil():
+    idioma = session.get('idioma', 'es')
+
     tamano_texto = session.get('tamano_texto', 'normal')
     rol = session.get('rol')
     # Verificación de si el usuario está logueado en la sesión
     if 'user_id' not in session:
         # Página que muestra el perfil de visitante
-        return render_template('perfil_visitante.html', tamano_texto=tamano_texto)
+        return render_template('perfil_visitante.html', tamano_texto=tamano_texto,textos=textos[idioma])
     
     # Obtiene el usuario actual desde la sesión
     usuario = User.query.get(session['user_id'])  # Usar 'user_id' en lugar de 'id'
@@ -191,7 +242,11 @@ def perfil():
             # Guardar los cambios en la base de datos
             try:
                 db.session.commit()
-                flash("Perfil actualizado correctamente.", "success")
+                if idioma=='es':
+                    flash("Perfil actualizado correctamente.", "success")
+                elif idioma=='en':
+                    flash("Profile updated successfully", "success")
+
                 return redirect(url_for('pagina_principal'))
             except Exception as e:
                 db.session.rollback()
@@ -205,21 +260,23 @@ def perfil():
 
     # Pasar el tamaño de texto a las plantillas
     if rol == 'admin':
-        return render_template('perfil_admin.html', form=form, usuario=usuario, tamano_texto=tamano_texto)
+        return render_template('perfil_admin.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma])
     else:
-        return render_template('perfil_usuario.html', form=form, usuario=usuario, tamano_texto=tamano_texto)
+        return render_template('perfil_usuario.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma])
 
 @app.route('/ajustes', methods=['GET', 'POST'])
 def ajustes():
+    idioma = session.get('idioma', 'es')
+
     if request.method == 'POST':
         idioma = request.form.get('idioma')
         tamano_texto = request.form.get('tamano_texto')
         session['idioma'] = idioma
         session['tamano_texto'] = tamano_texto
         return redirect(url_for('ajustes'))  # Redirige para actualizar la página con los nuevos valores
-    idioma = session.get('idioma', 'ingles')
+    idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
-    return render_template('ajustes.html', idioma=idioma, tamano_texto=tamano_texto)
+    return render_template('ajustes.html', idioma=idioma, tamano_texto=tamano_texto, textos=textos[idioma])
 
 
 if __name__ == '__main__':

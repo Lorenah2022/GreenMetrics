@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" {% if session.get('idioma') == 'ingles' %}lang="en"{% else %}lang="es"{% endif %}>
+<html >
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -147,6 +147,8 @@
         transition: background-color 0.3s ease, color 0.3s ease;
         text-align: center;
         font-size: 16px;
+        font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %}; /* Tamaño dinámico */
+
         width: 45%;  /* Ajusta el ancho para que ambos botones ocupen el 45% del contenedor */
     }
 
@@ -167,8 +169,8 @@
         <div class="dropdown">
             <button>≡</button>
             <div class="dropdown-content">
-                <a href="{{ url_for('perfil') }}">Perfil</a>
-                <a href="{{ url_for('logout') }}">Cerrar Sesión</a> 
+                <a href="{{ url_for('perfil') }}">{{ textos.perfil}}</a>
+                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion}}</a> 
             </div>
         </div>
     </div>
@@ -176,32 +178,32 @@
     <div class="form-container">
         <!-- Contenido principal -->
         <div class="main-content">
-            <h2>Ajustes</h2>
+            <h2>{{ textos.ajustes}}</h2>
         </div>
 
         <!-- Formulario de cambio de idioma -->
         <form action="{{ url_for('ajustes') }}" method="POST">
             <div class="form-group">
-                <label for="idioma">Seleccionar Idioma:</label>
+                <label for="idioma">{{ textos.sel_idioma}}:</label>
                 <select name="idioma" id="idioma">
-                    <option value="ingles" {% if session.get('idioma') == 'ingles' %}selected{% endif %}>Inglés</option>
-                    <option value="es" {% if session.get('idioma') == 'es' %}selected{% endif %}>Español</option>
+                    <option value="en" {% if session.get('idioma') == 'en' %}selected{% endif %}>{{ textos.ingles}}</option>
+                    <option value="es" {% if session.get('idioma') == 'es' %}selected{% endif %}>{{ textos.espanol}}</option>
                 </select>
             </div>
 
             <!-- Formulario de cambio de tamaño de texto -->
             <div class="form-group">
-                <label for="tamano_texto">Seleccionar Tamaño de Letra:</label>
+                <label for="tamano_texto">{{ textos.sel_letra}}<label>
                 <select name="tamano_texto" id="tamano_texto">
-                    <option value="pequeño" {% if session.get('tamano_texto') == 'pequeño' %}selected{% endif %}>Pequeño</option>
-                    <option value="normal" {% if session.get('tamano_texto') == 'normal' %}selected{% endif %}>Normal</option>
-                    <option value="grande" {% if session.get('tamano_texto') == 'grande' %}selected{% endif %}>Grande</option>
+                    <option value="pequeño" {% if session.get('tamano_texto') == 'pequeño' %}selected{% endif %}>{{ textos.pequeno}}</option>
+                    <option value="normal" {% if session.get('tamano_texto') == 'normal' %}selected{% endif %}>{{ textos.normal}}</option>
+                    <option value="grande" {% if session.get('tamano_texto') == 'grande' %}selected{% endif %}>{{ textos.grande}}</option>
                 </select>
             </div>
             
             <div class="button-container">
-                <button type="submit" class="back-button">Guardar Cambios</button>
-                <button type="button" onclick="window.location.href='{{ url_for('pagina_principal') }}'" class="back-button"> ← Volver atrás</button>
+                <button type="submit" class="back-button">{{ textos.guardar}}</button>
+                <button type="button" onclick="window.location.href='{{ url_for('pagina_principal') }}'" class="back-button"> {{ textos.volver_atras}}</button>
             </div>
         </form>
       

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" {% if session.get('idioma') == 'ingles' %}lang="en"{% else %}lang="es"{% endif %}>
+<html >
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -228,44 +228,43 @@
         <div class="dropdown">
             <button>≡</button>
             <div class="dropdown-content">
-                <a href="{{ url_for('ajustes') }}">Ajustes</a>
-                <a href="{{ url_for('logout') }}">Cerrar Sesión</a> 
+                <a href="{{ url_for('ajustes') }}">{{ textos.ajustes}}</a>
+                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion}}</a>
             </div>
         </div>
     </div>
 
     <div class="container">
-        <h1 class="text-center">Perfil de Administrador</h1>
+        <h1 class="text-center">{{ textos.tit_admin}}</h1>
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data">
                     {{ form.hidden_tag() }}
                     
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Nombre de usuario</label>
-                        {{ form.username(class="form-control", id="username") }}
+                    <div >
+                        <label for="username" class="form-label">{{ textos.usuario}}</label>                        {{ form.username(class="form-control", id="username") }}
                         {% if form.username.errors %}
                             <div class="text-danger small">{{ form.username.errors[0] }}</div>
                         {% endif %}
                     </div>
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Correo electrónico</label>
+                    <div >
+                        <label for="email" class="form-label">{{ textos.correo}}</label>
                         {{ form.email(class="form-control", id="email") }}
                         {% if form.email.errors %}
                             <div class="text-danger small">{{ form.email.errors[0] }}</div>
                         {% endif %}
                     </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Nueva contraseña</label>
+                    <div >
+                        <label for="password" class="form-label">{{ textos.nueva_contrasenha}}</label>
                         {{ form.password(class="form-control", id="password") }}
                         {% if form.password.errors %}
                             <div class="text-danger small">{{ form.password.errors[0] }}</div>
                         {% endif %}
                     </div>
                     
-                    <div class="mb-3">
-                        <label for="confirm_password" class="form-label">Confirmar Contraseña</label>
+                    <div >
+                        <label for="confirm_password" class="form-label">{{ textos.confirmar_contrasenha}}</label>
                         {{ form.confirm_password(class="form-control", id="confirm_password") }}
                         {% if form.confirm_password.errors %}
                             <div class="text-danger small">{{ form.confirm_password.errors[0] }}</div>
@@ -273,8 +272,8 @@
                     </div>
 
                     <div class="d-flex justify-content-between">
-                        <button type="submit" class="btn btn-success">Actualizar perfil</button>
-                        <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-success">{{ textos.actualizar_perfil}}</button>
+                        <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.cancelar}}</a>
                     </div>
                 </form>
             </div>
@@ -284,7 +283,7 @@
     <div id="successModal" class="modal">
         <div class="modal-content">
             <p id="modalMessage"></p>
-            <button class="close" onclick="closeModal()">Aceptar</button>
+            <button class="close" onclick="closeModal()">{{ textos.aceptar}}</button>
         </div>
     </div>
 
