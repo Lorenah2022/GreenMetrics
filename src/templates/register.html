@@ -43,6 +43,7 @@
             color: #006400;
             margin-bottom: 20px;
         }
+        
 
         .form-group {
             margin-bottom: 15px;
@@ -129,6 +130,12 @@
             border-radius: 5px;
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
+        .password-info {
+            font-size: 12px;
+            color: #555;
+            text-align: center;
+            margin-bottom: 15px;
+        }
 
     </style>
 </head>
@@ -152,6 +159,8 @@
                 <label for="password">Repita la contraseña:</label>
                 <input type="password" id="password" name="confirm_password" required>
             </div>
+            <p class="password-info">La contraseña debe tener al menos una mayúscula, una minúscula y un número.</p>
+            <p class="password-info">Además de un minimo de 8 caracteres.</p>
             <button type="submit">Registrarse</button>
             <div class="link">
                 ¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión aquí.</a>

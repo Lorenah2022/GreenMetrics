@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms.validators import DataRequired, Length, Email, EqualTo  # IMPORTACIÓN CORREGIDA
 import os
-
+import re  # Necesario para la validación de contraseñas
 
 app = Flask(__name__)
 
@@ -37,7 +37,7 @@ textos = {
         'cancelar': 'Cancel',
         'actualizar_perfil': 'Update profile',
         'confirmar_contrasenha': 'Confirm password',
-        'nueva_contrasenha': 'New password.',
+        'nueva_contrasenha': 'New password. *',
         'correo': 'Email.',
         'usuario': 'User name.',
         'tit_user': 'User profile.',
@@ -50,7 +50,11 @@ textos = {
         'sel_letra':'Select Font Size:',
         'guardar':'Save changes',
         'tit_admin': 'Administrator profile',
-        'modo_daltonismo': 'Daltonism'
+        'modo_daltonismo': 'Daltonism',
+        'criterio_1': 'The password must have at least one uppercase letter, one lowercase letter, and one number.',
+        'criterio_2':'Additionally, a minimum of 8 characters.',
+        'criterio_3':'* If you do not fill in the password field, it will not be updated.'
+
 
     },
     'es': {
@@ -69,7 +73,7 @@ textos = {
         'cancelar': 'Cancelar',
         'actualizar_perfil': 'Actualizar perfil.',
         'confirmar_contrasenha': 'Confirmar contraseña',
-        'nueva_contrasenha': 'Nueva contraseña.',
+        'nueva_contrasenha': 'Nueva contraseña. *',
         'correo': 'Correo electrónico.',
         'usuario': 'Nombre de usuario',
         'tit_user': 'Perfil de usuario',
@@ -82,7 +86,10 @@ textos = {
         'sel_letra':'Seleccionar Tamaño de Letra:',
         'guardar':'Guardar cambios.',
         'tit_admin':'Perfil de administrador',
-        'modo_daltonismo': 'Modo Daltonismo'
+        'modo_daltonismo': 'Modo Daltonismo',
+        'criterio_1':'La contraseña debe tener al menos una mayúscula, una minúscula y un número.',
+        'criterio_2':'Además de un minimo de 8 caracteres.',
+        'criterio_3':'* Si no rellena el campo de la contraseña, esta no se actualizará.'
     }
 }
 
@@ -97,6 +104,21 @@ class User(db.Model):
     email = db.Column(db.String(100), nullable=False , unique=True)
     password = db.Column(db.String(200), nullable=False)
     rol = db.Column(db.String(50), nullable=False, default='visitante')  # Default es 'usuario'
+
+
+
+# Función de validación de contraseña
+def validar_contrasena(password):
+    if len(password) < 8:
+        return "La contraseña debe tener al menos 8 caracteres."
+    if not any(char.isupper() for char in password):
+        return "La contraseña debe incluir al menos una letra mayúscula."
+    if not any(char.islower() for char in password):
+        return "La contraseña debe incluir al menos una letra minúscula."
+    if not any(char.isdigit() for char in password):
+        return "La contraseña debe incluir al menos un número."
+    return None
+
 
 # Ruta principal
 @app.route('/')
@@ -135,9 +157,12 @@ def register():
             password = request.form['password']
             confirm_password = request.form['confirm_password']
 
-            # Imprimir los datos para verificar
-            print(f"Nombre: {username}, Correo: {email}, Contraseña: {password}")
-
+            # Validar contraseña
+            error = validar_contrasena(password)
+            if error:
+                flash(error, 'error')
+                return render_template('register.html')  # Detener el proceso si hay errores
+            
             # Validar datos
             if not username or not email or not password:
                 flash('Por favor, completa todos los campos', 'error')
@@ -208,13 +233,7 @@ class ProfileForm(FlaskForm):
         EqualTo('password', message='Las contraseñas deben coincidir.')
     ])
     submit = SubmitField('Guardar Cambios')
-
-    # Validación personalizada para la contraseña
-    def validate_password(form, field):
-        if field.data:  # Solo valida si el campo no está vacío
-            if len(field.data) < 6:
-                raise ValidationError('La contraseña debe tener al menos 6 caracteres.')
-
+    
 # Ruta para editar el perfil
 @app.route('/perfil', methods=['GET', 'POST'])
 def perfil():
@@ -241,6 +260,14 @@ def perfil():
 
             # Si el campo de contraseña no está vacío, actualiza la contraseña
             if form.password.data:
+                # Validar contraseña
+                error = validar_contrasena(form.password.data)
+                if error:
+                    flash(error, 'error')
+                    return render_template(
+                    'perfil_usuario.html', form=form, usuario=usuario,
+                    tamano_texto=tamano_texto, textos=textos[idioma]
+                    )
                 usuario.password = generate_password_hash(form.password.data)
            
             # Guardar los cambios en la base de datos

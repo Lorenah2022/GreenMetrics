@@ -176,7 +176,11 @@
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
         }
 
-        
+        .password-info {
+            font-size: 12px;
+            color: #555;
+            text-align: center;
+            margin-bottom: 15px;
         }
 
         /* Mejorar la visualización en pantallas pequeñas */
@@ -257,6 +261,7 @@
 
                     <div >
                         <label for="password" class="form-label">{{ textos.nueva_contrasenha}}</label>
+                        <p class="password-info">{{textos.criterio_3}}</p>
                         {{ form.password(class="form-control", id="password") }}
                         {% if form.password.errors %}
                             <div class="text-danger small">{{ form.password.errors[0] }}</div>
@@ -270,6 +275,10 @@
                             <div class="text-danger small">{{ form.confirm_password.errors[0] }}</div>
                         {% endif %}
                     </div>
+
+                    <p class="password-info">{{textos.criterio_1}}</p>
+                    <p class="password-info">{{textos.criterio_2}}</p>
+
 
                     <div class="d-flex justify-content-between">
                         <button type="submit" class="btn btn-success">{{ textos.actualizar_perfil}}</button>
