@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html >
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,17 +16,11 @@
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
-            transition: background-image 1s ease-in-out; /* Transición suave */
-        }
-
-        .content {
-            color: white;
-            font-size: 2em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            transition: background-image 1s ease-in-out;
         }
 
         .form-container {
-            background-color: rgba(255, 255, 255, 0.9); 
+            background-color: rgba(255, 255, 255, 0.9);
             padding: 20px 40px;
             border: 5px solid #006400;
             border-radius: 8px;
@@ -36,6 +30,12 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+        }
+
+        .form-container h1 {
+            margin: 0;
+            text-align: center;
+            color: #344f34;
         }
 
         .form-container h2 {
@@ -86,7 +86,6 @@
         .form-container .link {
             text-align: center;
             margin-top: 15px;
-            
         }
 
         .form-container .link a {
@@ -97,12 +96,18 @@
         .form-container .link a:hover {
             text-decoration: underline;
             color: #8fbc8f;
-           
         }
 
-        /* Estilos para el modal */
+        /* Estilo para el botón de Google */
+        .g_id_signin {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Modal */
         .modal {
-            display: none; /* Oculto por defecto */
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
@@ -112,6 +117,7 @@
             justify-content: center;
             align-items: center;
         }
+
         .modal-content {
             background-color: white;
             padding: 20px;
@@ -119,6 +125,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             text-align: center;
         }
+
         .close {
             margin-top: 10px;
             cursor: pointer;
@@ -127,12 +134,14 @@
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
-            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+            font-size: 16px;
         }
     </style>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <div class="form-container">
+        <h1>Bienvenido a Greenmetrics</h1>
         <h2>Iniciar sesión</h2>
         <form method="POST">
             <div class="form-group">
@@ -144,16 +153,32 @@
                 <input type="password" id="password" name="password" required>
             </div>
             <button type="submit">Entrar</button>
+
+            <!-- Botón de inicio de sesión con Google -->
+            <div id="g_id_onload"
+                data-client_id= "110335636005-ates0e4d31oguugs7gf8bn1qu9rea6h6.apps.googleusercontent.com"
+                data-context="signin"
+                data-ux_mode="popup"
+                data-callback="handleCredentialResponse"
+                data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                data-type="standard"
+                data-shape="rectangular"
+                data-theme="outline"
+                data-text="sign_in_with"
+                data-size="large"
+                data-logo_alignment="left">
+            </div>
+
             <div class="link">
                 ¿No tienes cuenta? <a href="{{ url_for('register') }}">Crea una cuenta aquí.</a>
-            </div>           
+            </div>
             <div class="link">
                 <a href="{{ url_for('pagina_principal') }}">Continuar sin iniciar sesión</a>
-             </div>
-
+            </div>
         </form>
     </div>
-
 
     <!-- Modal -->
     <div id="successModal" class="modal">
@@ -180,33 +205,49 @@
             const modal = document.getElementById('successModal');
             modal.style.display = 'none';
         }
-    </script>
 
-    
-    <script>
-        // Array con las rutas de las imágenes
-        const backgrounds = [
-            'https://cadenaser.com/resizer/v2/ONHLNFT55ZJRTLLWA56FBHCP4M.jpg?auth=adc663c5f08c0540fe491b3679f70a92ae44aea7e5dc3b8d39c32800051b83af&quality=70&width=990&height=742&smart=true', // Imagen 1
-            'https://www.guiasturisticosburgos.com/media/noticias/845/400/horarios-y-precios-de-la-catedral-de-burgos-id-20.jpg', // Imagen 2
-            'https://www.guiasturisticosburgos.com/media/noticias/845/400/horarios-y-precios-monasterio-de-las-huelgas-id-24.jpg'  // Imagen 3
-        ];
-
-        // Índice inicial
-        let currentIndex = 0;
-
-        // Función para cambiar el fondo
-        // Función para cambiar el fondo
-        function changeBackground() {
-            document.body.style.backgroundImage = `url(${backgrounds[currentIndex]})`;
-            currentIndex = (currentIndex + 1) % backgrounds.length; // Avanza al siguiente fondo
+        // Callback para manejar la respuesta de Google
+        function handleCredentialResponse(response) {
+            console.log("Credenciales de Google:", response.credential);
+            // Aquí puedes enviar el token al servidor o procesarlo según tu lógica
         }
 
-
-        // Cambia el fondo al cargar la página
+        // Cambiar fondo dinámicamente
+        const backgrounds = [
+            'https://estaticos2.burgosnoticias.com/resources/files/2018/7/20/1532087105209universidad-burgos.jpg',
+            'https://www.guiasturisticosburgos.com/media/noticias/845/400/horarios-y-precios-de-la-catedral-de-burgos-id-20.jpg',
+            'https://www.guiasturisticosburgos.com/media/noticias/845/400/horarios-y-precios-monasterio-de-las-huelgas-id-24.jpg'
+        ];
+        let currentIndex = 0;
+        function changeBackground() {
+            document.body.style.backgroundImage = `url(${backgrounds[currentIndex]})`;
+            currentIndex = (currentIndex + 1) % backgrounds.length;
+        }
         changeBackground();
-
-        // Cambia el fondo cada minuto
-        setInterval(changeBackground, 60000); 
+        setInterval(changeBackground, 60000);
     </script>
+    <script>
+    function handleCredentialResponse(response) {
+        // El 'response' contiene el ID token que es necesario para autenticar al usuario
+        const id_token = response.credential;
+
+        // Ahora puedes enviar el token al servidor para que lo verifique
+        fetch("/google_login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ token: id_token })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Usuario autenticado:", data);
+            // Redirigir al usuario después de la autenticación
+            window.location.href = "/pagina_principal"; // O la URL que desees
+        })
+        .catch(error => console.error("Error al enviar el token:", error));
+    }
+</script>
+
 </body>
-</html> 
+</html>

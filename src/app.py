@@ -3,19 +3,39 @@ from flask_sqlalchemy import SQLAlchemy
 import secrets
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, EmailField, FileField, SubmitField, ValidationError
-from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms.validators import DataRequired, Length, Email, EqualTo  # IMPORTACIÓN CORREGIDA
 import os
-import re  # Necesario para la validación de contraseñas
+from flask import request, jsonify
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from flask_dance.contrib.google import make_google_blueprint, google
+
+import sys
+
+
+from dotenv import load_dotenv
+
+
+# Cargar variables desde .env
+load_dotenv()
 
 app = Flask(__name__)
+
+
+os.environ["PYTHONUNBUFFERED"] = "1"
+sys.stdout.reconfigure(line_buffering=True)
+
 
 # Protege la aplicación Flask contra manipulaciones y ataques
 app.secret_key = secrets.token_hex(32)
 # Configuración de la base de datos PostgreSQL
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Configuración de OAuth con Google
+app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.getenv("GOOGLE_CLIENT_ID")
+app.config["GOOGLE_OAUTH_CLIENT_SECRET"] = os.getenv("GOOGLE_CLIENT_SECRET")
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 db = SQLAlchemy(app)
 
@@ -93,13 +113,14 @@ textos = {
     }
 }
 
-
-
-
+# Crear el blueprint de Google OAuth
+google_bp = make_google_blueprint(client_id=os.getenv("GOOGLE_CLIENT_ID"), client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),  redirect_to='pagina_principal')
+app.register_blueprint(google_bp, url_prefix='/google_login')
 
  # Modelo de Usuario
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    google_id = db.Column(db.String(50), unique=True, nullable=True)  # Campo opcional
     username = db.Column(db.String(50), nullable=False , unique=True)
     email = db.Column(db.String(100), nullable=False , unique=True)
     password = db.Column(db.String(200), nullable=False)
@@ -128,6 +149,8 @@ def index():
 # Ruta principal: Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    google_client_id = app.config["GOOGLE_OAUTH_CLIENT_ID"]
+
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -145,8 +168,88 @@ def login():
             return redirect(url_for('pagina_principal', 
                                rol=user.rol))
     
-    return render_template('login.html')
+    return render_template('login.html',google_client_id=google_client_id)
 
+
+# Login con google
+def get_google_user_info():
+    if not google.authorized:
+        print("No autorizado con Google.")
+        return None
+    try:
+        resp = google.get("/oauth2/v1/userinfo")
+        if resp.ok:
+            user_info = resp.json()
+            print(f"Información obtenida de Google: {user_info}")
+            return user_info
+        else:
+            print(f"Error al obtener la información del usuario, respuesta no OK: {resp.status_code}")
+            return None
+
+    except Exception as e:
+        print(f"Error al obtener información del usuario de Google: {e}")
+        return None
+
+
+# Ruta de login con Google
+@app.route("/google_login", methods=["POST"])
+def google_login():
+    # Carga el client_id desde las variables de entorno
+    google_client_id = app.config["GOOGLE_OAUTH_CLIENT_ID"]
+    print(f"Google Client ID: {google_client_id}")  # Verifica que el Client ID esté correcto
+
+    print("Entrando a google_login...")
+
+    # Recibir el token desde el frontend
+    data = request.get_json()
+    token = data.get("token")
+
+    if not token:
+        return jsonify({"error": "Token de Google no proporcionado"}), 400
+
+    try:
+        # Verificar el token con Google
+        idinfo = id_token.verify_oauth2_token(
+            token, 
+            requests.Request(), 
+            google_client_id  # Usamos el client_id desde .env
+        )
+
+        # Si el token es válido, obtener la información del usuario
+        user_info = {
+            "id": idinfo["sub"],  # Google ID
+            "email": idinfo["email"],
+            "name": idinfo.get("name", ""),
+        }
+
+        # Buscar si el usuario ya existe
+        user = User.query.filter(
+            (User.google_id == user_info["id"]) | (User.email == user_info["email"])
+        ).first()
+
+        if not user:
+            user = User(
+                google_id=user_info["id"],
+                username=user_info.get("name", "Usuario de Google"),
+                email=user_info["email"],
+                password=generate_password_hash(""),  # Asignar un hash vacío como "contraseña"
+                rol="usuario"
+            )
+            db.session.add(user)
+            db.session.commit()
+
+        # Iniciar sesión
+        session["user_id"] = user.id
+        session["rol"] = user.rol
+
+        return jsonify({"message": "Usuario autenticado", "user": user.username}), 200
+
+    except ValueError as e:
+        # El token es inválido
+        print(f"Error al verificar el token de Google: {e}")
+        return jsonify({"error": "Token inválido"}), 400
+
+    
 # Ruta para el registro de nuevos usuarios
 @app.route('/register', methods=['GET', 'POST'])
 def register():
