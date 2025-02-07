@@ -1,20 +1,30 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+# --- Flask Core Modules ---
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
-import secrets
+
+# --- Flask Extensions ---
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, EmailField, FileField, SubmitField, ValidationError
-from werkzeug.security import generate_password_hash, check_password_hash
-from wtforms.validators import DataRequired, Length, Email, EqualTo  # IMPORTACIÓN CORREGIDA
-import os
-from flask import request, jsonify
-from google.oauth2 import id_token
-from google.auth.transport import requests
 from flask_dance.contrib.google import make_google_blueprint, google
 
-import sys
+# --- WTForms for Form Handling ---
+from wtforms import StringField, PasswordField, EmailField, FileField, SubmitField, ValidationError
+from wtforms.validators import DataRequired, Length, Email, EqualTo  
 
+# --- Security and Authentication ---
+from werkzeug.security import generate_password_hash, check_password_hash
+import secrets  # For generating secret keys
 
+# --- Google OAuth2 ---
+from google.oauth2 import id_token
+from google.auth.transport import requests
+
+# --- System and Utility Modules ---
+import os
 from dotenv import load_dotenv
+import subprocess
+import re
+import threading
+import sys
 
 
 # Cargar variables desde .env
@@ -39,6 +49,12 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 db = SQLAlchemy(app)
 
+
+
+# Crear el blueprint de Google OAuth
+google_bp = make_google_blueprint(client_id=os.getenv("GOOGLE_CLIENT_ID"), client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),  redirect_to='pagina_pedir_anho')
+app.register_blueprint(google_bp, url_prefix='/google_login')
+
  # Diccionario de traducciones
 textos = {
     'en': {
@@ -50,7 +66,13 @@ textos = {
         'crear_cuenta': 'Create account',
         'volver_atras': '← Go Back',
         'texto_bienvenida': 'Welcome to Greenmetrics',
-        'introducir_anho': 'Enter the year from which you want to extract the metrics.',
+        'introducir_anho': 'Enter the year from which you want to extract the metrics. (Ex. 2023-2024)',
+        'IA_tit':'IA',
+        'introducir_datos_IA':'Enter the following data, if not the default IA will be used (Llama-8B-GGUF)',
+        'datos_IA':'IA data',
+        'base_url':'URL base',
+        'api_key': 'API key',
+        'myModel': 'Model',
         'aceptar': 'Accept',
         'titulo_visit': 'Visitor profile',
         'text_visit': 'Content visible only to visitors.',
@@ -86,7 +108,13 @@ textos = {
         'crear_cuenta': 'Crear cuenta',
         'volver_atras': '← Volver atrás',
         'texto_bienvenida': 'Bienvenido a Greenmetrics',
-        'introducir_anho': 'Introduzca el año del que desea extraer las métricas.',
+        'introducir_anho': 'Introduzca el año del que desea extraer las métricas.(Ej. 2023-2024)',
+        'IA_tit':'IA',
+        'introducir_datos_IA':'Introduce los siguientes datos, sino se usará la IA predeterminada (Llama-8B-GGUF)',
+        'datos_IA':'Datos de la IA',
+        'base_url':'Base URL',
+        'api_key': 'API key',
+        'myModel': 'Modelo',
         'aceptar': 'Aceptar',
         'titulo_visit': 'Perfil de Visitante',
         'text_visit': 'Contenido solo visible para visitantes.',
@@ -113,9 +141,6 @@ textos = {
     }
 }
 
-# Crear el blueprint de Google OAuth
-google_bp = make_google_blueprint(client_id=os.getenv("GOOGLE_CLIENT_ID"), client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),  redirect_to='pagina_principal')
-app.register_blueprint(google_bp, url_prefix='/google_login')
 
  # Modelo de Usuario
 class User(db.Model):
@@ -165,7 +190,7 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             session['rol'] = user.rol
-            return redirect(url_for('pagina_principal', 
+            return redirect(url_for('pagina_pedir_anho', 
                                rol=user.rol))
     
     return render_template('login.html',google_client_id=google_client_id)
@@ -298,24 +323,99 @@ def register():
 
 
 # Ruta para la página principal
-@app.route('/pagina_principal')
-def pagina_principal():
+@app.route('/pagina_pedir_anho')
+def pagina_pedir_anho():
     # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
     # Comprobar si el usuario está autenticado
     if 'user_id' not in session:
-        return render_template('pagina_principal.html', 
+        return render_template('pagina_pedir_anho.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido para visitantes
     else:
         rol = session['rol']
-        return render_template('pagina_principal.html', 
+        return render_template('pagina_pedir_anho.html', 
                                rol=rol, 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
+        
+        
+    
+        
+# Ruta para la página principal
+@app.route('/pagina_pedir_IA')
+def pagina_pedir_IA():
+    # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+    # Comprobar si el usuario está autenticado
+    if 'user_id' not in session:
+        return render_template('pagina_pedir_IA.html', 
+                               rol='visitante', 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido para visitantes
+    else:
+        rol = session['rol']
+        return render_template('pagina_pedir_IA.html', 
+                               rol=rol, 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
+
+@app.route('/actualizar_api', methods=['POST'])
+def actualizar_api():
+    # Obtener los datos del formulario (si están disponibles)
+    base_url = request.form['base_url'] or None
+    api_key = request.form['api_key'] or None
+    model = request.form['model'] or None
+    
+    # Ruta relativa al archivo API.py (en relación a la carpeta donde está el script Flask)
+    ruta_api = os.path.join(os.getcwd(), 'sostenibilidad', 'API.py')  # Ruta relativa
+
+    # Leer el contenido actual de API.py
+    with open(ruta_api, 'r') as file:
+        contenido = file.read()
+    
+    # Obtener los valores actuales de las variables (si no se introducen nuevos valores)
+    base_url_actual = re.search(r'base_url = "(.*?)"', contenido)
+    api_key_actual = re.search(r'api_key = "(.*?)"', contenido)
+    model_actual = re.search(r'myModel = "(.*?)"', contenido)
+    
+    # Si no se ha introducido un valor, se mantiene el valor actual del archivo
+    if base_url is None:
+        base_url = base_url_actual.group(1) if base_url_actual else ''
+    if api_key is None:
+        api_key = api_key_actual.group(1) if api_key_actual else ''
+    if model is None:
+        model = model_actual.group(1) if model_actual else ''
+    
+    # Actualizar las variables en el archivo, solo si se ha proporcionado un valor
+    contenido_actualizado = re.sub(r'base_url = ".*?"', f'base_url = "{base_url}"', contenido)
+    contenido_actualizado = re.sub(r'api_key = ".*?"', f'api_key = "{api_key}"', contenido_actualizado)
+    contenido_actualizado = re.sub(r'myModel = ".*?"', f'myModel = "{model}"', contenido_actualizado)
+    
+    # Guardar los cambios en API.py
+    with open(ruta_api, 'w') as file:
+        file.write(contenido_actualizado)
+    
+    # Función que ejecutará el script en segundo plano
+    def ejecutar_api():
+        try:
+            # Ejecutar el archivo API.py
+            subprocess.run(['python3', ruta_api], check=True)
+            flash('La configuración de la API se ha actualizado correctamente y el código ha sido ejecutado.')
+        except subprocess.CalledProcessError as e:
+            flash(f'Hubo un error al ejecutar el archivo API.py: {e}')
+
+    # Crear y lanzar un hilo para ejecutar la función
+    hilo = threading.Thread(target=ejecutar_api)
+    hilo.start()
+    
+    return redirect(url_for('pagina_pedir_IA'))
+
 # Cerrar sesión
 @app.route('/logout')
 def logout():
@@ -381,7 +481,7 @@ def perfil():
                 elif idioma=='en':
                     flash("Profile updated successfully", "success")
 
-                return redirect(url_for('pagina_principal'))
+                return redirect(url_for('pagina_pedir_anho'))
             except Exception as e:
                 db.session.rollback()
                 flash(f"Error al actualizar el perfil: {str(e)}", "error")

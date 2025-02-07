@@ -19,7 +19,7 @@ archivos_guias = [f for f in os.listdir(directorio) if f.endswith('.pdf')]
 
 # Configuración de la API
 base_url = "http://127.0.0.1:1234"
-api_key = os.getenv("API_KEY")
+api_key = "deepseek-r1-distill-llama-8b:2"
 myModel = "lmstudio-community/DeepSeek-R1-Distill-Llama-8B-GGUF"
 
 # Crear DataFrame vacío
