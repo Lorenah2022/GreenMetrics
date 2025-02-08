@@ -3,9 +3,15 @@ import re
 import pandas as pd
 import os
 
-# Crear la carpeta "data" si no existe
-if not os.path.exists("data"):
-    os.makedirs("data")
+# Definir la ruta absoluta a la carpeta 'data' dentro de 'src/sostenibilidad'
+ruta_data = os.path.join("sostenibilidad", "data")
+
+# Crear la carpeta "data" dentro de "sostenibilidad" si no existe
+if not os.path.exists(ruta_data):
+    os.makedirs(ruta_data)
+    print(f"Carpeta 'data' creada en: {ruta_data}")
+else:
+    print(f"Carpeta 'data' ya existe en: {ruta_data}")
 
 # Función para obtener el contenido HTML de una página
 def obtener_html(host, path):
@@ -19,6 +25,11 @@ def obtener_html(host, path):
 
 # Función para procesar los enlaces
 def procesar_enlaces(host, path, filtro_incluir, filtro_excluir, archivo_salida):
+    # Verificar si la carpeta de salida existe antes de intentar guardar el archivo
+    if not os.path.exists(ruta_data):
+        print(f"Error: La carpeta de salida no existe: {ruta_data}")
+        return
+    
     # Obtener el HTML
     html = obtener_html(host, path)
     
@@ -39,11 +50,13 @@ def procesar_enlaces(host, path, filtro_incluir, filtro_excluir, archivo_salida)
     ]
     
     # Guardar los enlaces en un archivo Excel dentro de la carpeta "data"
-    archivo_completo = os.path.join("data", archivo_salida)  # Ruta completa dentro de "data"
-    df = pd.DataFrame(enlaces_absolutos, columns=["link"])
-    df.to_excel(archivo_completo, index=False, engine="openpyxl")
-    
-    print(f"Enlaces guardados en '{archivo_completo}'")
+    archivo_completo = os.path.join(ruta_data, archivo_salida)
+    try:
+        df = pd.DataFrame(enlaces_absolutos, columns=["link"])
+        df.to_excel(archivo_completo, index=False, engine="openpyxl")
+        print(f"Enlaces guardados en '{archivo_completo}'")
+    except Exception as e:
+        print(f"Error al guardar el archivo Excel: {e}")
 
 # Procesar los enlaces de los grados
 host_grados = "www.ubu.es"

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html >
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página Principal</title>
+    <style>
+        /* Estilo general para la página */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-image:url('/static/images/fondo.webp');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+
+
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color:{% if daltonismo %}#800080{% else %}#006400{% endif %};
+            color: white;
+            padding: 10px 20px;
+        }
+
+        .navbar h1 {
+            margin: 0;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+        }
+
+        /* Contenedor del menú */
+        .dropdown {
+            position: relative; /* Importante para posicionar el menú desplegable */
+        }
+
+        /* Botón del menú */
+        .dropdown button {
+            background-color:{% if daltonismo %}#800080{% else %}#006400{% endif %};
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .dropdown button:hover {
+            background-color:  {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+        }
+
+        /* Elementos del menú desplegable */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%; /* Alineado justo debajo del botón */
+            right: 0; /* Alinea el texto al borde derecho del contenedor */
+            background-color: white;
+            color: black;
+            min-width: 150px;
+            box-shadow:  {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+            z-index: 1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 10px 15px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color:  {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+            color: white;
+        }
+
+        /* Mostrar el menú al pasar el ratón */
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* Contenedor principal */
+        .main-content {
+            padding: 20px;
+            color: #333;
+            text-align: center;
+            flex: 1;
+        }
+
+        .main-content h2 {
+            color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            margin-bottom: 20px;
+        }
+
+        .main-content p {
+            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            color: #555;
+        }
+
+        .btn-aceptar {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+            cursor: pointer;
+        }
+
+        .btn-aceptar:hover {
+            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+        }
+
+        /* Mejorar la visualización en pantallas pequeñas */
+        @media (max-width: 600px) {
+            .navbar h1 {
+                font-size: 18px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+        }
+        /* Estilos para el modal */
+        .modal {
+            display: none; /* Oculto por defecto */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .close {
+            margin-top: 10px;
+            cursor: pointer;
+            color: white;
+            background-color:{% if daltonismo %}#800080{% else %}#006400{% endif %};
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Barra de navegación -->
+    <div class="navbar">
+        <h1>Greenmetrics</h1>
+        <div class="dropdown">
+            <button>≡</button>
+            <div class="dropdown-content">
+                <a href="{{ url_for('perfil') }}">{{ textos.perfil}}</a>
+                <a href="{{ url_for('ajustes') }}">{{ textos.ajustes}}</a>
+                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion}}</a> 
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="main-content">
+        <h2>{{ textos.texto_bienvenida }}</h2>
+        <form method="POST" action="{{ url_for('procesar_anho') }}">
+            <label for="anho">{{ textos.introducir_anho }}</label>
+            <input type="text" id="anho" name="anho" pattern="\d{4}-\d{4}" required>
+            <button type="submit" class="btn-aceptar">{{ textos.aceptar }}</button>
+        </form>
+    </div>
+
+   <!-- Modal -->
+     <div id="successModal" class="modal">
+        <div class="modal-content">
+            <p id="modalMessage"></p>
+            <button class="close" onclick="closeModal()">{{ textos.aceptar}}</button>
+        </div>
+    </div>
+
+    <script>
+        // Mostrar el modal si hay mensajes flash
+        document.addEventListener('DOMContentLoaded', () => {
+            const flashMessage = "{{ get_flashed_messages()[0] if get_flashed_messages() else '' }}";
+            
+            console.log("Mensaje Flash: ", flashMessage); // Imprimir para depurar
+            
+            if (flashMessage) {
+                const modal = document.getElementById('successModal');
+                const modalMessage = document.getElementById('modalMessage');
+                modalMessage.textContent = flashMessage;
+                modal.style.display = 'flex';
+            }
+        });
+    
+        // Cerrar el modal
+        function closeModal() {
+            const modal = document.getElementById('successModal');
+            modal.style.display = 'none';
+        }
+    </script>
+    
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('form');
+    
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();  // Evita el envío tradicional del formulario
+    
+                // Abrir la ventana emergente
+                const progressWindow = window.open('/progreso', 'Ventana de Progreso', 'width=600,height=400');
+    
+                // Recoger el formulario y enviar los datos al servidor
+                const formData = new FormData(form);
+                fetch('{{ url_for("procesar_anho") }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;  // Redirige si el servidor devuelve una redirección
+                    }
+                })
+                .catch(error => {
+                    console.error('Error durante el envío del formulario:', error);
+                    if (progressWindow) {
+                        progressWindow.close();
+                    }
+                });
+            });
+        });
+    </script>
+    
+    
+      
+</body>
+</html>

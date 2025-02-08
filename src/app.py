@@ -27,6 +27,8 @@ import threading
 import sys
 
 
+
+
 # Cargar variables desde .env
 load_dotenv()
 
@@ -49,6 +51,10 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 db = SQLAlchemy(app)
 
+
+# Variable global para el estado del proceso
+estado_proceso = {"en_proceso": False, "mensaje": "", "porcentaje": 0, "completado": False}
+lock = threading.Lock()  # Para controlar el acceso concurrente a estado_proceso
 
 
 # Crear el blueprint de Google OAuth
@@ -95,7 +101,14 @@ textos = {
         'modo_daltonismo': 'Daltonism',
         'criterio_1': 'The password must have at least one uppercase letter, one lowercase letter, and one number.',
         'criterio_2':'Additionally, a minimum of 8 characters.',
-        'criterio_3':'* If you do not fill in the password field, it will not be updated.'
+        'criterio_3':'* If you do not fill in the password field, it will not be updated.',
+        'ejecutando_guias':'Downloading guias',
+        'ejecutando_grados':'Downloading the links to the addresses of bachelors and masters degrees.',
+        'proceso_completado': 'Process successfully completed for the year',
+        'error_script': 'Error running the script:',
+        'progreso_titulo': 'Process Progress',
+        'mensaje_cargando': 'Loading...',
+        'proceso_en_ejecucion':'La descarga se realizará en segundo plano. A continuación, se abrirá una ventana donde aparecerá el progreso de la descarga.'
 
 
     },
@@ -137,7 +150,14 @@ textos = {
         'modo_daltonismo': 'Modo Daltonismo',
         'criterio_1':'La contraseña debe tener al menos una mayúscula, una minúscula y un número.',
         'criterio_2':'Además de un minimo de 8 caracteres.',
-        'criterio_3':'* Si no rellena el campo de la contraseña, esta no se actualizará.'
+        'criterio_3':'* Si no rellena el campo de la contraseña, esta no se actualizará.',
+        'ejecutando_guias':'Descargando las guías docentes.....',
+        'ejecutando_grados':'Descargando los enlaces a las direcciones de los grados y masteres.',
+        'proceso_completado': 'Proceso completado exitosamente para el año',
+        'error_script': 'Error al ejecutar el script:',
+        'progreso_titulo': 'Progreso del Proceso',
+        'mensaje_cargando': 'Cargando...',
+        'proceso_en_ejecucion':'La descarga se realizará en segundo plano. A continuación, se abrirá una ventana donde aparecerá el progreso de la descarga.'
     }
 }
 
@@ -415,6 +435,102 @@ def actualizar_api():
     hilo.start()
     
     return redirect(url_for('pagina_pedir_IA'))
+
+# Función para obtener el texto en el idioma seleccionado
+def get_text(clave):
+    idioma = session.get('idioma', 'es')  # Idioma por defecto: español
+    return textos.get(idioma, {}).get(clave, clave)
+
+
+@app.route("/", methods=["GET", "POST"])
+def procesar_anho():
+    global estado_proceso
+    if request.method == "POST":
+        anho = request.form["anho"]
+        idioma = session.get('idioma', 'es')  # Obtener el idioma actual
+
+        # Verificar el formato del año (####-####)
+        if not anho_pattern(anho):
+            return "El año debe tener el formato 2022-2023", 400
+
+        with lock:
+            estado_proceso["en_proceso"] = True
+            estado_proceso["mensaje"] = textos[idioma]['mensaje_cargando']
+            estado_proceso["porcentaje"] = 0
+            estado_proceso["completado"] = False
+
+        # Crear y lanzar un hilo para ejecutar ambos scripts
+        hilo = threading.Thread(target=ejecutar_procesos, args=(anho, idioma))
+        hilo.start()
+        return redirect(url_for('pagina_pedir_IA'))
+
+    return redirect(url_for('pagina_pedir_IA'))
+
+
+def ejecutar_procesos(anho, idioma='es'):
+    """ Función que ejecuta ambos scripts secuencialmente y actualiza el estado. """
+    global estado_proceso
+    try:
+        # Ejecutar grados.py
+        ruta_grados = os.path.join(os.getcwd(), 'sostenibilidad', 'grados.py')
+        actualizar_estado(textos[idioma]['ejecutando_grados'], 10)
+        subprocess.run(['python3', ruta_grados], check=True)
+        
+        # Ejecutar guias_docentes.py
+        ruta_guias = os.path.join(os.getcwd(), 'sostenibilidad', 'guias_docentes.py')
+        actualizar_estado(textos[idioma]['ejecutando_guias'], 30)
+        
+        # Paso 1 de guias_docentes.py
+        subprocess.run(['python3', ruta_guias, anho], check=True)
+        actualizar_estado(textos[idioma]['paso_1_guias'], 50)
+        
+        # Paso 2 de guias_docentes.py
+        subprocess.run(['python3', ruta_guias, anho], check=True)
+        actualizar_estado(textos[idioma]['paso_2_guias'], 75)
+        
+        # Paso 3 de guias_docentes.py
+        subprocess.run(['python3', ruta_guias, anho], check=True)
+        actualizar_estado(textos[idioma]['proceso_completado'], 100)
+        
+        with lock:
+            estado_proceso["completado"] = True  # Marcar el proceso como completado
+    except subprocess.CalledProcessError as e:
+        with lock:
+            estado_proceso["mensaje"] = f"{textos[idioma]['error_script']} {e}"
+    finally:
+        with lock:
+            estado_proceso["en_proceso"] = False
+
+
+
+def actualizar_estado(mensaje, porcentaje):
+    """ Actualiza el estado del proceso con un mensaje y porcentaje de progreso. """
+    global estado_proceso
+    with lock:
+        estado_proceso["mensaje"] = mensaje
+        estado_proceso["porcentaje"] = porcentaje
+
+def anho_pattern(anho):
+    """ Verifica si el año tiene el formato correcto (####-####). """
+    return bool(re.match(r"\d{4}-\d{4}", anho))
+
+@app.route('/estado_proceso')
+def estado_proceso_api():
+    """ Devuelve el estado actual del proceso en formato JSON. """
+    with lock:
+        return jsonify(estado_proceso)
+
+@app.route('/progreso')
+def progreso():
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+    
+    return render_template('progreso.html', 
+                           textos=textos[idioma], 
+                           tamano_texto=tamano_texto, 
+                           daltonismo=daltonismo)
+
 
 # Cerrar sesión
 @app.route('/logout')
