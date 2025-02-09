@@ -7,14 +7,31 @@ from bs4 import BeautifulSoup
 import time
 
 """ Función principal que procesa las guías docentes utilizando el año proporcionado. """
-def procesar_guias(anho):
+def procesar_guias(anho, tipo_estudio):
         
     # Definir la ruta base para "data"
     ruta_data = os.path.join("sostenibilidad", "data")
 
-    # Cargar el archivo Excel con los enlaces
-    ruta_excel = os.path.join(ruta_data, "enlaces_filtrados_masteres_ubu.xlsx")
-    degrees = pd.read_excel(ruta_excel)
+    if tipo_estudio == 'master':
+        # Cargar el archivo Excel con los enlaces
+        ruta_excel = os.path.join(ruta_data, "enlaces_filtrados_masteres_ubu.xlsx")
+        degrees = pd.read_excel(ruta_excel)
+    elif tipo_estudio == 'grado':
+         # Cargar el archivo Excel con los enlaces
+        ruta_excel = os.path.join(ruta_data, "enlaces_filtrados_grados_ubu.xlsx")
+        degrees = pd.read_excel(ruta_excel)
+        
+    elif tipo_estudio=='ambos':
+        #hacer ambos
+        ruta_excel_grados = os.path.join(ruta_data, "enlaces_filtrados_grados_ubu.xlsx")
+        ruta_excel_masteres = os.path.join(ruta_data, "enlaces_filtrados_masteres_ubu.xlsx")
+        
+        grados = pd.read_excel(ruta_excel_grados)
+        masteres = pd.read_excel(ruta_excel_masteres)
+        
+        # Concatenar los DataFrames de grados y másteres
+        degrees = pd.concat([grados, masteres], ignore_index=True)
+        
 
     # Lista para almacenar los datos
     subject_data = []
@@ -121,9 +138,10 @@ def procesar_guias(anho):
 
 if __name__ == "__main__":
     # Obtener el año académico desde los argumentos de la línea de comandos
-    if len(sys.argv) != 2:
-        print("Uso: python procesar_guias.py <año_académico>")
+    if len(sys.argv) != 3:
+        print("Uso: python procesar_guias.py <año_académico> <tipo_estudio>")
         sys.exit(1)
-    
+
     anho = sys.argv[1]
-    procesar_guias(anho)
+    tipo_estudio = sys.argv[2]
+    procesar_guias(anho, tipo_estudio)

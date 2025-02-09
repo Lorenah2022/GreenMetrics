@@ -26,9 +26,6 @@ import re
 import threading
 import sys
 
-
-
-
 # Cargar variables desde .env
 load_dotenv()
 
@@ -43,6 +40,10 @@ sys.stdout.reconfigure(line_buffering=True)
 app.secret_key = secrets.token_hex(32)
 # Configuración de la base de datos PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+app.config['SQLALCHEMY_BINDS'] = {
+    'binds': os.getenv("DATABASE_BINDS")  # Base de datos secundaria para OAuth o auditoría
+}
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Configuración de OAuth con Google
 app.config["GOOGLE_OAUTH_CLIENT_ID"] = os.getenv("GOOGLE_CLIENT_ID")
@@ -63,103 +64,104 @@ app.register_blueprint(google_bp, url_prefix='/google_login')
 
  # Diccionario de traducciones
 textos = {
+    
     'en': {
-        'perfil': 'Profile',
-        'contenido': 'Content visible only for visitors.',
-        'ajustes': 'Settings',
-        'cerrar_sesion': 'Logout',
-        'iniciar_sesion': 'Login',
-        'crear_cuenta': 'Create account',
-        'volver_atras': '← Go Back',
-        'texto_bienvenida': 'Welcome to Greenmetrics',
-        'introducir_anho': 'Enter the year from which you want to extract the metrics. (Ex. 2023-2024)',
-        'IA_tit':'IA',
-        'introducir_datos_IA':'Enter the following data, if not the default IA will be used (Llama-8B-GGUF)',
-        'datos_IA':'IA data',
-        'base_url':'URL base',
-        'api_key': 'API key',
-        'myModel': 'Model',
         'aceptar': 'Accept',
-        'titulo_visit': 'Visitor profile',
-        'text_visit': 'Content visible only to visitors.',
-        'cancelar': 'Cancel',
         'actualizar_perfil': 'Update profile',
-        'confirmar_contrasenha': 'Confirm password',
-        'nueva_contrasenha': 'New password. *',
-        'correo': 'Email.',
-        'usuario': 'User name.',
-        'tit_user': 'User profile.',
-        'ingles':'English',
-        'espanol':'Spanish',
-        'pequeno':'Small',
-        'normal': 'Medium',
-        'grande':'Big',
-        'sel_idioma': 'Select language:',
-        'sel_letra':'Select Font Size:',
-        'guardar':'Save changes',
-        'tit_admin': 'Administrator profile',
-        'modo_daltonismo': 'Daltonism',
-        'criterio_1': 'The password must have at least one uppercase letter, one lowercase letter, and one number.',
-        'criterio_2':'Additionally, a minimum of 8 characters.',
-        'criterio_3':'* If you do not fill in the password field, it will not be updated.',
-        'ejecutando_guias':'Downloading guias',
-        'ejecutando_grados':'Downloading the links to the addresses of bachelors and masters degrees.',
-        'proceso_completado': 'Process successfully completed for the year',
-        'error_script': 'Error running the script:',
-        'progreso_titulo': 'Process Progress',
-        'mensaje_cargando': 'Loading...',
-        'proceso_en_ejecucion':'La descarga se realizará en segundo plano. A continuación, se abrirá una ventana donde aparecerá el progreso de la descarga.'
-
-
-    },
-    'es': {
-        'perfil': 'Perfil',
-        'contenido': 'Contenido solo visible para visitantes.',
-        'ajustes': 'Ajustes',
-        'cerrar_sesion': 'Cerrar sesión',
-        'iniciar_sesion': 'Iniciar sesión',
-        'crear_cuenta': 'Crear cuenta',
-        'volver_atras': '← Volver atrás',
-        'texto_bienvenida': 'Bienvenido a Greenmetrics',
-        'introducir_anho': 'Introduzca el año del que desea extraer las métricas.(Ej. 2023-2024)',
-        'IA_tit':'IA',
-        'introducir_datos_IA':'Introduce los siguientes datos, sino se usará la IA predeterminada (Llama-8B-GGUF)',
-        'datos_IA':'Datos de la IA',
-        'base_url':'Base URL',
+        'ajustes': 'Settings',
         'api_key': 'API key',
-        'myModel': 'Modelo',
+        'base_url': 'URL base',
+        'cancelar': 'Cancel',
+        'cerrar_sesion': 'Logout',
+        'confirmar_contrasenha': 'Confirm password',
+        'contenido': 'Content visible only for visitors.',
+        'criterio_1': 'The password must have at least one uppercase letter, one lowercase letter, and one number.',
+        'criterio_2': 'Additionally, a minimum of 8 characters.',
+        'criterio_3': '* If you do not fill in the password field, it will not be updated.',
+        'datos_IA': 'IA data',
+        'descargar_datos_nuevos': 'Download new data',
+        'ejecutando_grados': 'Downloading the links to the addresses of bachelors and masters degrees.',
+        'ejecutando_guias': 'Downloading guias',
+        'en': 'English',
+        'error_script': 'Error running the script:',
+        'espanol': 'Spanish',
+        'introducir_anho': 'Enter the year from which you want to extract the metrics. (Ex. 2023-2024)',
+        'introducir_datos_IA': 'Enter the following data, if not the default IA will be used (Llama-8B-GGUF)',
+        'IA_tit': 'IA',
+        'ingles': 'English',
+        'iniciar_sesion': 'Login',
+        'myModel': 'Model',
+        'mensaje_cargando': 'Loading...',
+        'modo_daltonismo': 'Daltonism',
+        'nueva_contrasenha': 'New password. *',
+        'normal': 'Medium',
+        'pequeno': 'Small',
+        'perfil': 'Profile',
+        'proceso_completado': 'Process successfully completed for the year',
+        'proceso_en_ejecucion': 'La descarga se realizará en segundo plano. A continuación, se abrirá una ventana donde aparecerá el progreso de la descarga.',
+        'progreso_titulo': 'Process Progress',
+        'realizar_busqueda_nueva': 'Search',
+        'sel_idioma': 'Select language:',
+        'sel_letra': 'Select Font Size:',
+        'texto_bienvenida': 'Welcome to Greenmetrics',
+        'tit_admin': 'Administrator profile',
+        'tit_user': 'User profile.',
+        'titulo_visit': 'Visitor profile',
+        'usuario': 'User name.',
+        'volver_atras': '← Go Back'
+        },
+    'es': {
         'aceptar': 'Aceptar',
-        'titulo_visit': 'Perfil de Visitante',
-        'text_visit': 'Contenido solo visible para visitantes.',
-        'cancelar': 'Cancelar',
         'actualizar_perfil': 'Actualizar perfil.',
+        'ajustes': 'Ajustes',
+        'api_key': 'API key',
+        'base_url': 'Base URL',
+        'cancelar': 'Cancelar',
+        'cerrar_sesion': 'Cerrar sesión',
         'confirmar_contrasenha': 'Confirmar contraseña',
-        'nueva_contrasenha': 'Nueva contraseña. *',
-        'correo': 'Correo electrónico.',
-        'usuario': 'Nombre de usuario',
-        'tit_user': 'Perfil de usuario',
-        'ingles':'Inglés',
-        'espanol':'Español',
-        'pequeno':'Pequeño',
-        'normal':'Medio',
-        'grande':'Grande',
-        'sel_idioma':'Seleccionar Idioma:',
-        'sel_letra':'Seleccionar Tamaño de Letra:',
-        'guardar':'Guardar cambios.',
-        'tit_admin':'Perfil de administrador',
-        'modo_daltonismo': 'Modo Daltonismo',
-        'criterio_1':'La contraseña debe tener al menos una mayúscula, una minúscula y un número.',
-        'criterio_2':'Además de un minimo de 8 caracteres.',
-        'criterio_3':'* Si no rellena el campo de la contraseña, esta no se actualizará.',
-        'ejecutando_guias':'Descargando las guías docentes.....',
-        'ejecutando_grados':'Descargando los enlaces a las direcciones de los grados y masteres.',
-        'proceso_completado': 'Proceso completado exitosamente para el año',
+        'contenido': 'Contenido solo visible para visitantes.',
+        'criterio_1': 'La contraseña debe tener al menos una mayúscula, una minúscula y un número.',
+        'criterio_2': 'Además de un minimo de 8 caracteres.',
+        'criterio_3': '* Si no rellena el campo de la contraseña, esta no se actualizará.',
+        'datos_IA': 'Datos de la IA',
+        'descargar_datos_nuevos': 'Descargar datos nuevos',
+        'ejecutando_grados': 'Descargando los enlaces a las direcciones de los grados y masteres.',
+        'ejecutando_guias': 'Descargando las guías docentes.....',
+        'en': 'Inglés',
         'error_script': 'Error al ejecutar el script:',
-        'progreso_titulo': 'Progreso del Proceso',
+        'espanol': 'Español',
+        'grado_o_master_especifico':'Introduce si quieres algún grado o master en especifico',
+        'introducir_anho': 'Introduzca el año del que desea extraer las métricas.(Ej. 2023-2024)',
+        'introducir_datos_IA': 'Introduce los siguientes datos, sino se usará la IA predeterminada (Llama-8B-GGUF)',
+        'IA_tit': 'IA',
+        'ingles': 'Inglés',
+        'iniciar_sesion': 'Iniciar sesión',
+        'myModel': 'Modelo',
         'mensaje_cargando': 'Cargando...',
-        'proceso_en_ejecucion':'La descarga se realizará en segundo plano. A continuación, se abrirá una ventana donde aparecerá el progreso de la descarga.'
+        'modo_daltonismo': 'Modo Daltonismo',
+        'nueva_contrasenha': 'Nueva contraseña. *',
+        'normal': 'Medio',
+        'opcion_ambos':'Ambos',
+        'opcion_grado':'Grado',
+        'opcion_master':'master',
+        'pequeno': 'Pequeño',
+        'perfil': 'Perfil',
+        'proceso_completado': 'Proceso completado exitosamente para el año',
+        'proceso_en_ejecucion': 'La descarga se realizará en segundo plano. A continuación, se abrirá una ventana donde aparecerá el progreso de la descarga.',
+        'progreso_titulo': 'Progreso del Proceso',
+        'realizar_busqueda_nueva': 'Realizar una búsqueda',
+        'sel_idioma': 'Seleccionar Idioma:',
+        'sel_letra': 'Seleccionar Tamaño de Letra:',
+        'seleccionar_tipo_estudio' : 'Selecciona el tipo de estudio',
+        'texto_bienvenida': 'Bienvenido a Greenmetrics',
+        'tit_admin': 'Perfil de administrador',
+        'tit_user': 'Perfil de usuario',
+        'titulo_visit': 'Perfil de Visitante',
+        'usuario': 'Nombre de usuario',
+        'volver_atras': '← Volver atrás'
+        }
     }
-}
+
 
 
  # Modelo de Usuario
@@ -171,6 +173,13 @@ class User(db.Model):
     password = db.Column(db.String(200), nullable=False)
     rol = db.Column(db.String(50), nullable=False, default='visitante')  # Default es 'usuario'
 
+# Modelo de Búsqueda
+class Busqueda(db.Model):
+    __bind_key__ = 'binds'
+    id = db.Column(db.Integer, primary_key=True)
+    anho = db.Column(db.String(20), nullable=False)
+    tipo_programa = db.Column(db.String(100), nullable=True)
+    asignatura = db.Column(db.String(100), nullable=True)
 
 
 # Función de validación de contraseña
@@ -210,7 +219,7 @@ def login():
             session['user_id'] = user.id
             session['username'] = user.username
             session['rol'] = user.rol
-            return redirect(url_for('pagina_pedir_anho', 
+            return redirect(url_for('pagina_principal', 
                                rol=user.rol))
     
     return render_template('login.html',google_client_id=google_client_id)
@@ -343,6 +352,26 @@ def register():
 
 
 # Ruta para la página principal
+@app.route('/pagina_principal')
+def pagina_principal():
+    # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+    # Comprobar si el usuario está autenticado
+    if 'user_id' not in session:
+        return render_template('pagina_principal.html', 
+                               rol='visitante', 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido para visitantes
+    else:
+        rol = session['rol']
+        return render_template('pagina_principal.html', 
+                               rol=rol, 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
+        
+# Ruta para la página para pedir el año
 @app.route('/pagina_pedir_anho')
 def pagina_pedir_anho():
     # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
@@ -365,7 +394,7 @@ def pagina_pedir_anho():
         
     
         
-# Ruta para la página principal
+# Ruta para la página donde se solicitan los datos de la IA
 @app.route('/pagina_pedir_IA')
 def pagina_pedir_IA():
     # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
@@ -436,12 +465,6 @@ def actualizar_api():
     
     return redirect(url_for('pagina_pedir_IA'))
 
-# Función para obtener el texto en el idioma seleccionado
-def get_text(clave):
-    idioma = session.get('idioma', 'es')  # Idioma por defecto: español
-    return textos.get(idioma, {}).get(clave, clave)
-
-
 @app.route("/", methods=["GET", "POST"])
 def procesar_anho():
     global estado_proceso
@@ -451,7 +474,21 @@ def procesar_anho():
 
         # Verificar el formato del año (####-####)
         if not anho_pattern(anho):
-            return "El año debe tener el formato 2022-2023", 400
+            flash("El año debe tener el formato 2022-2023", "error")
+            return redirect(url_for('pagina_pedir_anho'))
+
+        # Registrar la búsqueda en la base de datos
+        nueva_busqueda = Busqueda(anho=anho)
+        db.session.add(nueva_busqueda)
+        db.session.commit() 
+        
+        # Obtener los datos de tipo de estudio y grado/máster específico del formulario
+        tipo_estudio = request.form.get("tipo_estudio", "ambos")
+
+        # Validar si el tipo de estudio es correcto
+        if tipo_estudio not in ["grado", "master", "ambos"]:
+            flash("Opción de tipo de estudio no válida", "error")
+            return redirect(url_for('pagina_pedir_anho'))
 
         with lock:
             estado_proceso["en_proceso"] = True
@@ -459,15 +496,59 @@ def procesar_anho():
             estado_proceso["porcentaje"] = 0
             estado_proceso["completado"] = False
 
-        # Crear y lanzar un hilo para ejecutar ambos scripts
-        hilo = threading.Thread(target=ejecutar_procesos, args=(anho, idioma))
+        # Crear y lanzar un hilo para ejecutar ambos scripts con los parámetros
+        hilo = threading.Thread(target=ejecutar_procesos, args=(anho, tipo_estudio, idioma))
         hilo.start()
         return redirect(url_for('pagina_pedir_IA'))
 
     return redirect(url_for('pagina_pedir_IA'))
 
 
-def ejecutar_procesos(anho, idioma='es'):
+@app.route('/consultar_busquedas', methods=['GET'])
+def consultar_busquedas():
+    # Obtener los filtros seleccionados desde los parámetros de la URL
+    anho_seleccionado = request.args.get('anho')  # Usamos un nombre claro para el valor seleccionado
+    tipo_programa = request.args.get('tipo_programa')
+    asignatura = request.args.get('asignatura')
+
+    # Consultar los valores únicos para los filtros desde la base de datos secundaria
+    anhos_disponibles = [a[0] for a in db.session.execute(
+        db.select(Busqueda.anho).distinct().execution_options(bind_key='binds')
+    ).all()]
+    print("Años obtenidos:", anhos_disponibles)  # Imprime los años que obtuviste de la base de datos
+
+    tipos_programa = ["Grado", "Máster"]
+    
+    asignaturas = db.session.execute(
+        db.select(Busqueda.asignatura).distinct().execution_options(bind_key='binds')
+    ).all()
+
+    # Consultar las búsquedas filtradas usando el bind 'binds'
+    query = db.session.query(Busqueda).execution_options(bind_key='binds')
+
+    if anho_seleccionado:
+        query = query.filter(Busqueda.anho == anho_seleccionado)
+    if tipo_programa and tipo_programa != "Todos":
+        query = query.filter(Busqueda.tipo_programa == tipo_programa)
+    if asignatura:
+        query = query.filter(Busqueda.asignatura == asignatura)
+
+    busquedas = query.all()
+
+    # Pasar los datos al template
+    return render_template(
+        'consultar_busquedas.html',
+        busquedas=busquedas,
+        anhos=anhos_disponibles,  # Asegúrate de pasar la lista de años disponibles
+        tipos_programa=tipos_programa,
+        asignaturas=[a[0] for a in asignaturas],  # Extraer solo los valores de las tuplas
+        selected_anho=anho_seleccionado,  # Pasamos el valor seleccionado
+        selected_tipo_programa=tipo_programa,
+        selected_asignatura=asignatura
+    )
+
+
+def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
     """ Función que ejecuta ambos scripts secuencialmente y actualiza el estado. """
     global estado_proceso
     try:
@@ -481,15 +562,15 @@ def ejecutar_procesos(anho, idioma='es'):
         actualizar_estado(textos[idioma]['ejecutando_guias'], 30)
         
         # Paso 1 de guias_docentes.py
-        subprocess.run(['python3', ruta_guias, anho], check=True)
+        subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
         actualizar_estado(textos[idioma]['paso_1_guias'], 50)
         
         # Paso 2 de guias_docentes.py
-        subprocess.run(['python3', ruta_guias, anho], check=True)
+        subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
         actualizar_estado(textos[idioma]['paso_2_guias'], 75)
         
         # Paso 3 de guias_docentes.py
-        subprocess.run(['python3', ruta_guias, anho], check=True)
+        subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
         actualizar_estado(textos[idioma]['proceso_completado'], 100)
         
         with lock:
@@ -597,7 +678,7 @@ def perfil():
                 elif idioma=='en':
                     flash("Profile updated successfully", "success")
 
-                return redirect(url_for('pagina_pedir_anho'))
+                return redirect(url_for('pagina_principal'))
             except Exception as e:
                 db.session.rollback()
                 flash(f"Error al actualizar el perfil: {str(e)}", "error")

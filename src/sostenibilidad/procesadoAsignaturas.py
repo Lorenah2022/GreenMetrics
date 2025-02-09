@@ -4,8 +4,7 @@ import os
 import re
 from PyPDF2 import PdfReader
 
-# Definir la ruta base para "data"
-ruta_data = os.path.join(os.getcwd(), "data")
+ruta_data = os.path.join("sostenibilidad", "data")
 
 # Cargar el archivo Excel desde la carpeta "data"
 ruta_excel = os.path.join(ruta_data, "datos_asignaturas_masteres.xlsx")

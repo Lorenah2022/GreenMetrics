@@ -183,7 +183,15 @@
         <form method="POST" action="{{ url_for('procesar_anho') }}">
             <label for="anho">{{ textos.introducir_anho }}</label>
             <input type="text" id="anho" name="anho" pattern="\d{4}-\d{4}" required>
-            <button type="submit" class="btn-aceptar">{{ textos.aceptar }}</button>
+            <label for="tipo_estudio">{{ textos.seleccionar_tipo_estudio }}</label>
+                <select id="tipo_estudio" name="tipo_estudio">
+                    <option value="ambos">{{ textos.opcion_ambos }}</option>
+                    <option value="grado">{{ textos.opcion_grado }}</option>
+                    <option value="master">{{ textos.opcion_master }}</option>
+                </select>
+            <div>
+                 <button type="submit" class="btn-aceptar">{{ textos.aceptar }}</button>
+            </div>
         </form>
     </div>
 

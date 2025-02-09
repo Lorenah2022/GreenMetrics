@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Consultas Anteriores</title>
+</head>
+<body>
+    <h1>Búsquedas Anteriores</h1>
+
+    <!-- Filtros de búsqueda -->
+    <form method="GET">
+        <label for="anho">Año:</label>
+        <select name="anho" id="anho">
+            <option value="">Todos</option>
+            {% for anho in anhos %}
+                <option value="{{ anho }}" {% if selected_anho == anho %}selected{% endif %}>{{ anho }}</option>
+            {% endfor %}
+        </select>
+    
+        <label for="asignatura">Asignatura:</label>
+        <select name="asignatura" id="asignatura">
+            <option value="">Todos</option>
+            {% for asignatura in asignaturas %}
+                <option value="{{ asignatura[0] }}" {% if selected_asignatura == asignatura[0] %}selected{% endif %}>{{ asignatura[0] }}</option>
+            {% endfor %}
+        </select>
+    
+        <label for="tipo_programa">Tipo de Programa:</label>
+        <select name="tipo_programa" id="tipo_programa">
+            <option value="">Todos</option>
+            {% for tipo in tipos_programa %}
+                <option value="{{ tipo }}" {% if selected_tipo_programa == tipo %}selected{% endif %}>{{ tipo }}</option>
+            {% endfor %}
+        </select>
+    
+        <button type="submit">Filtrar</button>
+    </form>
+    
+
+    <!-- Tabla de resultados -->
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Año</th>
+                <th>Asignatura</th>
+                <th>Tipo de Programa</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if busquedas %}
+                {% for busqueda in busquedas %}
+                    <tr>
+                        <td>{{ busqueda.id }}</td>
+                        <td>{{ busqueda.anho }}</td>
+                        <td>{{ busqueda.asignatura if busqueda.asignatura else "N/A" }}</td>
+                        <td>{{ busqueda.tipo_programa }}</td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="6">No se encontraron búsquedas anteriores.</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</body>
+</html>
