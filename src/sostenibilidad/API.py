@@ -11,7 +11,7 @@ dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
 load_dotenv(dotenv_path)
 
 # Definir rutas
-directorio = os.path.join("data", "guias")  # Carpeta con los archivos PDF
+directorio = os.path.join("sostenibilidad","data", "guias")  # Carpeta con los archivos PDF
 archivo_salida = os.path.join("data", "resultados_guias.csv")  # Archivo de salida
 
 # Listar los archivos PDF en el directorio
@@ -19,7 +19,7 @@ archivos_guias = [f for f in os.listdir(directorio) if f.endswith('.pdf')]
 
 # Configuración de la API
 base_url = "http://127.0.0.1:1234"
-api_key = "deepseek-r1-distill-llama-8b:2"
+api_key =  os.getenv("API_KEY")
 myModel = "lmstudio-community/DeepSeek-R1-Distill-Llama-8B-GGUF"
 
 # Crear DataFrame vacío

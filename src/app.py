@@ -41,7 +41,7 @@ app.secret_key = secrets.token_hex(32)
 # Configuración de la base de datos PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 app.config['SQLALCHEMY_BINDS'] = {
-    'binds': os.getenv("DATABASE_BINDS")  # Base de datos secundaria para OAuth o auditoría
+    'busqueda': os.getenv("DATABASE_BINDS")  # Base de datos secundaria para OAuth o auditoría
 }
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -69,22 +69,28 @@ textos = {
         'aceptar': 'Accept',
         'actualizar_perfil': 'Update profile',
         'ajustes': 'Settings',
+        'anho':'Year',
         'api_key': 'API key',
         'base_url': 'URL base',
+        'busquedas_anteriores':'Previous Searches',
         'cancelar': 'Cancel',
         'cerrar_sesion': 'Logout',
         'confirmar_contrasenha': 'Confirm password',
         'contenido': 'Content visible only for visitors.',
+        'codigo_Asignatura':'Subject code',
         'criterio_1': 'The password must have at least one uppercase letter, one lowercase letter, and one number.',
         'criterio_2': 'Additionally, a minimum of 8 characters.',
         'criterio_3': '* If you do not fill in the password field, it will not be updated.',
         'datos_IA': 'IA data',
         'descargar_datos_nuevos': 'Download new data',
         'ejecutando_grados': 'Downloading the links to the addresses of bachelors and masters degrees.',
-        'ejecutando_guias': 'Downloading guias',
+        'ejecutando_guias': 'Downloading guias....',
+        'ejecutando_asignaturas':'The subjects are being processed..... ',
         'en': 'English',
         'error_script': 'Error running the script:',
         'espanol': 'Spanish',
+        'guardar':'Save changes',
+        'grande':'Big',
         'introducir_anho': 'Enter the year from which you want to extract the metrics. (Ex. 2023-2024)',
         'introducir_datos_IA': 'Enter the following data, if not the default IA will be used (Llama-8B-GGUF)',
         'IA_tit': 'IA',
@@ -94,19 +100,26 @@ textos = {
         'mensaje_cargando': 'Loading...',
         'modo_daltonismo': 'Daltonism',
         'nueva_contrasenha': 'New password. *',
+        'nombre_archivo':'File name',
         'normal': 'Medium',
+        'no_busquedas':'No previous searches were found.',
+        'opcion_ambos':'Both',
+        'opcion_grado':'Degree',
+        'opcion_master':'Master',
         'pequeno': 'Small',
         'perfil': 'Profile',
         'proceso_completado': 'Process successfully completed for the year',
-        'proceso_en_ejecucion': 'La descarga se realizará en segundo plano. A continuación, se abrirá una ventana donde aparecerá el progreso de la descarga.',
         'progreso_titulo': 'Process Progress',
         'realizar_busqueda_nueva': 'Search',
         'sel_idioma': 'Select language:',
         'sel_letra': 'Select Font Size:',
+        'seleccionar_tipo_estudio' : 'Choose the type: ',
         'texto_bienvenida': 'Welcome to Greenmetrics',
         'tit_admin': 'Administrator profile',
         'tit_user': 'User profile.',
         'titulo_visit': 'Visitor profile',
+        'tipo':'Programme type',
+        'todos':'All',
         'usuario': 'User name.',
         'volver_atras': '← Go Back'
         },
@@ -114,12 +127,15 @@ textos = {
         'aceptar': 'Aceptar',
         'actualizar_perfil': 'Actualizar perfil.',
         'ajustes': 'Ajustes',
+        'anho':'año',
         'api_key': 'API key',
         'base_url': 'Base URL',
+        'busquedas_anteriores':'Búsquedas anteriores',
         'cancelar': 'Cancelar',
         'cerrar_sesion': 'Cerrar sesión',
         'confirmar_contrasenha': 'Confirmar contraseña',
         'contenido': 'Contenido solo visible para visitantes.',
+        'codigo_Asignatura':'Código asignatura',
         'criterio_1': 'La contraseña debe tener al menos una mayúscula, una minúscula y un número.',
         'criterio_2': 'Además de un minimo de 8 caracteres.',
         'criterio_3': '* Si no rellena el campo de la contraseña, esta no se actualizará.',
@@ -127,10 +143,12 @@ textos = {
         'descargar_datos_nuevos': 'Descargar datos nuevos',
         'ejecutando_grados': 'Descargando los enlaces a las direcciones de los grados y masteres.',
         'ejecutando_guias': 'Descargando las guías docentes.....',
+        'ejecutando_asignaturas':'Se están procesando las asignaturas.... ',
         'en': 'Inglés',
         'error_script': 'Error al ejecutar el script:',
         'espanol': 'Español',
-        'grado_o_master_especifico':'Introduce si quieres algún grado o master en especifico',
+        'guardar':'Guardar cambios',
+        'grande':'Grande',
         'introducir_anho': 'Introduzca el año del que desea extraer las métricas.(Ej. 2023-2024)',
         'introducir_datos_IA': 'Introduce los siguientes datos, sino se usará la IA predeterminada (Llama-8B-GGUF)',
         'IA_tit': 'IA',
@@ -140,14 +158,15 @@ textos = {
         'mensaje_cargando': 'Cargando...',
         'modo_daltonismo': 'Modo Daltonismo',
         'nueva_contrasenha': 'Nueva contraseña. *',
+        'nombre_archivo':'Nombre del archivo:',
         'normal': 'Medio',
+        'no_busquedas':'No se encontraron búsquedas anteriores.',
         'opcion_ambos':'Ambos',
         'opcion_grado':'Grado',
-        'opcion_master':'master',
+        'opcion_master':'Master',
         'pequeno': 'Pequeño',
         'perfil': 'Perfil',
         'proceso_completado': 'Proceso completado exitosamente para el año',
-        'proceso_en_ejecucion': 'La descarga se realizará en segundo plano. A continuación, se abrirá una ventana donde aparecerá el progreso de la descarga.',
         'progreso_titulo': 'Progreso del Proceso',
         'realizar_busqueda_nueva': 'Realizar una búsqueda',
         'sel_idioma': 'Seleccionar Idioma:',
@@ -157,6 +176,8 @@ textos = {
         'tit_admin': 'Perfil de administrador',
         'tit_user': 'Perfil de usuario',
         'titulo_visit': 'Perfil de Visitante',
+        'tipo':'Tipo de programa',
+        'todos':'Todos',
         'usuario': 'Nombre de usuario',
         'volver_atras': '← Volver atrás'
         }
@@ -175,11 +196,12 @@ class User(db.Model):
 
 # Modelo de Búsqueda
 class Busqueda(db.Model):
-    __bind_key__ = 'binds'
+    __bind_key__ = 'busqueda'
     id = db.Column(db.Integer, primary_key=True)
     anho = db.Column(db.String(20), nullable=False)
+    codigo_asignatura = db.Column(db.String(100), nullable=True)
     tipo_programa = db.Column(db.String(100), nullable=True)
-    asignatura = db.Column(db.String(100), nullable=True)
+    nombre_archivo=db.Column(db.String(100), nullable=True)
 
 
 # Función de validación de contraseña
@@ -416,6 +438,9 @@ def pagina_pedir_IA():
 
 @app.route('/actualizar_api', methods=['POST'])
 def actualizar_api():
+    global estado_proceso
+    idioma = session.get('idioma', 'es')  # Obtener el idioma actual
+
     # Obtener los datos del formulario (si están disponibles)
     base_url = request.form['base_url'] or None
     api_key = request.form['api_key'] or None
@@ -449,27 +474,49 @@ def actualizar_api():
     # Guardar los cambios en API.py
     with open(ruta_api, 'w') as file:
         file.write(contenido_actualizado)
-    
-    # Función que ejecutará el script en segundo plano
-    def ejecutar_api():
-        try:
-            # Ejecutar el archivo API.py
-            subprocess.run(['python3', ruta_api], check=True)
-            flash('La configuración de la API se ha actualizado correctamente y el código ha sido ejecutado.')
-        except subprocess.CalledProcessError as e:
-            flash(f'Hubo un error al ejecutar el archivo API.py: {e}')
+        
+    with lock:
+            estado_proceso["en_proceso"] = True
+            estado_proceso["mensaje"] = textos[idioma]['mensaje_cargando']
+            estado_proceso["porcentaje"] = 0
+            estado_proceso["completado"] = False
 
     # Crear y lanzar un hilo para ejecutar la función
     hilo = threading.Thread(target=ejecutar_api)
-    hilo.start()
-    
+    hilo.start()    
     return redirect(url_for('pagina_pedir_IA'))
+
+# Función que ejecutará el script en segundo plano
+def ejecutar_api():
+    global estado_proceso
+    idioma = session.get('idioma', 'es')
+    try:
+        # Actualizamos el estado al inicio
+        actualizar_estado("Iniciando la ejecución de la API...", 0, en_proceso=True)
+
+        # Ejecutamos el archivo API.py (esto puede tomar tiempo)
+        ruta_api = os.path.join(os.getcwd(), 'sostenibilidad', 'API.py')
+        actualizar_estado(textos[idioma]['ejecutando_guias'], 10)
+        subprocess.run(['python3', ruta_api], check=True)
+        actualizar_estado(textos[idioma]['ejecutando_guias'], 50)
+        
+        # Marcar el proceso como completado
+        actualizar_estado(textos[idioma]['proceso_completado'], 100)
+        
+        with lock:
+            estado_proceso["completado"] = True  # Marcar el proceso como completado
+    except subprocess.CalledProcessError as e:
+        with lock:
+            estado_proceso["mensaje"] = f"{textos[idioma]['error_script']} {e}"
+    finally:
+        with lock:
+            estado_proceso["en_proceso"] = False
 
 @app.route("/", methods=["GET", "POST"])
 def procesar_anho():
     global estado_proceso
     if request.method == "POST":
-        anho = request.form["anho"]
+        anho = request.form.get("anho")
         idioma = session.get('idioma', 'es')  # Obtener el idioma actual
 
         # Verificar el formato del año (####-####)
@@ -506,45 +553,59 @@ def procesar_anho():
 
 @app.route('/consultar_busquedas', methods=['GET'])
 def consultar_busquedas():
+    idioma = session.get('idioma', 'es')  # Obtener el idioma actual
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+    
     # Obtener los filtros seleccionados desde los parámetros de la URL
     anho_seleccionado = request.args.get('anho')  # Usamos un nombre claro para el valor seleccionado
     tipo_programa = request.args.get('tipo_programa')
-    asignatura = request.args.get('asignatura')
+    codigo_asignatura = request.args.get('codigo_asignatura')
+    nombre_archivo = request.args.get('nombre_archivo')
 
     # Consultar los valores únicos para los filtros desde la base de datos secundaria
     anhos_disponibles = [a[0] for a in db.session.execute(
-        db.select(Busqueda.anho).distinct().execution_options(bind_key='binds')
+        db.select(Busqueda.anho).distinct().execution_options(bind_key='busqueda')
     ).all()]
-    print("Años obtenidos:", anhos_disponibles)  # Imprime los años que obtuviste de la base de datos
 
-    tipos_programa = ["Grado", "Máster"]
+    tipos_programa = ["grado", "master"]
     
-    asignaturas = db.session.execute(
-        db.select(Busqueda.asignatura).distinct().execution_options(bind_key='binds')
+    codigo_asignaturas = db.session.execute(
+        db.select(Busqueda.codigo_asignatura).distinct().execution_options(bind_key='busqueda')
+    ).all()
+    
+    # Consultar los nombres de los archivos únicos
+    nombre_archivos = db.session.execute(
+        db.select(Busqueda.nombre_archivo).distinct().execution_options(bind_key='busqueda')
     ).all()
 
-    # Consultar las búsquedas filtradas usando el bind 'binds'
-    query = db.session.query(Busqueda).execution_options(bind_key='binds')
+    # Consultar las búsquedas filtradas usando el bind 'busqueda'
+    query = db.session.query(Busqueda).execution_options(bind_key='busqueda')
 
-    if anho_seleccionado:
+    if anho_seleccionado and anho_seleccionado!="Todos":
         query = query.filter(Busqueda.anho == anho_seleccionado)
     if tipo_programa and tipo_programa != "Todos":
         query = query.filter(Busqueda.tipo_programa == tipo_programa)
-    if asignatura:
-        query = query.filter(Busqueda.asignatura == asignatura)
+    if codigo_asignatura and codigo_asignatura != "Todos":
+        query = query.filter(Busqueda.codigo_asignatura == codigo_asignatura)
+    if nombre_archivo and nombre_archivo!="Todos" :
+        query = query.filter(Busqueda.nombre_archivo == nombre_archivo)
 
     busquedas = query.all()
 
     # Pasar los datos al template
     return render_template(
-        'consultar_busquedas.html',
+        'consultar_busquedas.html',  
+        textos=textos[idioma], tamano_texto=tamano_texto, daltonismo=daltonismo,
         busquedas=busquedas,
-        anhos=anhos_disponibles,  # Asegúrate de pasar la lista de años disponibles
+        anhos=anhos_disponibles,
         tipos_programa=tipos_programa,
-        asignaturas=[a[0] for a in asignaturas],  # Extraer solo los valores de las tuplas
-        selected_anho=anho_seleccionado,  # Pasamos el valor seleccionado
+        codigo_asignaturas=[a[0] for a in codigo_asignaturas],
+        nombre_archivos=[a[0] for a in nombre_archivos],  # Pasando los nombres de archivos únicos
+        selected_anho=anho_seleccionado,
         selected_tipo_programa=tipo_programa,
-        selected_asignatura=asignatura
+        selected_codigo_asignatura=codigo_asignatura,
+        selected_nombre_archivo=nombre_archivo 
     )
 
 
@@ -561,16 +622,34 @@ def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
         ruta_guias = os.path.join(os.getcwd(), 'sostenibilidad', 'guias_docentes.py')
         actualizar_estado(textos[idioma]['ejecutando_guias'], 30)
         
+        
         # Paso 1 de guias_docentes.py
         subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
-        actualizar_estado(textos[idioma]['paso_1_guias'], 50)
+        actualizar_estado(textos[idioma]['ejecutando_guias'], 40)
         
         # Paso 2 de guias_docentes.py
         subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
-        actualizar_estado(textos[idioma]['paso_2_guias'], 75)
+        actualizar_estado(textos[idioma]['ejecutando_guias'], 50)
         
         # Paso 3 de guias_docentes.py
         subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
+        actualizar_estado(textos[idioma]['ejecutando_guias'], 60)
+        
+        # Ejecutar procesadoAsignaturas.py
+        ruta_procesado = os.path.join(os.getcwd(), 'sostenibilidad', 'procesadoAsignaturas.py')
+        actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 70)
+        
+        
+        # Paso 4 de procesadoAsignaturas.py
+        subprocess.run(['python3', ruta_procesado, anho, tipo_estudio], check=True)
+        actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 80)
+        
+         # Ejecutar procesadoAsignaturas.py
+        ruta_procesado = os.path.join(os.getcwd(), 'sostenibilidad', 'procesadoAsignaturas.py')
+        actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 90)
+        subprocess.run(['python3', ruta_procesado, tipo_estudio], check=True)
+        
+        # Marcar el proceso como completado
         actualizar_estado(textos[idioma]['proceso_completado'], 100)
         
         with lock:
@@ -582,14 +661,15 @@ def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
         with lock:
             estado_proceso["en_proceso"] = False
 
-
-
-def actualizar_estado(mensaje, porcentaje):
-    """ Actualiza el estado del proceso con un mensaje y porcentaje de progreso. """
+# Función para actualizar el estado del proceso
+def actualizar_estado(mensaje, porcentaje, en_proceso=False, completado=False):
+    """ Actualiza el estado del proceso con un mensaje, porcentaje de progreso y otros indicadores. """
     global estado_proceso
     with lock:
         estado_proceso["mensaje"] = mensaje
         estado_proceso["porcentaje"] = porcentaje
+        estado_proceso["en_proceso"] = en_proceso
+        estado_proceso["completado"] = completado
 
 def anho_pattern(anho):
     """ Verifica si el año tiene el formato correcto (####-####). """

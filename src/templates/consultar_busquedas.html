@@ -3,48 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <title>Consultas Anteriores</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-image: url('/static/images/fondo.webp');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
+            color: black;
+        }
+
+        /* Barra de navegación */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            color: white;
+            padding: 10px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .navbar h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        /* Título centrado */
+        .title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
+        }
+
+        /* Tabla de resultados */
+        table {
+            width: 80%;
+            margin: 0 auto 20px;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.9);
+            color: black;
+        }
+
+        table th, table td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        table th {
+            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            color: white;
+        }
+
+        /* Filtros de búsqueda */
+        form {
+            width: 80%;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        form label, form select, form button {
+            margin: 5px;
+        }
+
+        form button {
+            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        form button:hover {
+            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+        }
+
+        /* Contenedor del menú */
+        .dropdown {
+            position: relative; /* Importante para posicionar el menú desplegable */
+        }
+
+        /* Botón del menú */
+        .dropdown button {
+            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .dropdown button:hover {
+            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+        }
+
+        /* Elementos del menú desplegable */
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%; /* Alineado justo debajo del botón */
+            right: 0; /* Alinea el texto al borde derecho del contenedor */
+            background-color: white;
+            color: black;
+            min-width: 150px;
+            box-shadow: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+            z-index: 1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 10px 15px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+            color: white;
+        }
+
+        /* Mostrar el menú al pasar el ratón */
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* Botón de cancelar */
+        /* Estilo de los botones */
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 30px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+
+        }
+
+        .btn-secondary {
+            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            color: white;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background-color:{% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+            transform: scale(1.05);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+          }
+          
+          .form-group label {
+            width: 150px; /* Ancho fijo para las etiquetas */
+            text-align: left;
+            margin-left: 10px;
+          }
+          
+          .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+          .form-group input {
+            flex: 1; /* El input ocupa todo el espacio disponible */
+            padding: 5px;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+            border-color: #5a6268;  
+          }
+    </style>
 </head>
 <body>
-    <h1>Búsquedas Anteriores</h1>
+
+    <!-- Barra de navegación -->
+    <div class="navbar">
+        <h1>Greenmetrics</h1>
+        <div class="dropdown">
+            <button>≡</button>
+            <div class="dropdown-content">
+                <a href="{{ url_for('perfil') }}">{{ textos.perfil }}</a>
+                <a href="{{ url_for('ajustes') }}">{{ textos.ajustes }}</a>
+                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion }}</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Título centrado -->
+    <h1 class="title">{{textos.busquedas_anteriores}}</h1>
 
     <!-- Filtros de búsqueda -->
     <form method="GET">
-        <label for="anho">Año:</label>
+        <label for="anho">{{textos.anho}}</label>
         <select name="anho" id="anho">
-            <option value="">Todos</option>
+            <option value="">{{textos.todos}}</option>
             {% for anho in anhos %}
                 <option value="{{ anho }}" {% if selected_anho == anho %}selected{% endif %}>{{ anho }}</option>
             {% endfor %}
         </select>
-    
-        <label for="asignatura">Asignatura:</label>
-        <select name="asignatura" id="asignatura">
-            <option value="">Todos</option>
-            {% for asignatura in asignaturas %}
-                <option value="{{ asignatura[0] }}" {% if selected_asignatura == asignatura[0] %}selected{% endif %}>{{ asignatura[0] }}</option>
+
+        <label for="codigo_asignatura">{{textos.codigo_Asignatura}}</label>
+        <select name="codigo_asignatura">
+            <option value="Todos">{{textos.todos}}</option>
+            {% for codigo_asignatura in codigo_asignaturas %}
+                <option value="{{ codigo_asignatura }}" {% if selected_codigo_asignatura == codigo_asignatura %}selected{% endif %}>{{ codigo_asignatura }}</option>
             {% endfor %}
         </select>
-    
-        <label for="tipo_programa">Tipo de Programa:</label>
+        
+
+        <label for="tipo_programa">{{textos.tipo}}</label>
         <select name="tipo_programa" id="tipo_programa">
-            <option value="">Todos</option>
+            <option value="">{{textos.todos}}</option>
             {% for tipo in tipos_programa %}
                 <option value="{{ tipo }}" {% if selected_tipo_programa == tipo %}selected{% endif %}>{{ tipo }}</option>
             {% endfor %}
         </select>
-    
+
+        <label for="nombre_archivo">{{textos.nombre_archivo}}</label>
+        <select name="nombre_archivo" id="nombre_archivo">
+            <option value="">{{textos.todos}}</option>
+            {% for archivo in nombre_archivos %}
+                <option value="{{ archivo }}" {% if selected_nombre_archivo == archivo %}selected{% endif %}>{{ archivo }}</option>
+            {% endfor %}
+        </select>
+
         <button type="submit">Filtrar</button>
     </form>
-    
 
     <!-- Tabla de resultados -->
-    <table border="1">
+    <table>
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Año</th>
-                <th>Asignatura</th>
-                <th>Tipo de Programa</th>
+                <th>{{textos.anho}}</th>
+                <th>{{textos.codigo_Asignatura}}</th>
+                <th>{{textos.tipo}}</th>
+                <th>{{textos.nombre_archivo}}</th>
             </tr>
         </thead>
         <tbody>
@@ -53,16 +269,20 @@
                     <tr>
                         <td>{{ busqueda.id }}</td>
                         <td>{{ busqueda.anho }}</td>
-                        <td>{{ busqueda.asignatura if busqueda.asignatura else "N/A" }}</td>
+                        <td>{{ busqueda.codigo_asignatura if busqueda.codigo_asignatura else "N/A" }}</td>
                         <td>{{ busqueda.tipo_programa }}</td>
+                        <td>{{ busqueda.nombre_archivo }}</td>
                     </tr>
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="6">No se encontraron búsquedas anteriores.</td>
+                    <td colspan="5">{{ busqueda.no_busquedas }}.</td>
                 </tr>
             {% endif %}
         </tbody>
     </table>
+    <div class="button-container">
+        <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
+    </div>
 </body>
 </html>

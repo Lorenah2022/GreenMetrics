@@ -5,6 +5,10 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import time
+# Agregar el directorio raíz de tu proyecto al sys.path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from app import app, Busqueda, db  # Asegúrate de importar 'app' también
+
 
 """ Función principal que procesa las guías docentes utilizando el año proporcionado. """
 def procesar_guias(anho, tipo_estudio):
@@ -125,13 +129,31 @@ def procesar_guias(anho, tipo_estudio):
                 "nombre_archivo": nombre_archivo
             })
 
+
+            # Insertar la información directamente en la base de datos
+            with app.app_context():  # Aquí se establece el contexto de la aplicación
+                nuevo_registro = Busqueda(
+                    anho=anho,  # Si tienes la variable 'anho' disponible
+                    tipo_programa=tipo_estudio,  # O 'grado' o 'master' según el tipo de estudio
+                    codigo_asignatura=codigo_asignatura,
+                    nombre_archivo=nombre_archivo
+                )
+
+                # Agregar el registro a la sesión de SQLAlchemy y confirmarlo
+                db.session.add(nuevo_registro)
+                db.session.commit()
             time.sleep(2)  # Pausa de 2 segundos entre descargas para no sobrecargar el servidor
 
     # Convertir la lista de datos a un DataFrame
     df_subjects = pd.DataFrame(subject_data)
 
-    # Ruta del archivo Excel dentro de "data"
-    ruta_excel_salida = os.path.join(ruta_data, "datos_asignaturas_masteres.xlsx")
+
+    if tipo_estudio == 'master':
+        ruta_excel_salida = os.path.join(ruta_data, "datos_asignaturas_masteres.xlsx")           
+    elif tipo_estudio == 'grado':
+        ruta_excel_salida = os.path.join(ruta_data, "datos_asignaturas_grados.xlsx")                 
+    elif tipo_estudio=='ambos':
+       ruta_excel_salida = os.path.join(ruta_data, "enlaces_filtrados_grados_masteres_ubu.xlsx")
 
     # Guardar el DataFrame en un archivo Excel en la carpeta "data"
     df_subjects.to_excel(ruta_excel_salida, index=False)
@@ -139,9 +161,9 @@ def procesar_guias(anho, tipo_estudio):
 if __name__ == "__main__":
     # Obtener el año académico desde los argumentos de la línea de comandos
     if len(sys.argv) != 3:
-        print("Uso: python procesar_guias.py <año_académico> <tipo_estudio>")
+        print("Uso correcto: python script.py <anho> <tipo_estudio>")
         sys.exit(1)
-
+        
     anho = sys.argv[1]
     tipo_estudio = sys.argv[2]
     procesar_guias(anho, tipo_estudio)

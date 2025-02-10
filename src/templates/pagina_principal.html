@@ -120,6 +120,23 @@
         .dropdown:hover .dropdown-content {
             display: block;
         }
+        /* Contenedor principal */
+        .main-content {
+            padding: 20px;
+            color: #333;
+            text-align: center;
+            flex: 1;
+        }
+
+        .main-content h2 {
+            color: #006400;
+            margin-bottom: 20px;
+        }
+
+        .main-content p {
+            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            color: #555;
+        }
 
     </style>
 </head>

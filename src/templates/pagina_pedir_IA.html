@@ -155,7 +155,7 @@
 
         }
 
-        /* Botón de actualizar. */
+        /* Botón de aceptar. */
         .btn-success {
             background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
@@ -169,16 +169,16 @@
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
         }
 
-        /* Botón de cancelar */
+        /* Botón de volver atrás */
         .btn-secondary {
-            background-color: #6c757d;
+            background-color:{% if daltonismo %}#00FF00{% else %}#006400{% endif %};
             color: white;
             border: none;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
 
         .btn-secondary:hover {
-            background-color: #5a6268;  
+            background-color: {% if daltonismo %}#800080{% else %}#8fbc8f{% endif %};  
             transform: scale(1.05);
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
         }
@@ -290,7 +290,7 @@
                     
                     <div class="d-flex justify-content-between">
                         <button type="submit" class="btn btn-success">{{ textos.aceptar }}</button>
-                        <a href="{{ url_for('pagina_pedir_anho') }}" class="btn btn-secondary">{{ textos.cancelar }}</a>
+                        <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
                     </div>
                 </form>
            
@@ -322,7 +322,35 @@
             modal.style.display = 'none';
         }
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.querySelector('form');
     
-
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();  // Evita el envío tradicional del formulario
+    
+                // Abrir la ventana emergente
+                const progressWindow = window.open('/progreso', 'Ventana de Progreso', 'width=600,height=400');
+    
+                // Recoger el formulario y enviar los datos al servidor
+                const formData = new FormData(form);
+                fetch('{{ url_for("actualizar_api") }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;  // Redirige si el servidor devuelve una redirección
+                    }
+                })
+                .catch(error => {
+                    console.error('Error durante el envío del formulario:', error);
+                    if (progressWindow) {
+                        progressWindow.close();
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
