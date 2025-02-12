@@ -3,16 +3,15 @@ import requests
 import json
 import pandas as pd
 from PyPDF2 import PdfReader
-
 from dotenv import load_dotenv
 
 # Cargar variables desde .env, como no esta en el mismo directorio que el script, especifico la ubicación del fichero .env
-dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
-load_dotenv(dotenv_path)
+directorio = os.path.join(os.path.dirname(__file__), 'data', 'guias')
+load_dotenv()
 
 # Definir rutas
 directorio = os.path.join("sostenibilidad","data", "guias")  # Carpeta con los archivos PDF
-archivo_salida = os.path.join("data", "resultados_guias.csv")  # Archivo de salida
+archivo_salida = os.path.join("sostenibilidad","data", "resultados_guias.csv")  # Archivo de salida
 
 # Listar los archivos PDF en el directorio
 archivos_guias = [f for f in os.listdir(directorio) if f.endswith('.pdf')]
@@ -88,7 +87,7 @@ for pdf_file in archivos_guias:
 
     # Filtrar solo el contenido posterior a </think>
     if "</think>" in message_content:
-        message_content = message_content.split("</think>", 1)[1].strip()  # Solo lo que sigue después de </think>
+        message_content = message_content.split("</think>")[-1].strip()  # Solo lo que sigue después de </think>
 
     # Separar la respuesta por comas
     contenido_separado = [x.strip() for x in message_content.split(",") if x.strip()]

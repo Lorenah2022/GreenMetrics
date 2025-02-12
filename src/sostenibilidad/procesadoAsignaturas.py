@@ -7,7 +7,6 @@ from PyPDF2 import PdfReader
 
 # Agregar el directorio raíz de tu proyecto al sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app import app, Busqueda, db  # Asegúrate de importar 'app' también
 
 def procesar_asignaturas(tipo_estudio):
     ruta_data = os.path.join("sostenibilidad", "data")

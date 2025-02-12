@@ -297,60 +297,29 @@
     </div>
 
     <!-- Modal -->
-    <div id="successModal" class="modal">
+    <div id="processModal" class="modal">
         <div class="modal-content">
-            <p id="modalMessage"></p>
-            <button class="close" onclick="closeModal()">{{ textos.aceptar}}</button>
+            <p id="processMessage">{{textos.mensaje_cargando}}</p>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const flashMessage = "{{ get_flashed_messages()[0] if get_flashed_messages() else '' }}";
-            console.log("Mensaje Flash: ", flashMessage);  // Verifica en la consola si hay un mensaje flash
-    
-            if (flashMessage) {
-                const modal = document.getElementById('successModal');
-                const modalMessage = document.getElementById('modalMessage');
-                modalMessage.textContent = flashMessage;
-                modal.style.display = 'flex';  // Asegúrate de que sea visible
-            }
+        // Al enviar el formulario, mostramos el modal
+        document.querySelector('form').addEventListener('submit', function (event) {
+            event.preventDefault(); // Evitar que el formulario se envíe inmediatamente
+            const modal = document.getElementById('processModal');
+            modal.style.display = 'flex';  // Mostrar el modal con el mensaje
+
+            // Hacer el submit del formulario de manera asíncrona
+            setTimeout(function () {
+                document.querySelector('form').submit();
+            }, 2000);  // Tiempo para mostrar el mensaje antes de hacer el submit
         });
-    
+
         function closeModal() {
-            const modal = document.getElementById('successModal');
+            const modal = document.getElementById('processModal');
             modal.style.display = 'none';
         }
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.querySelector('form');
-    
-            form.addEventListener('submit', (event) => {
-                event.preventDefault();  // Evita el envío tradicional del formulario
-    
-                // Abrir la ventana emergente
-                const progressWindow = window.open('/progreso', 'Ventana de Progreso', 'width=600,height=400');
-    
-                // Recoger el formulario y enviar los datos al servidor
-                const formData = new FormData(form);
-                fetch('{{ url_for("actualizar_api") }}', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    if (response.redirected) {
-                        window.location.href = response.url;  // Redirige si el servidor devuelve una redirección
-                    }
-                })
-                .catch(error => {
-                    console.error('Error durante el envío del formulario:', error);
-                    if (progressWindow) {
-                        progressWindow.close();
-                    }
-                });
-            });
-        });
     </script>
 </body>
 </html>

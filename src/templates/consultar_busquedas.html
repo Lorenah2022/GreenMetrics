@@ -144,11 +144,9 @@
         }
 
         /* Botón de cancelar */
-        /* Estilo de los botones */
         .btn {
             display: inline-block;
             padding: 12px 25px;
-            margin-top: 20px;
             text-align: center;
             font-weight: bold;
             border-radius: 30px;
@@ -185,7 +183,7 @@
           .button-container {
             display: flex;
             justify-content: center;
-            margin-top: 20px;
+            margin: 40px 0;
         }
 
           .form-group input {
@@ -249,18 +247,30 @@
             {% endfor %}
         </select>
 
+        <label for="modalidad">{{textos.modalidad}}</label>
+        <select name="modalidad" id="modalidad">
+            <option value="">{{ textos.todos }}</option>
+            {% for modo in modalidad %}
+                <option value="{{ modo }}" {% if selected_modalidad == modo %}selected{% endif %}>{{ modo }}</option>
+            {% endfor %}
+        </select>
+       
         <button type="submit">Filtrar</button>
+        
     </form>
-
+    <div class="button-container">
+        <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
+    </div>
     <!-- Tabla de resultados -->
     <table>
         <thead>
             <tr>
                 <th>ID</th>
-                <th>{{textos.anho}}</th>
-                <th>{{textos.codigo_Asignatura}}</th>
-                <th>{{textos.tipo}}</th>
-                <th>{{textos.nombre_archivo}}</th>
+                <th>{{ textos.anho }}</th>
+                <th>{{ textos.codigo_Asignatura }}</th>
+                <th>{{ textos.tipo }}</th>
+                <th>{{ textos.nombre_archivo }}</th>
+                <th>{{ textos.modalidad }}</th> 
             </tr>
         </thead>
         <tbody>
@@ -272,17 +282,17 @@
                         <td>{{ busqueda.codigo_asignatura if busqueda.codigo_asignatura else "N/A" }}</td>
                         <td>{{ busqueda.tipo_programa }}</td>
                         <td>{{ busqueda.nombre_archivo }}</td>
+                        <td>{{ busqueda.modalidad }}</td>  <!-- Mostrar modalidad -->
                     </tr>
                 {% endfor %}
             {% else %}
                 <tr>
-                    <td colspan="5">{{ busqueda.no_busquedas }}.</td>
+                    <td colspan="6">{{ textos.no_busquedas }}</td>  <!-- Actualizamos el colspan a 6 -->
                 </tr>
             {% endif %}
         </tbody>
     </table>
-    <div class="button-container">
-        <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
-    </div>
+
+   
 </body>
 </html>

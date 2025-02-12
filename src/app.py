@@ -99,6 +99,7 @@ textos = {
         'myModel': 'Model',
         'mensaje_cargando': 'Loading...',
         'modo_daltonismo': 'Daltonism',
+        'modalidad':'modality',
         'nueva_contrasenha': 'New password. *',
         'nombre_archivo':'File name',
         'normal': 'Medium',
@@ -155,8 +156,9 @@ textos = {
         'ingles': 'Inglés',
         'iniciar_sesion': 'Iniciar sesión',
         'myModel': 'Modelo',
-        'mensaje_cargando': 'Cargando...',
+        'mensaje_cargando': 'Cargando... Esto puede tardar algunos minutos...',
         'modo_daltonismo': 'Modo Daltonismo',
+        'modalidad':'modalidad',
         'nueva_contrasenha': 'Nueva contraseña. *',
         'nombre_archivo':'Nombre del archivo:',
         'normal': 'Medio',
@@ -202,7 +204,11 @@ class Busqueda(db.Model):
     codigo_asignatura = db.Column(db.String(100), nullable=True)
     tipo_programa = db.Column(db.String(100), nullable=True)
     nombre_archivo=db.Column(db.String(100), nullable=True)
-
+    modalidad=db.Column(db.String(100), nullable=True)
+    
+    __table_args__ = (
+        db.UniqueConstraint('anho','codigo_asignatura','modalidad', name='unique_modalidad_anho_codigo'),
+    )
 
 # Función de validación de contraseña
 def validar_contrasena(password):
@@ -438,79 +444,63 @@ def pagina_pedir_IA():
 
 @app.route('/actualizar_api', methods=['POST'])
 def actualizar_api():
-    global estado_proceso
-    idioma = session.get('idioma', 'es')  # Obtener el idioma actual
+    try:
+        # Ruta donde se encuentra el archivo API.py
+        ruta_api = os.path.join(os.getcwd(), 'sostenibilidad', 'API.py')
 
-    # Obtener los datos del formulario (si están disponibles)
-    base_url = request.form['base_url'] or None
-    api_key = request.form['api_key'] or None
-    model = request.form['model'] or None
-    
-    # Ruta relativa al archivo API.py (en relación a la carpeta donde está el script Flask)
-    ruta_api = os.path.join(os.getcwd(), 'sostenibilidad', 'API.py')  # Ruta relativa
-
-    # Leer el contenido actual de API.py
-    with open(ruta_api, 'r') as file:
-        contenido = file.read()
-    
-    # Obtener los valores actuales de las variables (si no se introducen nuevos valores)
-    base_url_actual = re.search(r'base_url = "(.*?)"', contenido)
-    api_key_actual = re.search(r'api_key = "(.*?)"', contenido)
-    model_actual = re.search(r'myModel = "(.*?)"', contenido)
-    
-    # Si no se ha introducido un valor, se mantiene el valor actual del archivo
-    if base_url is None:
-        base_url = base_url_actual.group(1) if base_url_actual else ''
-    if api_key is None:
-        api_key = api_key_actual.group(1) if api_key_actual else ''
-    if model is None:
-        model = model_actual.group(1) if model_actual else ''
-    
-    # Actualizar las variables en el archivo, solo si se ha proporcionado un valor
-    contenido_actualizado = re.sub(r'base_url = ".*?"', f'base_url = "{base_url}"', contenido)
-    contenido_actualizado = re.sub(r'api_key = ".*?"', f'api_key = "{api_key}"', contenido_actualizado)
-    contenido_actualizado = re.sub(r'myModel = ".*?"', f'myModel = "{model}"', contenido_actualizado)
-    
-    # Guardar los cambios en API.py
-    with open(ruta_api, 'w') as file:
-        file.write(contenido_actualizado)
+        # Obtener los datos del formulario (si están disponibles)
+        base_url = request.form['base_url'] or None
+        api_key = request.form['api_key'] or None
+        model = request.form['model'] or None
         
-    with lock:
-            estado_proceso["en_proceso"] = True
-            estado_proceso["mensaje"] = textos[idioma]['mensaje_cargando']
-            estado_proceso["porcentaje"] = 0
-            estado_proceso["completado"] = False
+        # Leer el contenido actual de API.py
+        with open(ruta_api, 'r') as file:
+            contenido = file.read()
+        
+        # Obtener los valores actuales de las variables (si no se introducen nuevos valores)
+        base_url_actual = re.search(r'base_url = "(.*?)"', contenido)
+        api_key_actual = re.search(r'api_key = "(.*?)"', contenido)
+        model_actual = re.search(r'myModel = "(.*?)"', contenido)
+        
+        # Si no se ha introducido un valor, se mantiene el valor actual del archivo
+        if base_url is None:
+            base_url = base_url_actual.group(1) if base_url_actual else ''
+        if api_key is None:
+            api_key = api_key_actual.group(1) if api_key_actual else ''
+        if model is None:
+            model = model_actual.group(1) if model_actual else ''
+        
+        # Actualizar las variables en el archivo, solo si se ha proporcionado un valor
+        contenido_actualizado = re.sub(r'base_url = ".*?"', f'base_url = "{base_url}"', contenido)
+        contenido_actualizado = re.sub(r'api_key = ".*?"', f'api_key = "{api_key}"', contenido_actualizado)
+        contenido_actualizado = re.sub(r'myModel = ".*?"', f'myModel = "{model}"', contenido_actualizado)
+        
+        # Guardar los cambios en API.py
+        with open(ruta_api, 'w') as file:
+            file.write(contenido_actualizado)
 
-    # Crear y lanzar un hilo para ejecutar la función
-    hilo = threading.Thread(target=ejecutar_api)
-    hilo.start()    
-    return redirect(url_for('pagina_pedir_IA'))
+        # Crear y lanzar un hilo para ejecutar la función
+        hilo = threading.Thread(target=ejecutar_api)
+        hilo.start()
+
+        # Redirigir a la página de IA después de iniciar el proceso
+        return redirect(url_for('pagina_pedir_IA'))
+    
+    except Exception as e:
+        # En caso de error, devolver un mensaje
+        return f"Error al actualizar la API: {str(e)}"
 
 # Función que ejecutará el script en segundo plano
 def ejecutar_api():
-    global estado_proceso
-    idioma = session.get('idioma', 'es')
     try:
-        # Actualizamos el estado al inicio
-        actualizar_estado("Iniciando la ejecución de la API...", 0, en_proceso=True)
-
-        # Ejecutamos el archivo API.py (esto puede tomar tiempo)
         ruta_api = os.path.join(os.getcwd(), 'sostenibilidad', 'API.py')
-        actualizar_estado(textos[idioma]['ejecutando_guias'], 10)
+        # Ejecutar el archivo API.py (esto puede tomar tiempo)
         subprocess.run(['python3', ruta_api], check=True)
-        actualizar_estado(textos[idioma]['ejecutando_guias'], 50)
-        
-        # Marcar el proceso como completado
-        actualizar_estado(textos[idioma]['proceso_completado'], 100)
-        
-        with lock:
-            estado_proceso["completado"] = True  # Marcar el proceso como completado
+        print("Proceso completado correctamente.")
     except subprocess.CalledProcessError as e:
-        with lock:
-            estado_proceso["mensaje"] = f"{textos[idioma]['error_script']} {e}"
-    finally:
-        with lock:
-            estado_proceso["en_proceso"] = False
+        print(f"Error ejecutando el script: {str(e)}")
+    except Exception as e:
+        print(f"Error en el hilo de ejecución: {str(e)}")
 
 @app.route("/", methods=["GET", "POST"])
 def procesar_anho():
@@ -524,11 +514,7 @@ def procesar_anho():
             flash("El año debe tener el formato 2022-2023", "error")
             return redirect(url_for('pagina_pedir_anho'))
 
-        # Registrar la búsqueda en la base de datos
-        nueva_busqueda = Busqueda(anho=anho)
-        db.session.add(nueva_busqueda)
-        db.session.commit() 
-        
+       
         # Obtener los datos de tipo de estudio y grado/máster específico del formulario
         tipo_estudio = request.form.get("tipo_estudio", "ambos")
 
@@ -542,6 +528,11 @@ def procesar_anho():
             estado_proceso["mensaje"] = textos[idioma]['mensaje_cargando']
             estado_proceso["porcentaje"] = 0
             estado_proceso["completado"] = False
+
+        
+        # Crear y lanzar un hilo para ejecutar ambos scripts con los parámetros
+        hilo = threading.Thread(target=ejecutar_procesos, args=(anho, tipo_estudio, idioma))
+        hilo.start()
 
         # Crear y lanzar un hilo para ejecutar ambos scripts con los parámetros
         hilo = threading.Thread(target=ejecutar_procesos, args=(anho, tipo_estudio, idioma))
@@ -558,10 +549,11 @@ def consultar_busquedas():
     daltonismo = session.get('daltonismo', False)
     
     # Obtener los filtros seleccionados desde los parámetros de la URL
-    anho_seleccionado = request.args.get('anho')  # Usamos un nombre claro para el valor seleccionado
+    anho_seleccionado = request.args.get('anho')  
     tipo_programa = request.args.get('tipo_programa')
     codigo_asignatura = request.args.get('codigo_asignatura')
     nombre_archivo = request.args.get('nombre_archivo')
+    modalidad = request.args.get('modalidad')
 
     # Consultar los valores únicos para los filtros desde la base de datos secundaria
     anhos_disponibles = [a[0] for a in db.session.execute(
@@ -570,26 +562,31 @@ def consultar_busquedas():
 
     tipos_programa = ["grado", "master"]
     
-    codigo_asignaturas = db.session.execute(
+    codigo_asignaturas = [a[0] for a in db.session.execute(
         db.select(Busqueda.codigo_asignatura).distinct().execution_options(bind_key='busqueda')
-    ).all()
-    
-    # Consultar los nombres de los archivos únicos
-    nombre_archivos = db.session.execute(
-        db.select(Busqueda.nombre_archivo).distinct().execution_options(bind_key='busqueda')
-    ).all()
+    ).all()]
 
-    # Consultar las búsquedas filtradas usando el bind 'busqueda'
+    nombre_archivos = [a[0] for a in db.session.execute(
+        db.select(Busqueda.nombre_archivo).distinct().execution_options(bind_key='busqueda')
+    ).all()]
+
+    modalidad_disponibles = [a[0] for a in db.session.execute(
+        db.select(Busqueda.modalidad).distinct().execution_options(bind_key='busqueda')
+    ).all()]
+    
+    # Construir la consulta con los filtros aplicados
     query = db.session.query(Busqueda).execution_options(bind_key='busqueda')
 
-    if anho_seleccionado and anho_seleccionado!="Todos":
+    if anho_seleccionado and anho_seleccionado != "Todos":
         query = query.filter(Busqueda.anho == anho_seleccionado)
     if tipo_programa and tipo_programa != "Todos":
         query = query.filter(Busqueda.tipo_programa == tipo_programa)
     if codigo_asignatura and codigo_asignatura != "Todos":
         query = query.filter(Busqueda.codigo_asignatura == codigo_asignatura)
-    if nombre_archivo and nombre_archivo!="Todos" :
+    if nombre_archivo and nombre_archivo != "Todos":
         query = query.filter(Busqueda.nombre_archivo == nombre_archivo)
+    if modalidad and modalidad != "Todos":
+        query = query.filter(Busqueda.modalidad == modalidad)
 
     busquedas = query.all()
 
@@ -600,58 +597,51 @@ def consultar_busquedas():
         busquedas=busquedas,
         anhos=anhos_disponibles,
         tipos_programa=tipos_programa,
-        codigo_asignaturas=[a[0] for a in codigo_asignaturas],
-        nombre_archivos=[a[0] for a in nombre_archivos],  # Pasando los nombres de archivos únicos
+        codigo_asignaturas=codigo_asignaturas,
+        nombre_archivos=nombre_archivos,
+        modalidad=modalidad_disponibles,
         selected_anho=anho_seleccionado,
         selected_tipo_programa=tipo_programa,
         selected_codigo_asignatura=codigo_asignatura,
-        selected_nombre_archivo=nombre_archivo 
+        selected_nombre_archivo=nombre_archivo,
+        selected_modalidad=modalidad  
     )
 
 
+
 def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
-    """ Función que ejecuta ambos scripts secuencialmente y actualiza el estado. """
+    """ Función que ejecuta los scripts en orden y actualiza el estado. """
     global estado_proceso
     try:
-        # Ejecutar grados.py
+        
+        # Ejecutar guias_docentes.py
         ruta_grados = os.path.join(os.getcwd(), 'sostenibilidad', 'grados.py')
         actualizar_estado(textos[idioma]['ejecutando_grados'], 10)
-        subprocess.run(['python3', ruta_grados], check=True)
+
+        # Ejecutar guias_docentes.py (un solo paso si no se necesita dividir)
+        subprocess.run(['python3', ruta_grados, anho, tipo_estudio], check=True)
+        actualizar_estado(textos[idioma]['ejecutando_grados'], 20)
+
         
         # Ejecutar guias_docentes.py
         ruta_guias = os.path.join(os.getcwd(), 'sostenibilidad', 'guias_docentes.py')
         actualizar_estado(textos[idioma]['ejecutando_guias'], 30)
-        
-        
-        # Paso 1 de guias_docentes.py
-        subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
-        actualizar_estado(textos[idioma]['ejecutando_guias'], 40)
-        
-        # Paso 2 de guias_docentes.py
-        subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
-        actualizar_estado(textos[idioma]['ejecutando_guias'], 50)
-        
-        # Paso 3 de guias_docentes.py
+
+        # Ejecutar guias_docentes.py (un solo paso si no se necesita dividir)
         subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
         actualizar_estado(textos[idioma]['ejecutando_guias'], 60)
-        
+
         # Ejecutar procesadoAsignaturas.py
         ruta_procesado = os.path.join(os.getcwd(), 'sostenibilidad', 'procesadoAsignaturas.py')
         actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 70)
-        
-        
-        # Paso 4 de procesadoAsignaturas.py
-        subprocess.run(['python3', ruta_procesado, anho, tipo_estudio], check=True)
-        actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 80)
-        
-         # Ejecutar procesadoAsignaturas.py
-        ruta_procesado = os.path.join(os.getcwd(), 'sostenibilidad', 'procesadoAsignaturas.py')
-        actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 90)
+
+        # Ejecutar procesadoAsignaturas.py
         subprocess.run(['python3', ruta_procesado, tipo_estudio], check=True)
-        
+        actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 90)
+
         # Marcar el proceso como completado
         actualizar_estado(textos[idioma]['proceso_completado'], 100)
-        
+
         with lock:
             estado_proceso["completado"] = True  # Marcar el proceso como completado
     except subprocess.CalledProcessError as e:
