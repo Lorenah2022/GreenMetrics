@@ -97,7 +97,10 @@ def procesar_guias(anho, tipo_estudio):
 
             # Extraer el código de asignatura desde la URL
             codigo_asignatura = enlace_completo.split("asignatura=")[-1].split("&")[0]
-
+            
+            # Si el código contiene "_online", lo eliminamos para evitar duplicados
+            if "_online" in codigo_asignatura:
+                codigo_asignatura = codigo_asignatura.replace("_online", "")
             # Definir el nombre del archivo PDF con la modalidad incluida
             nombre_archivo = f"{codigo_asignatura}_{modalidad}.pdf"
 
@@ -130,7 +133,15 @@ def procesar_guias(anho, tipo_estudio):
                 "nombre_archivo": nombre_archivo
             })
 
-
+            # Print para depuración
+            print("Depuración de datos guardados:")
+            print(f"basic_link: {basic_link}")
+            print(f"enlace_completo: {enlace_completo}")
+            print(f"codigo_asignatura: {codigo_asignatura}")
+            print(f"modalidad: {modalidad}")
+            print(f"nombre_archivo: {nombre_archivo}")
+            print("-" * 50)
+            
             # Insertar la información directamente en la base de datos
             try:
                 with app.app_context():
