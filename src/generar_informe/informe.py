@@ -2,13 +2,15 @@ import pandas as pd
 from docx import Document
 from docx.shared import Inches
 from docx2pdf import convert
+import os
 
 # Rutas de los archivos
-template_path = "modelo_base.docx"
-output_docx_path = "output_filled.docx"
-output_pdf_path = "output_filled.pdf"
-excel_path = "courses.xlsx"
-logo_path ="../static/images/logo-UBU.jpg"
+base_dir = os.path.dirname(__file__)  # Directorio base donde se encuentra el script
+template_path =  os.path.join(base_dir, 'modelo_base.docx')
+output_docx_path =  os.path.join(base_dir, 'output_filled.docx')
+output_pdf_path =  os.path.join(base_dir, 'output_filled.pdf')
+excel_path = os.path.join('generar_informe', 'courses.xlsx')
+logo_path = os.path.join(base_dir, '../static/images/logo-UBU.jpg') 
 
 # Datos de la Universidad de Burgos
 university_name = "University of Burgos"

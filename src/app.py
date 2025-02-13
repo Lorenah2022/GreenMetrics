@@ -83,6 +83,7 @@ textos = {
         'criterio_3': '* If you do not fill in the password field, it will not be updated.',
         'datos_IA': 'IA data',
         'descargar_datos_nuevos': 'Download new data',
+        'descargar_informe':'Download report',
         'ejecutando_grados': 'Downloading the links to the addresses of bachelors and masters degrees.',
         'ejecutando_guias': 'Downloading guias....',
         'ejecutando_asignaturas':'The subjects are being processed..... ',
@@ -142,6 +143,7 @@ textos = {
         'criterio_3': '* Si no rellena el campo de la contraseña, esta no se actualizará.',
         'datos_IA': 'Datos de la IA',
         'descargar_datos_nuevos': 'Descargar datos nuevos',
+        'descargar_informe':'Descargar informe',
         'ejecutando_grados': 'Descargando los enlaces a las direcciones de los grados y masteres.',
         'ejecutando_guias': 'Descargando las guías docentes.....',
         'ejecutando_asignaturas':'Se están procesando las asignaturas.... ',
@@ -186,8 +188,8 @@ textos = {
     }
 
 
-
- # Modelo de Usuario
+# ----------------------- BASES DE DATOS -----------------------------------------------------
+# Modelo de Usuario
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     google_id = db.Column(db.String(50), unique=True, nullable=True)  # Campo opcional
@@ -210,23 +212,55 @@ class Busqueda(db.Model):
         db.UniqueConstraint('anho','codigo_asignatura','modalidad', name='unique_modalidad_anho_codigo'),
     )
 
-# Función de validación de contraseña
-def validar_contrasena(password):
-    if len(password) < 8:
-        return "La contraseña debe tener al menos 8 caracteres."
-    if not any(char.isupper() for char in password):
-        return "La contraseña debe incluir al menos una letra mayúscula."
-    if not any(char.islower() for char in password):
-        return "La contraseña debe incluir al menos una letra minúscula."
-    if not any(char.isdigit() for char in password):
-        return "La contraseña debe incluir al menos un número."
-    return None
 
+# ----------------------- FORMULARIOS -----------------------------------------------------
+# Formulario para editar el perfil
+class ProfileForm(FlaskForm):
+    username = StringField('Nombre de usuario', validators=[
+        DataRequired(), Length(min=3, max=50)
+    ])
+    email = EmailField('Correo electrónico', validators=[
+        DataRequired(), Email()
+    ])
+    password = PasswordField('Nueva Contraseña', validators=[])
+    confirm_password = PasswordField('Confirmar Contraseña', validators=[
+        EqualTo('password', message='Las contraseñas deben coincidir.')
+    ])
+    submit = SubmitField('Guardar Cambios')
+    
 
+#  ----------------------- PÁGINAS PRINCIPALES ----------------------------------------------------
 # Ruta principal
 @app.route('/')
 def index():
     return redirect(url_for('login'))
+
+# Cerrar sesión
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash("Has cerrado sesión.", "info")
+    return redirect(url_for('login'))
+
+# Ruta para la página principal
+@app.route('/pagina_principal')
+def pagina_principal():
+    # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+    # Comprobar si el usuario está autenticado
+    if 'user_id' not in session:
+        return render_template('pagina_principal.html', 
+                               rol='visitante', 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido para visitantes
+    else:
+        rol = session['rol']
+        return render_template('pagina_principal.html', 
+                               rol=rol, 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol     
 
 # Ruta principal: Login
 @app.route('/login', methods=['GET', 'POST'])
@@ -252,7 +286,148 @@ def login():
     
     return render_template('login.html',google_client_id=google_client_id)
 
+# Ruta para el registro de nuevos usuarios
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+            # Obtener datos del formulario
+            username = request.form['username'] 
+            email = request.form['email']  
+            password = request.form['password']
+            confirm_password = request.form['confirm_password']
 
+            # Validar contraseña
+            error = validar_contrasena(password)
+            if error:
+                flash(error, 'error')
+                return render_template('register.html')  # Detener el proceso si hay errores
+            
+            # Validar datos
+            if not username or not email or not password:
+                flash('Por favor, completa todos los campos', 'error')
+            elif password != confirm_password:
+                flash('Las contraseñas no coinciden', 'error')
+            else:
+                # Verificar si el nombre de usuario o el correo electrónico ya están en uso
+                existing_user_by_username = User.query.filter_by(username=username).first()
+                existing_user_by_email = User.query.filter_by(email=email).first()
+
+                if existing_user_by_username:
+                    flash('El nombre de usuario ya está en uso', 'error')
+                elif existing_user_by_email:
+                    flash('El correo electrónico ya está en uso', 'error')
+                else:
+                    try:
+                        # Hash de la contraseña con pbkdf2:sha256
+                        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+                        new_user = User(username=username, email=email, password=hashed_password, rol ='usuario')  
+                        db.session.add(new_user)
+                        db.session.commit()
+                        flash('Cuenta creada exitosamente', 'success')
+                        print("Usuario guardado en la base de datos.")
+                    except Exception as e:
+                        db.session.rollback()
+                        flash(f'Error al guardar el usuario: {str(e)}', 'error')
+                        print(f"Error al guardar el usuario: {str(e)}")
+            
+    return render_template('register.html')
+
+
+#  ----------------------- PÁGINAS DE MODIFICACIÓN DE PARÁMETROS ----------------------------------------------------
+# Ruta para cambiar los ajustes (idioma, tamaño de la letra y habilitar la opción de daltonismo)
+@app.route('/ajustes', methods=['GET', 'POST'])
+def ajustes():
+    idioma = session.get('idioma', 'es')
+
+    if request.method == 'POST':
+        idioma = request.form.get('idioma')
+        tamano_texto = request.form.get('tamano_texto')
+        daltonismo = request.form.get('daltonismo') == 'on'  # Verificamos si el checkbox está seleccionado
+        session['idioma'] = idioma
+        session['tamano_texto'] = tamano_texto
+        session['daltonismo'] = daltonismo  # Guardamos la opción de daltonismo en la sesión
+        return redirect(url_for('ajustes'))  # Redirige para actualizar la página con los nuevos valores
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)  # Por defecto, el daltonismo está desactivado
+    return render_template('ajustes.html', idioma=idioma, tamano_texto=tamano_texto,  daltonismo=daltonismo,textos=textos[idioma])
+
+# Ruta para editar el perfil
+@app.route('/perfil', methods=['GET', 'POST'])
+def perfil():
+    idioma = session.get('idioma', 'es')
+    daltonismo = session.get('daltonismo', False)
+    tamano_texto = session.get('tamano_texto', 'normal')
+    rol = session.get('rol')
+    # Verificación de si el usuario está logueado en la sesión
+    if 'user_id' not in session:
+        # Página que muestra el perfil de visitante
+        return render_template('perfil_visitante.html', tamano_texto=tamano_texto,textos=textos[idioma],daltonismo=daltonismo)
+    
+    # Obtiene el usuario actual desde la sesión
+    usuario = User.query.get(session['user_id'])  # Usar 'user_id' en lugar de 'id'
+    
+    # Crear el formulario de perfil
+    form = ProfileForm()
+
+    if request.method == 'POST':  # Validación explícita del método POST
+        if form.validate():  # Valida los datos del formulario sin necesidad de submit
+            # Actualizar solo los campos que se llenaron
+            usuario.username = form.username.data
+            usuario.email = form.email.data
+
+            # Si el campo de contraseña no está vacío, actualiza la contraseña
+            if form.password.data:
+                # Validar contraseña
+                error = validar_contrasena(form.password.data)
+                if error:
+                    flash(error, 'error')
+                    return render_template(
+                    'perfil_usuario.html', form=form, usuario=usuario,
+                    tamano_texto=tamano_texto, textos=textos[idioma]
+                    )
+                usuario.password = generate_password_hash(form.password.data)
+           
+            # Guardar los cambios en la base de datos
+            try:
+                db.session.commit()
+                if idioma=='es':
+                    flash("Perfil actualizado correctamente.", "success")
+                elif idioma=='en':
+                    flash("Profile updated successfully", "success")
+
+                return redirect(url_for('pagina_principal'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Error al actualizar el perfil: {str(e)}", "error")
+        else:
+            flash("Hay errores en el formulario. Por favor, corrígelos.", "error")
+
+    # Rellenar los campos del formulario con los datos actuales del usuario
+    form.username.data = usuario.username
+    form.email.data = usuario.email
+
+    # Pasar el tamaño de texto a las plantillas
+    if rol == 'admin':
+        return render_template('perfil_admin.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma],daltonismo=daltonismo)
+    else:
+        return render_template('perfil_usuario.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma],daltonismo=daltonismo)
+
+
+# Función de validación de contraseña
+def validar_contrasena(password):
+    if len(password) < 8:
+        return "La contraseña debe tener al menos 8 caracteres."
+    if not any(char.isupper() for char in password):
+        return "La contraseña debe incluir al menos una letra mayúscula."
+    if not any(char.islower() for char in password):
+        return "La contraseña debe incluir al menos una letra minúscula."
+    if not any(char.isdigit() for char in password):
+        return "La contraseña debe incluir al menos un número."
+    return None
+
+
+#  ----------------------- CONFIGURACIÓN DE INICION SESIÓN CON GOOGLE ----------------------------------------------------
 # Login con google
 def get_google_user_info():
     if not google.authorized:
@@ -271,7 +446,6 @@ def get_google_user_info():
     except Exception as e:
         print(f"Error al obtener información del usuario de Google: {e}")
         return None
-
 
 # Ruta de login con Google
 @app.route("/google_login", methods=["POST"])
@@ -332,73 +506,7 @@ def google_login():
         return jsonify({"error": "Token inválido"}), 400
 
     
-# Ruta para el registro de nuevos usuarios
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-            # Obtener datos del formulario
-            username = request.form['username'] 
-            email = request.form['email']  
-            password = request.form['password']
-            confirm_password = request.form['confirm_password']
-
-            # Validar contraseña
-            error = validar_contrasena(password)
-            if error:
-                flash(error, 'error')
-                return render_template('register.html')  # Detener el proceso si hay errores
-            
-            # Validar datos
-            if not username or not email or not password:
-                flash('Por favor, completa todos los campos', 'error')
-            elif password != confirm_password:
-                flash('Las contraseñas no coinciden', 'error')
-            else:
-                # Verificar si el nombre de usuario o el correo electrónico ya están en uso
-                existing_user_by_username = User.query.filter_by(username=username).first()
-                existing_user_by_email = User.query.filter_by(email=email).first()
-
-                if existing_user_by_username:
-                    flash('El nombre de usuario ya está en uso', 'error')
-                elif existing_user_by_email:
-                    flash('El correo electrónico ya está en uso', 'error')
-                else:
-                    try:
-                        # Hash de la contraseña con pbkdf2:sha256
-                        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-                        new_user = User(username=username, email=email, password=hashed_password, rol ='usuario')  
-                        db.session.add(new_user)
-                        db.session.commit()
-                        flash('Cuenta creada exitosamente', 'success')
-                        print("Usuario guardado en la base de datos.")
-                    except Exception as e:
-                        db.session.rollback()
-                        flash(f'Error al guardar el usuario: {str(e)}', 'error')
-                        print(f"Error al guardar el usuario: {str(e)}")
-            
-    return render_template('register.html')
-
-
-# Ruta para la página principal
-@app.route('/pagina_principal')
-def pagina_principal():
-    # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
-    idioma = session.get('idioma', 'es')
-    tamano_texto = session.get('tamano_texto', 'normal')
-    daltonismo = session.get('daltonismo', False)
-    # Comprobar si el usuario está autenticado
-    if 'user_id' not in session:
-        return render_template('pagina_principal.html', 
-                               rol='visitante', 
-                               textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido para visitantes
-    else:
-        rol = session['rol']
-        return render_template('pagina_principal.html', 
-                               rol=rol, 
-                               textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
-        
+#  ----------------------- PÁGINAS PARA DESCARGAR LAS GUÍAS DOCENTES PARA UN CURSO ACADÉMICO DETERMINADO ----------------------------------------------------
 # Ruta para la página para pedir el año
 @app.route('/pagina_pedir_anho')
 def pagina_pedir_anho():
@@ -418,10 +526,95 @@ def pagina_pedir_anho():
                                rol=rol, 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
+
+@app.route("/", methods=["GET", "POST"])
+def procesar_anho():
+    global estado_proceso
+    if request.method == "POST":
+        anho = request.form.get("anho")
+        idioma = session.get('idioma', 'es')  # Obtener el idioma actual
+
+        # Verificar el formato del año (####-####)
+        if not anho_pattern(anho):
+            flash("El año debe tener el formato 2022-2023", "error")
+            return redirect(url_for('pagina_pedir_anho'))
+
+       
+        # Obtener los datos de tipo de estudio y grado/máster específico del formulario
+        tipo_estudio = request.form.get("tipo_estudio", "ambos")
+
+        # Validar si el tipo de estudio es correcto
+        if tipo_estudio not in ["grado", "master", "ambos"]:
+            flash("Opción de tipo de estudio no válida", "error")
+            return redirect(url_for('pagina_pedir_anho'))
+
+        with lock:
+            estado_proceso["en_proceso"] = True
+            estado_proceso["mensaje"] = textos[idioma]['mensaje_cargando']
+            estado_proceso["porcentaje"] = 0
+            estado_proceso["completado"] = False
+
+        
+        # Crear y lanzar un hilo para ejecutar ambos scripts con los parámetros
+        hilo = threading.Thread(target=ejecutar_procesos, args=(anho, tipo_estudio, idioma))
+        hilo.start()
+
+        # Crear y lanzar un hilo para ejecutar ambos scripts con los parámetros
+        hilo = threading.Thread(target=ejecutar_procesos, args=(anho, tipo_estudio, idioma))
+        hilo.start()
+        return redirect(url_for('pagina_pedir_IA'))
+
+    return redirect(url_for('pagina_pedir_IA'))
+
+def anho_pattern(anho):
+    """ Verifica si el año tiene el formato correcto (####-####). """
+    return bool(re.match(r"\d{4}-\d{4}", anho))
+
+# Función que ejecuta los scripts en el orden correcto.
+def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
+    """ Función que ejecuta los scripts en orden y actualiza el estado. """
+    global estado_proceso
+    try:
+        
+        # Ejecutar guias_docentes.py
+        ruta_grados = os.path.join(os.getcwd(), 'sostenibilidad', 'grados.py')
+        actualizar_estado(textos[idioma]['ejecutando_grados'], 10)
+
+        # Ejecutar guias_docentes.py (un solo paso si no se necesita dividir)
+        subprocess.run(['python3', ruta_grados, anho, tipo_estudio], check=True)
+        actualizar_estado(textos[idioma]['ejecutando_grados'], 20)
+
+        
+        # Ejecutar guias_docentes.py
+        ruta_guias = os.path.join(os.getcwd(), 'sostenibilidad', 'guias_docentes.py')
+        actualizar_estado(textos[idioma]['ejecutando_guias'], 30)
+
+        # Ejecutar guias_docentes.py (un solo paso si no se necesita dividir)
+        subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
+        actualizar_estado(textos[idioma]['ejecutando_guias'], 60)
+
+        # Ejecutar procesadoAsignaturas.py
+        ruta_procesado = os.path.join(os.getcwd(), 'sostenibilidad', 'procesadoAsignaturas.py')
+        actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 70)
+
+        # Ejecutar procesadoAsignaturas.py
+        subprocess.run(['python3', ruta_procesado, tipo_estudio], check=True)
+        actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 90)
+
+        # Marcar el proceso como completado
+        actualizar_estado(textos[idioma]['proceso_completado'], 100)
+
+        with lock:
+            estado_proceso["completado"] = True  # Marcar el proceso como completado
+    except subprocess.CalledProcessError as e:
+        with lock:
+            estado_proceso["mensaje"] = f"{textos[idioma]['error_script']} {e}"
+    finally:
+        with lock:
+            estado_proceso["en_proceso"] = False
         
         
-    
-        
+#  ----------------------- PÁGINA PARA EJECUTAR LA API ----------------------------------------------------
 # Ruta para la página donde se solicitan los datos de la IA
 @app.route('/pagina_pedir_IA')
 def pagina_pedir_IA():
@@ -442,6 +635,7 @@ def pagina_pedir_IA():
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
 
+#Función donde se piden los paramétros para la configuración de la API.
 @app.route('/actualizar_api', methods=['POST'])
 def actualizar_api():
     try:
@@ -502,46 +696,9 @@ def ejecutar_api():
     except Exception as e:
         print(f"Error en el hilo de ejecución: {str(e)}")
 
-@app.route("/", methods=["GET", "POST"])
-def procesar_anho():
-    global estado_proceso
-    if request.method == "POST":
-        anho = request.form.get("anho")
-        idioma = session.get('idioma', 'es')  # Obtener el idioma actual
 
-        # Verificar el formato del año (####-####)
-        if not anho_pattern(anho):
-            flash("El año debe tener el formato 2022-2023", "error")
-            return redirect(url_for('pagina_pedir_anho'))
-
-       
-        # Obtener los datos de tipo de estudio y grado/máster específico del formulario
-        tipo_estudio = request.form.get("tipo_estudio", "ambos")
-
-        # Validar si el tipo de estudio es correcto
-        if tipo_estudio not in ["grado", "master", "ambos"]:
-            flash("Opción de tipo de estudio no válida", "error")
-            return redirect(url_for('pagina_pedir_anho'))
-
-        with lock:
-            estado_proceso["en_proceso"] = True
-            estado_proceso["mensaje"] = textos[idioma]['mensaje_cargando']
-            estado_proceso["porcentaje"] = 0
-            estado_proceso["completado"] = False
-
-        
-        # Crear y lanzar un hilo para ejecutar ambos scripts con los parámetros
-        hilo = threading.Thread(target=ejecutar_procesos, args=(anho, tipo_estudio, idioma))
-        hilo.start()
-
-        # Crear y lanzar un hilo para ejecutar ambos scripts con los parámetros
-        hilo = threading.Thread(target=ejecutar_procesos, args=(anho, tipo_estudio, idioma))
-        hilo.start()
-        return redirect(url_for('pagina_pedir_IA'))
-
-    return redirect(url_for('pagina_pedir_IA'))
-
-
+#  ----------------------- PÁGINA PARA VISUALIZAR LA BASE DE DATOS ----------------------------------------------------
+#  Ruta para la página donde se muestra la base de datos
 @app.route('/consultar_busquedas', methods=['GET'])
 def consultar_busquedas():
     idioma = session.get('idioma', 'es')  # Obtener el idioma actual
@@ -608,49 +765,7 @@ def consultar_busquedas():
     )
 
 
-
-def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
-    """ Función que ejecuta los scripts en orden y actualiza el estado. """
-    global estado_proceso
-    try:
-        
-        # Ejecutar guias_docentes.py
-        ruta_grados = os.path.join(os.getcwd(), 'sostenibilidad', 'grados.py')
-        actualizar_estado(textos[idioma]['ejecutando_grados'], 10)
-
-        # Ejecutar guias_docentes.py (un solo paso si no se necesita dividir)
-        subprocess.run(['python3', ruta_grados, anho, tipo_estudio], check=True)
-        actualizar_estado(textos[idioma]['ejecutando_grados'], 20)
-
-        
-        # Ejecutar guias_docentes.py
-        ruta_guias = os.path.join(os.getcwd(), 'sostenibilidad', 'guias_docentes.py')
-        actualizar_estado(textos[idioma]['ejecutando_guias'], 30)
-
-        # Ejecutar guias_docentes.py (un solo paso si no se necesita dividir)
-        subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
-        actualizar_estado(textos[idioma]['ejecutando_guias'], 60)
-
-        # Ejecutar procesadoAsignaturas.py
-        ruta_procesado = os.path.join(os.getcwd(), 'sostenibilidad', 'procesadoAsignaturas.py')
-        actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 70)
-
-        # Ejecutar procesadoAsignaturas.py
-        subprocess.run(['python3', ruta_procesado, tipo_estudio], check=True)
-        actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 90)
-
-        # Marcar el proceso como completado
-        actualizar_estado(textos[idioma]['proceso_completado'], 100)
-
-        with lock:
-            estado_proceso["completado"] = True  # Marcar el proceso como completado
-    except subprocess.CalledProcessError as e:
-        with lock:
-            estado_proceso["mensaje"] = f"{textos[idioma]['error_script']} {e}"
-    finally:
-        with lock:
-            estado_proceso["en_proceso"] = False
-
+#  ----------------------- BARRA DE PROGRESO  ----------------------------------------------------
 # Función para actualizar el estado del proceso
 def actualizar_estado(mensaje, porcentaje, en_proceso=False, completado=False):
     """ Actualiza el estado del proceso con un mensaje, porcentaje de progreso y otros indicadores. """
@@ -661,9 +776,6 @@ def actualizar_estado(mensaje, porcentaje, en_proceso=False, completado=False):
         estado_proceso["en_proceso"] = en_proceso
         estado_proceso["completado"] = completado
 
-def anho_pattern(anho):
-    """ Verifica si el año tiene el formato correcto (####-####). """
-    return bool(re.match(r"\d{4}-\d{4}", anho))
 
 @app.route('/estado_proceso')
 def estado_proceso_api():
@@ -682,107 +794,57 @@ def progreso():
                            tamano_texto=tamano_texto, 
                            daltonismo=daltonismo)
 
-
-# Cerrar sesión
-@app.route('/logout')
-def logout():
-    session.clear()
-    flash("Has cerrado sesión.", "info")
-    return redirect(url_for('login'))
-
-# Formulario para editar el perfil
-class ProfileForm(FlaskForm):
-    username = StringField('Nombre de usuario', validators=[
-        DataRequired(), Length(min=3, max=50)
-    ])
-    email = EmailField('Correo electrónico', validators=[
-        DataRequired(), Email()
-    ])
-    password = PasswordField('Nueva Contraseña', validators=[])
-    confirm_password = PasswordField('Confirmar Contraseña', validators=[
-        EqualTo('password', message='Las contraseñas deben coincidir.')
-    ])
-    submit = SubmitField('Guardar Cambios')
-    
-# Ruta para editar el perfil
-@app.route('/perfil', methods=['GET', 'POST'])
-def perfil():
+#  ----------------------- GENERAR INFORMES ----------------------------------------------------
+# Ruta para la página donde se realiza la descarga del informe
+@app.route('/informe')
+def informe():
+    # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
     idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
-    tamano_texto = session.get('tamano_texto', 'normal')
-    rol = session.get('rol')
-    # Verificación de si el usuario está logueado en la sesión
+    # Comprobar si el usuario está autenticado
     if 'user_id' not in session:
-        # Página que muestra el perfil de visitante
-        return render_template('perfil_visitante.html', tamano_texto=tamano_texto,textos=textos[idioma],daltonismo=daltonismo)
-    
-    # Obtiene el usuario actual desde la sesión
-    usuario = User.query.get(session['user_id'])  # Usar 'user_id' en lugar de 'id'
-    
-    # Crear el formulario de perfil
-    form = ProfileForm()
-
-    if request.method == 'POST':  # Validación explícita del método POST
-        if form.validate():  # Valida los datos del formulario sin necesidad de submit
-            # Actualizar solo los campos que se llenaron
-            usuario.username = form.username.data
-            usuario.email = form.email.data
-
-            # Si el campo de contraseña no está vacío, actualiza la contraseña
-            if form.password.data:
-                # Validar contraseña
-                error = validar_contrasena(form.password.data)
-                if error:
-                    flash(error, 'error')
-                    return render_template(
-                    'perfil_usuario.html', form=form, usuario=usuario,
-                    tamano_texto=tamano_texto, textos=textos[idioma]
-                    )
-                usuario.password = generate_password_hash(form.password.data)
-           
-            # Guardar los cambios en la base de datos
-            try:
-                db.session.commit()
-                if idioma=='es':
-                    flash("Perfil actualizado correctamente.", "success")
-                elif idioma=='en':
-                    flash("Profile updated successfully", "success")
-
-                return redirect(url_for('pagina_principal'))
-            except Exception as e:
-                db.session.rollback()
-                flash(f"Error al actualizar el perfil: {str(e)}", "error")
-        else:
-            flash("Hay errores en el formulario. Por favor, corrígelos.", "error")
-
-    # Rellenar los campos del formulario con los datos actuales del usuario
-    form.username.data = usuario.username
-    form.email.data = usuario.email
-
-    # Pasar el tamaño de texto a las plantillas
-    if rol == 'admin':
-        return render_template('perfil_admin.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma],daltonismo=daltonismo)
+        return render_template('informe.html', 
+                               rol='visitante', 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido para visitantes
     else:
-        return render_template('perfil_usuario.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma],daltonismo=daltonismo)
+        rol = session['rol']
+        return render_template('informe.html', 
+                               rol=rol, 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
+        
+@app.route('/generar_informe', methods=['POST'])
+def generar_informe():
+    try:
+        # Crear y lanzar un hilo para ejecutar la función
+        hilo = threading.Thread(target=ejecutar_informe)
+        hilo.start()
 
-@app.route('/ajustes', methods=['GET', 'POST'])
-def ajustes():
-    idioma = session.get('idioma', 'es')
-
-    if request.method == 'POST':
-        idioma = request.form.get('idioma')
-        tamano_texto = request.form.get('tamano_texto')
-        daltonismo = request.form.get('daltonismo') == 'on'  # Verificamos si el checkbox está seleccionado
-        session['idioma'] = idioma
-        session['tamano_texto'] = tamano_texto
-        session['daltonismo'] = daltonismo  # Guardamos la opción de daltonismo en la sesión
-        return redirect(url_for('ajustes'))  # Redirige para actualizar la página con los nuevos valores
-    idioma = session.get('idioma', 'es')
-    tamano_texto = session.get('tamano_texto', 'normal')
-    daltonismo = session.get('daltonismo', False)  # Por defecto, el daltonismo está desactivado
-    return render_template('ajustes.html', idioma=idioma, tamano_texto=tamano_texto,  daltonismo=daltonismo,textos=textos[idioma])
+        # Redirigir a la página de IA después de iniciar el proceso
+        return redirect(url_for('pagina_principal'))
+    
+    except Exception as e:
+        # En caso de error, devolver un mensaje
+        return f"Error al generar el informe: {str(e)}"
 
 
+# Función que ejecutará el script en segundo plano
+def ejecutar_informe():
+    try:
+        ruta_informe = os.path.join(os.getcwd(), 'generar_informe', 'informe.py')
+        # Ejecutar el archivo API.py (esto puede tomar tiempo)
+        subprocess.run(['python3', ruta_informe], check=True)
+        print("Proceso completado correctamente.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error ejecutando el script: {str(e)}")
+    except Exception as e:
+        print(f"Error en el hilo de ejecución: {str(e)}")
+        
+        
+         
+#  ----------------------- MAIN  ----------------------------------------------------
 if __name__ == '__main__':
     # Crear las tablas de la base de datos
     with app.app_context():
