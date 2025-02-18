@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html >
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,12 +13,11 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background-image:url('/static/images/fondo.webp');
+            background-image: url('/static/images/fondo.webp');
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-
         }
 
         /* Filtro translúcido para mejorar la visibilidad del contenido */
@@ -35,13 +34,19 @@
             align-items: center;
             background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
-            padding: 10px 20px; /* Unificación del grosor */
-            z-index: 1;
+            padding: 10px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         .navbar h1 {
             margin: 0;
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            font-size: 20px;
+        }
+
+        form button:hover {
+            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
         }
 
         /* Contenedor del menú */
@@ -96,7 +101,6 @@
             display: block;
         }
 
-
         /* Contenedor principal */
         .container {
             background-color: rgba(255, 255, 255, 0.9); 
@@ -104,17 +108,16 @@
             border: 5px solid{% if daltonismo %}#800080{% else %}#006400{% endif %};
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 400px;
+            width: 500px;
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-
         }
 
         /* Título */
-        h1.text-center {
+        h1 {
             color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
             margin-bottom: 30px;
             font-size: 2rem;
@@ -127,7 +130,6 @@
             font-size: 1rem;
             color: #555;
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-
         }
 
         .form-control {
@@ -152,10 +154,9 @@
             cursor: pointer;
             transition: all 0.3s ease-in-out;
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-
         }
 
-        /* Botón de aceptar. */
+        /* Botón de aceptar */
         .btn-success {
             background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
@@ -164,14 +165,14 @@
         }
 
         .btn-success:hover {
-            background-color:{% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
             transform: scale(1.05);
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
         }
 
         /* Botón de volver atrás */
         .btn-secondary {
-            background-color:{% if daltonismo %}#00FF00{% else %}#006400{% endif %};
+            background-color: {% if daltonismo %}#00FF00{% else %}#006400{% endif %};
             color: white;
             border: none;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
@@ -182,32 +183,13 @@
             transform: scale(1.05);
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
         }
-        .form-group {
-            display: flex;
-            align-items: center;
-          }
-          
-          .form-group label {
-            width: 150px; /* Ancho fijo para las etiquetas */
-            text-align: left;
-            margin-left: 10px;
-          }
-          
-          .form-group input {
-            flex: 1; /* El input ocupa todo el espacio disponible */
-            padding: 5px;
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
-            border-color: #5a6268;  
-          }
-        
-        
+
         .info {
             font-size: 12px;
             color: #555;
             text-align: center;
             margin-bottom: 15px;
         }
-
 
         /* Mejorar la visualización en pantallas pequeñas */
         @media (max-width: 600px) {
@@ -232,8 +214,8 @@
             justify-content: center;
             align-items: center;
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-
         }
+
         .modal-content {
             background-color: white;
             padding: 20px;
@@ -241,6 +223,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             text-align: center;
         }
+
         .close {
             margin-top: 10px;
             cursor: pointer;
@@ -251,11 +234,25 @@
             border-radius: 5px;
             font-size: 16px;
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+        }
 
+        /* Contenedor para los botones al lado */
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;  /* Espacio entre los botones */
+            margin-top: 20px;
         }
     </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("informeForm").addEventListener("submit", function() {
+                alert("Generando informe...");
+            });
+        });
+    </script>
 </head>
-<body class="bg-light">
+<body>
     <!-- Barra de navegación -->
     <div class="navbar">
         <h1>Greenmetrics</h1>
@@ -270,41 +267,44 @@
     </div>
 
     <div class="container">
-        <h1 class="text-center">{{ textos.descargar_informe}}</h1>
-           
-                
-                <form method="POST" action="{{ url_for('generar_informe') }}">
-                    <div class="d-flex justify-content-between">
-                        <button type="submit" class="btn btn-success">{{ textos.aceptar }}</button>
-                        <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
-                    </div>
-                </form>
-           
+        <h1>Informe </h1>
+        <form method="POST" action="{{ url_for('generar_informe') }}">
+            <div class="form-group">
+                <label for="anho">Año Académico:</label>
+                <select name="anho" id="anho" class="form-control" required>
+                    {% for anho in nuevos_anhos_disponibles %}
+                        <option value="{{ anho }}">{{ anho }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        
+            <label for="informe">Selecciona el informe a generar:</label>
+            <select name="informe" id="informe">
+                <option value="6_1">6_1 Number of courses or modules related to environment and sustainability offered</option>
+            </select>
+            <div class="button-container">
+                <button id="genInformeBtn" class="btn btn-secondary">Generar Informe</button>
+                <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
+            </div>
+        </form>
     </div>
 
     <!-- Modal -->
-    <div id="processModal" class="modal">
+    <div id="myModal" class="modal">
         <div class="modal-content">
-            <p id="processMessage">{{textos.mensaje_cargando}}</p>
+            <h3>¡Informe Generado!</h3>
+            <p>El informe ha sido generado exitosamente.</p>
+            <button class="close" onclick="closeModal()">Cerrar</button>
         </div>
     </div>
 
     <script>
-        // Al enviar el formulario, mostramos el modal
-        document.querySelector('form').addEventListener('submit', function (event) {
-            event.preventDefault(); // Evitar que el formulario se envíe inmediatamente
-            const modal = document.getElementById('processModal');
-            modal.style.display = 'flex';  // Mostrar el modal con el mensaje
-
-            // Hacer el submit del formulario de manera asíncrona
-            setTimeout(function () {
-                document.querySelector('form').submit();
-            }, 2000);  // Tiempo para mostrar el mensaje antes de hacer el submit
+        document.getElementById("genInformeBtn").addEventListener("click", function() {
+            document.getElementById("myModal").style.display = "flex";
         });
 
         function closeModal() {
-            const modal = document.getElementById('processModal');
-            modal.style.display = 'none';
+            document.getElementById("myModal").style.display = "none";
         }
     </script>
 </body>

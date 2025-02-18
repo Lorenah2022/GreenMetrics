@@ -11,7 +11,7 @@ load_dotenv()
 
 # Definir rutas
 directorio = os.path.join("sostenibilidad","data", "guias")  # Carpeta con los archivos PDF
-archivo_salida = os.path.join("sostenibilidad","data", "resultados_guias.csv")  # Archivo de salida
+archivo_salida = os.path.join("sostenibilidad","data", "resultados_guias.xlsx")  # Archivo de salida
 
 # Listar los archivos PDF en el directorio
 archivos_guias = [f for f in os.listdir(directorio) if f.endswith('.pdf')]
@@ -104,11 +104,11 @@ for pdf_file in archivos_guias:
         }])
         resultados = pd.concat([resultados, nuevo_resultado], ignore_index=True)
     else:
-        print(f"⚠ Error: La respuesta de la IA no tiene el formato correcto. Recibido:\n{message_content}")
+        print(f" Error: La respuesta de la IA no tiene el formato correcto. Recibido:\n{message_content}")
 
 # Guardar los resultados en CSV
 if not resultados.empty:
-    resultados.to_csv(archivo_salida, index=False,encoding='utf-8')
+    resultados.to_excel(archivo_salida, index=False)
     print(f"\n Archivo guardado correctamente en: {archivo_salida}")
 else:
     print("\n No se guardaron datos porque ninguna respuesta fue válida.")

@@ -558,10 +558,7 @@ def procesar_anho():
         # Crear y lanzar un hilo para ejecutar ambos scripts con los parámetros
         hilo = threading.Thread(target=ejecutar_procesos, args=(anho, tipo_estudio, idioma))
         hilo.start()
-
-        # Crear y lanzar un hilo para ejecutar ambos scripts con los parámetros
-        hilo = threading.Thread(target=ejecutar_procesos, args=(anho, tipo_estudio, idioma))
-        hilo.start()
+        
         return redirect(url_for('pagina_pedir_IA'))
 
     return redirect(url_for('pagina_pedir_IA'))
@@ -798,50 +795,70 @@ def progreso():
 # Ruta para la página donde se realiza la descarga del informe
 @app.route('/informe')
 def informe():
-    # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
-    # Comprobar si el usuario está autenticado
+
+    # Obtener años únicos desde la base de datos
+    anhos_disponibles = db.session.query(Busqueda.anho).distinct().order_by(Busqueda.anho.desc()).all()
+    # Crear una nueva lista para almacenar los años disponibles
+    nuevos_anhos_disponibles = []
+
+    # Iterar sobre cada fila de anhos_disponibles
+    for row in anhos_disponibles:
+        # Asegúrate de extraer el primer valor de cada tupla
+        nuevos_anhos_disponibles.append(row[0])
+
     if 'user_id' not in session:
         return render_template('informe.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido para visitantes
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
     else:
         rol = session['rol']
         return render_template('informe.html', 
                                rol=rol, 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
         
 @app.route('/generar_informe', methods=['POST'])
 def generar_informe():
     try:
-        # Crear y lanzar un hilo para ejecutar la función
-        hilo = threading.Thread(target=ejecutar_informe)
+        # Obtener el año seleccionado desde el formulario
+        anho_seleccionado = request.form.get('anho')
+        informe_seleccionado = request.form.get('informe')
+
+        if not anho_seleccionado or not informe_seleccionado:
+            return "Error: No se seleccionaron todos los campos", 400
+
+
+        # Iniciar un hilo para ejecutar el informe con el año como argumento
+        hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado,informe_seleccionado))
         hilo.start()
 
-        # Redirigir a la página de IA después de iniciar el proceso
+        # Redirigir a la página principal después de iniciar el proceso
         return redirect(url_for('pagina_principal'))
-    
+
     except Exception as e:
-        # En caso de error, devolver un mensaje
-        return f"Error al generar el informe: {str(e)}"
+        return f"Error al generar el informe: {str(e)}", 500
 
-
-# Función que ejecutará el script en segundo plano
-def ejecutar_informe():
+# Función que ejecutará el script en segundo plano con el año seleccionado
+def ejecutar_informe(anho,informe):
     try:
         ruta_informe = os.path.join(os.getcwd(), 'generar_informe', 'informe.py')
-        # Ejecutar el archivo API.py (esto puede tomar tiempo)
-        subprocess.run(['python3', ruta_informe], check=True)
-        print("Proceso completado correctamente.")
+
+        # Ejecutar el script con el año seleccionado como argumento
+        subprocess.run(['python3', ruta_informe, anho, informe], check=True)
+
+        print(f"Proceso completado correctamente para el año {anho}.")
     except subprocess.CalledProcessError as e:
         print(f"Error ejecutando el script: {str(e)}")
     except Exception as e:
         print(f"Error en el hilo de ejecución: {str(e)}")
-        
         
          
 #  ----------------------- MAIN  ----------------------------------------------------
