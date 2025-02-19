@@ -50,8 +50,8 @@ for pdf_file in archivos_guias:
                     "2. The degree\n"
                     "3. The code\n"
                     "4. The curricular sustainability competencies\n"
-                    "Find section 9 in the document. Identify only the competencies listed there that have an asterisk (*). "
-                    "If no competencies in section 9 have an asterisk, return 'None' in that field.\n"
+                    "Find section with the following title  Competencias que debe adquirir el alumno/a al cursar la asignatura. Identify only the competencies listed there that have an asterisk (*). "
+                    "If no competencies have an asterisk, return 'None' in that field.\n"
                     "Return the four fields separated by commas in this format:\n"
                     "Subject name, degree, code, Curricular sustainability competencies\n"
                     "Ensure that you return ONLY these four fields in a single line, without extra text."
@@ -62,7 +62,7 @@ for pdf_file in archivos_guias:
                 "content": pdf_text
             }
         ],
-        "temperature": 0.7
+        "temperature": 0.2
     }
 
     # Convertir a JSON
