@@ -849,7 +849,7 @@ def generar_informe():
 # Función que ejecutará el script en segundo plano con el año seleccionado
 def ejecutar_informe(anho,informe):
     try:
-        ruta_informe = os.path.join(os.getcwd(), 'generar_informe', 'informe.py')
+        ruta_informe = os.path.join(os.getcwd(), 'generar_informe', 'general.py')
 
         # Ejecutar el script con el año seleccionado como argumento
         subprocess.run(['python3', ruta_informe, anho, informe], check=True)
