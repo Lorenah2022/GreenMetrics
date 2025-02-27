@@ -267,10 +267,10 @@
     </div>
 
     <div class="container">
-        <h1>Informe </h1>
+        <h1>{{textos.descargar_informe}} </h1>
         <form method="POST" action="{{ url_for('generar_informe') }}">
             <div class="form-group">
-                <label for="anho">Año Académico:</label>
+                <label for="anho">{{textos.anho}}:</label>
                 <select name="anho" id="anho" class="form-control" required>
                     {% for anho in nuevos_anhos_disponibles %}
                         <option value="{{ anho }}">{{ anho }}</option>
@@ -278,14 +278,14 @@
                 </select>
             </div>
         
-            <label for="informe">Selecciona el informe a generar:</label>
+            <label for="informe">{{textos.selecionar_informe}}</label>
             <select name="informe" id="informe">
                 <option value="1_19">1_19 Percentage of operation and maintenance activities of building in one year</option>
                 <option value="6_1">6_1 Number of courses or modules related to environment and sustainability offered</option>
 
             </select>
             <div class="button-container">
-                <button id="genInformeBtn" class="btn btn-secondary">Generar Informe</button>
+                <button id="genInformeBtn" class="btn btn-secondary">{{textos.descargar_informe}}</button>
                 <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
             </div>
         </form>
@@ -294,19 +294,22 @@
     <!-- Modal -->
     <div id="myModal" class="modal">
         <div class="modal-content">
-            <h3>¡Informe Generado!</h3>
-            <p>El informe ha sido generado exitosamente.</p>
-            <button class="close" onclick="closeModal()">Cerrar</button>
+            <h3>{{textos.mensaje_cargando}}</h3>
+            <button class="close" onclick="closeModal()">{{textos.aceptar}}</button>
         </div>
     </div>
 
     <script>
         document.getElementById("genInformeBtn").addEventListener("click", function() {
+            event.preventDefault(); // Evita el envío del formulario inmediato
+
             document.getElementById("myModal").style.display = "flex";
         });
 
         function closeModal() {
             document.getElementById("myModal").style.display = "none";
+            document.querySelector("form").submit(); // Envía el formulario solo cuando se cierra el modal
+
         }
     </script>
 </body>
