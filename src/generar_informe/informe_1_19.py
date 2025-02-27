@@ -14,6 +14,55 @@ from docx.shared import Inches
 from docx2pdf import convert
 import sys
 import csv
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import ttk
+
+def ask_confirmation(record):
+    """Muestra una ventana emergente personalizada para que el usuario confirme si desea agregar un registro."""
+    def on_yes():
+        nonlocal user_response
+        user_response = True
+        root.destroy()
+    
+    def on_no():
+        nonlocal user_response
+        user_response = False
+        root.destroy()
+    
+    root = tk.Tk()
+    root.title("Confirmación")
+    root.geometry("600x450") 
+    root.configure(bg="#f0f0f0")
+    
+    frame = tk.Frame(root, bg="#f0f0f0")
+    frame.pack(padx=20, pady=20, fill="both", expand=True)
+    
+    label = tk.Label(frame, text="¿Deseas agregar este registro?", font=("Arial", 14, "bold"), bg="#006400", fg="white", pady=10)
+    label.pack(pady=(0, 10))
+    
+    record_text = "\n".join([f"{key}: {value}" for key, value in record.items()])
+    text_widget = tk.Text(frame, height=6, wrap="word", font=("Arial", 10))
+    text_widget.insert("1.0", record_text)
+    text_widget.config(state="disabled")
+    text_widget.pack(pady=(0, 10), fill="both", expand=True)
+    
+    button_frame = tk.Frame(frame, bg="#f0f0f0")
+    button_frame.pack(pady=10)
+    
+    style = ttk.Style()
+    style.configure("TButton", font=("Arial", 12), padding=10)
+    style.configure("Green.TButton", background="#008000", foreground="#008000")
+    
+    yes_button = ttk.Button(button_frame, text="Sí", command=on_yes, style="Green.TButton")
+    yes_button.pack(side="left", padx=20)
+    
+    no_button = ttk.Button(button_frame, text="No", command=on_no, style="Green.TButton")
+    no_button.pack(side="right", padx=20)
+    
+    user_response = None
+    root.mainloop()
+    return user_response
 
 base_dir = os.path.dirname(__file__)
 
@@ -190,6 +239,27 @@ def ejecutar_API():
     else:
         print("No se generaron datos válidos. No se creó el archivo Excel.")
 
+def initialize_table(doc, headers):
+    """Inicializa la tabla en el documento de Word con los encabezados."""
+    for table in doc.tables:
+        while len(table.columns) < len(headers):
+            table.add_column(width=Inches(1.5))
+        for i, header in enumerate(headers):
+            table.cell(0, i).text = header
+        return table  # Retornamos la primera tabla encontrada
+    return None
+
+def fill_table_with_confirmation(table, headers, data):
+    """Llena la tabla solo con los datos confirmados por el usuario."""
+    for row in data:
+        record = dict(zip(headers, row))
+        if not ask_confirmation(record):
+            print("Registro omitido.")
+            continue
+
+        new_row = table.add_row()
+        for col_idx, value in enumerate(row):
+            new_row.cells[col_idx].text = str(value)
   
 # Función que genera el informe
 def generar_informe():
@@ -210,21 +280,7 @@ def generar_informe():
         df = df[df['Building'].notna()]
         return headers_custom, df.values.tolist()
     
-    def fill_table(doc, headers, data):
-        for table in doc.tables:
-            for row in table.rows:
-                for cell in row.cells:
-                    cell.text = ""
-            while len(table.columns) < len(headers):
-                table.add_column(width=Inches(1.5))
-            for i, header in enumerate(headers):
-                table.cell(0, i).text = header
-            for row_idx, row in enumerate(data):
-                if row_idx + 1 >= len(table.rows):
-                    table.add_row()
-                for col_idx, value in enumerate(row):
-                    table.cell(row_idx + 1, col_idx).text = str(value)
-            break
+    
     
     doc = Document(template_path)
     # Reemplazar el texto específico en la plantilla
@@ -235,8 +291,11 @@ def generar_informe():
     )
     headers, data_from_excel = extract_data_from_excel(excel_data_path)
     
-    fill_table(doc, headers, data_from_excel)
+    table = initialize_table(doc, headers)
+    if table:
+        fill_table_with_confirmation(table, headers, data_from_excel)
     
+    doc.save(output_docx_path)
     # Eliminar "Description: " si aparece en el documento
     remove_text_from_docx(doc, "Description:")
 
