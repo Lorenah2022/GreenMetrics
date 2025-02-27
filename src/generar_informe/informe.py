@@ -8,6 +8,9 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 import time
+from fpdf import FPDF
+import os
+
 
 def ask_confirmation(question):
     """Muestra una ventana emergente personalizada para que el usuario confirme si desea agregar un registro."""
@@ -196,6 +199,34 @@ boton_buscar = driver.find_element(By.NAME, "busquedaFormAvanz")  # Ajusta el NA
 boton_buscar.click()
 
 # Extraer los resultados de la tabla
+
+def crear_pdf_con_enlaces(enlaces, archivo_pdf):
+        # Obtener el directorio del archivo
+        directorio = os.path.dirname(archivo_pdf)
+        
+        # Verificar si el directorio existe, si no, crearlo
+        if not os.path.exists(directorio):
+            os.makedirs(directorio)
+
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        pdf.cell(200, 10, "Enlaces del Feed RSS", ln=True, align="C")
+        pdf.ln(10)
+        pdf.set_font("Arial", size=10)
+        for enlace in enlaces:
+            pdf.multi_cell(0, 10, enlace)
+            pdf.ln(5)
+        
+        pdf.output(archivo_pdf)
+        print(f"Archivo PDF guardado en: {archivo_pdf}")
+        
+
+
+base_dir = os.path.dirname(__file__)
+
+
 # Encuentra todas las filas de la tabla con la clase 'resultados'
 resultados = driver.find_elements(By.CSS_SELECTOR, ".resultados tbody tr")
 
@@ -212,10 +243,14 @@ else:
         enlace_elemento = resultado.find_element(By.CSS_SELECTOR, "a")
         if enlace_elemento:
             enlace = enlace_elemento.get_attribute("href")  # Obtener el atributo href del enlace
-        
-        # Agregar el enlace a los datos
-        #datos.append(enlace)  # Si el enlace se encuentra, lo añadimos a la lista de datos
-        
+            pdf_path2 = os.path.join(base_dir, "enlaces_busqueda.pdf")
+            crear_pdf_con_enlaces([enlace],pdf_path2)
+
+            
         print(enlace)  # Imprimir los resultados con el enlace
+
+       
+       
+
 # Cerrar el navegador cuando termine
 driver.quit()
