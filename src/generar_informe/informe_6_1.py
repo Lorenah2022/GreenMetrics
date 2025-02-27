@@ -14,13 +14,9 @@ def generar_informe(anho):
         print(f"Error: No se encontró la plantilla {template_path}")
         sys.exit(1)
     
-    university_name = "University of Burgos"
-    country_name = "Spain"
-    
-    
-   
+
     excel_data_path = combinar_excels()
-    output_filename = f"{university_name}_{country_name}_6_1_Number_of_courses_or_modules_related_to_environment_and_sustainability_offered"
+    output_filename = f"University_Country_6_1_Number_of_courses_or_modules_related_to_environment_and_sustainability_offered"
     headers_custom = ["Course Title", "Degree", "Degree link", "Notes"]
     
     if not os.path.exists(excel_data_path):
