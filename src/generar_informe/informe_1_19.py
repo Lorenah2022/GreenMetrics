@@ -376,7 +376,7 @@ def buscar():
 
     # Llenar el campo "Expediente"
     campo_expediente = driver.find_element(By.ID, "expediente")  # Usar ID correcto
-    expediente = ask_input("El nombre del expediente (Ej. UBU/2023/0018 )")
+    expediente = ask_input("El nombre del expediente (Ej. UBU/2023/0018 ). (Si los campos están vacíos, se omitirán.")")
     if expediente:
         campo_expediente.send_keys(expediente)
 
