@@ -1,23 +1,34 @@
-import requests
-from fpdf import FPDF
-import xml.etree.ElementTree as ET
-import os
-import json
-import pandas as pd
-from PyPDF2 import PdfReader
-from bs4 import BeautifulSoup
-import re
-from dotenv import load_dotenv
+import csv
 import io
+import json
+import os
+import sys
+import time
+import tkinter as tk
+from tkinter import messagebox, simpledialog, ttk
+
+import pandas as pd
+import requests
+import xml.etree.ElementTree as ET
+from bs4 import BeautifulSoup
 from docx import Document
 from docx.shared import Inches
 from docx2pdf import convert
-import sys
-import csv
-import tkinter as tk
-from tkinter import messagebox
-from tkinter import ttk
+from dotenv import load_dotenv
+from fpdf import FPDF
+from PyPDF2 import PdfReader
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.webdriver.chrome.options import Options
 
+
+# Variable global
+base_dir = os.path.dirname(__file__)
+
+
+# Ventanas emergentes
 def ask_confirmation(record):
     """Muestra una ventana emergente personalizada para que el usuario confirme si desea agregar un registro."""
     def on_yes():
@@ -64,7 +75,62 @@ def ask_confirmation(record):
     root.mainloop()
     return user_response
 
-base_dir = os.path.dirname(__file__)
+def ask_download():
+    """Muestra una ventana emergente personalizada para que el usuario confirme si desea continuar descargando o generar el informe."""
+    def on_yes():
+        nonlocal user_response
+        user_response = True
+        root.destroy()
+    
+    def on_no():
+        nonlocal user_response
+        user_response = False
+        root.destroy()
+    
+    root = tk.Tk()
+    root.title("Confirmación")
+    root.geometry("600x450") 
+    root.configure(bg="#f0f0f0")
+    
+    frame = tk.Frame(root, bg="#f0f0f0")
+    frame.pack(padx=20, pady=20, fill="both", expand=True)
+    
+    label = tk.Label(frame, text="¿Deseas seguir descargando más archivos? No se preocupe si se descargan ficheros no deseados, ya que más adelante se le pedirá que los confirme.", font=("Arial", 14, "bold"), bg="#006400", fg="white", pady=10)
+    label.pack(pady=(0, 10))
+    
+    button_frame = tk.Frame(frame, bg="#f0f0f0")
+    button_frame.pack(pady=10)
+    
+    style = ttk.Style()
+    style.configure("TButton", font=("Arial", 12), padding=10)
+    style.configure("Green.TButton", background="#008000", foreground="#008000")
+    
+    yes_button = ttk.Button(button_frame, text="Sí", command=on_yes, style="Green.TButton")
+    yes_button.pack(side="left", padx=20)
+    
+    no_button = ttk.Button(button_frame, text="No", command=on_no, style="Green.TButton")
+    no_button.pack(side="right", padx=20)
+    
+    user_response = None
+    root.mainloop()
+    return user_response
+def ask_input(question):
+    """Muestra una ventana emergente con un campo de texto para que el usuario ingrese un valor."""
+    root = tk.Tk()
+    root.withdraw()  # Ocultar la ventana principal
+
+    response = simpledialog.askstring("Entrada", question)
+    return response
+
+def ask_checkbox(question):
+    """Muestra una ventana emergente con opciones de Sí o No para que el usuario decida si marcar la casilla."""
+    root = tk.Tk()
+    root.withdraw()  # Ocultar la ventana principal
+    
+    respuesta = messagebox.askyesno("Pregunta", question)
+    return respuesta
+
+
 
 # Función para reemplazar texto en un documento de Word
 def replace_text_in_docx(doc, old_text, new_text):
@@ -78,6 +144,16 @@ def remove_text_from_docx(doc, text_to_remove):
         if text_to_remove in paragraph.text:
             paragraph.text = ""  # Eliminar el texto
 
+def guardar_enlaces_en_excel(enlaces, archivo_excel):
+        # Convertir enlaces en un DataFrame de pandas
+        df = pd.DataFrame(enlaces, columns=["Link"])
+        # Eliminar duplicados en la columna "Link"
+        df = df.drop_duplicates(subset=["Link"], keep="first")
+        # Guardar en un archivo Excel
+        df.to_excel(archivo_excel, index=False)
+        print(f"Archivo Excel guardado en: {archivo_excel}")
+    
+    
 
 def extraer_licitaciones():
     rss_url = "https://contratacion.ubu.es/licitacion/rest/rss/expediente/1753"
@@ -89,54 +165,21 @@ def extraer_licitaciones():
         root = ET.fromstring(contenido_rss)
         return [item.find("link").text for item in root.findall(".//item") if item.find("link") is not None]
     
-    def crear_pdf_con_enlaces(enlaces, archivo_pdf):
-        # Obtener el directorio del archivo
-        directorio = os.path.dirname(archivo_pdf)
-        
-        # Verificar si el directorio existe, si no, crearlo
-        if not os.path.exists(directorio):
-            os.makedirs(directorio)
-
-        pdf = FPDF()
-        pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.add_page()
-        pdf.set_font("Arial", "B", 16)
-        pdf.cell(200, 10, "Enlaces del Feed RSS", ln=True, align="C")
-        pdf.ln(10)
-        pdf.set_font("Arial", size=10)
-        for enlace in enlaces:
-            pdf.multi_cell(0, 10, enlace)
-            pdf.ln(5)
-        
-        pdf.output(archivo_pdf)
-        print(f"Archivo PDF guardado en: {archivo_pdf}")
-    
     contenido_rss = obtener_rss(rss_url)
     if contenido_rss:
         enlaces = extraer_enlaces_rss(contenido_rss)
         if enlaces:
             # Ruta corregida
-            pdf_path = os.path.join(base_dir, "enlaces_rss.pdf")
-            crear_pdf_con_enlaces(enlaces, pdf_path)
+            excel_path = os.path.join(base_dir, "enlaces.xlsx")
+            guardar_enlaces_en_excel(enlaces, excel_path)
 
 
-def ejecutar_API():
-    pdf_path = os.path.join(base_dir, "enlaces_rss.pdf")
+def ejecutar_API(excel_path):
     load_dotenv()
     base_url = "http://127.0.0.1:1234"
     api_key = os.getenv("API_KEY")
     myModel = "lmstudio-community/DeepSeek-R1-Distill-Llama-8B-GGUF"
-    
-    def extraer_enlaces_de_pdf(pdf_path):
-        enlaces = set()
-        with open(pdf_path, "rb") as file:
-            reader = PdfReader(file)
-            for page in reader.pages:
-                texto = page.extract_text()
-                if texto:
-                    urls = re.findall(r"https?://[^\s<>\"']+", texto)
-                    enlaces.update(url for url in urls if "idExpediente=" in url and url[-1].isdigit())
-        return sorted(enlaces)
+
     
     def obtener_html(url):
         try:
@@ -222,7 +265,11 @@ def ejecutar_API():
         else:
             print(f" Error: La respuesta de la IA no tiene el formato correcto.\nRecibido:\n{message_content}")
             return None
-    enlaces = extraer_enlaces_de_pdf(pdf_path)
+    
+    # Obtener los enlaces desde el archivo Excel
+    df = pd.read_excel(excel_path)
+    enlaces = df['Link'].tolist()
+    
     resultados = [extraer_datos_llm(limpiar_html(obtener_html(enlace)), enlace) for enlace in enlaces if obtener_html(enlace)]
     
     # Filtrar valores None antes de crear el DataFrame
@@ -234,7 +281,7 @@ def ejecutar_API():
     df = df.drop_duplicates(subset=["File"], keep="first")  # Se queda con el primer registro de cada "File"
 
     if not df.empty:
-        df.to_excel("resultados_licitaciones.xlsx", index=False)
+        df.to_excel("enlaces.xlsx", index=False)
         print("\nArchivo Excel guardado sin duplicados en 'File'.")
     else:
         print("No se generaron datos válidos. No se creó el archivo Excel.")
@@ -269,7 +316,7 @@ def generar_informe():
         print(f"Error: No se encontró la plantilla {template_path}")
         sys.exit(1)
     
-    excel_data_path = "resultados_licitaciones.xlsx"
+    excel_data_path = "enlaces.xlsx"
     output_filename = "University_Country_1_19_Percentage_of_operation_and_maintenance_activities_of_building_in_one_year_pe"
     headers_custom = ["Building", "Contract", "Maintenance Type", "File", "Link"]
     output_docx_path = os.path.join(base_dir, f"{output_filename}.docx")
@@ -279,8 +326,7 @@ def generar_informe():
         df = pd.read_excel(path)
         df = df[df['Building'].notna()]
         return headers_custom, df.values.tolist()
-    
-    
+       
     
     doc = Document(template_path)
     # Reemplazar el texto específico en la plantilla
@@ -308,9 +354,241 @@ def generar_informe():
     
     print(f"Documento PDF generado en: {output_pdf_path}")
 
+def buscar():  
+    # El navegador no muestra su interfaz gráfica.
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")  # Habilita el modo headless
+
+    # Iniciar el navegador
+    driver = webdriver.Chrome(options=chrome_options)
+    driver.get("https://contratacion.ubu.es/licitacion/busquedaAvanzConc.do")
+
+    # Esperar a que la página cargue
+    time.sleep(3)
+
+    # Llenar el campo "Expediente"
+    campo_expediente = driver.find_element(By.ID, "expediente")  # Usar ID correcto
+    expediente = ask_input("El nombre del expediente (Ej. UBU/2023/0018 )")
+    if expediente:
+        campo_expediente.send_keys(expediente)
+
+
+    # Llenar el campo "Objeto"
+    campo_objeto = driver.find_element(By.ID, "ObjContrato")  # Ajusta el NAME real
+    objeto = ask_input("Introduzca el Objeto: ")
+    if objeto:
+        campo_objeto.send_keys(objeto)
+
+
+    # Seleccionar "Modalidad" en el desplegable
+    select_modalidad = Select(driver.find_element(By.ID, "modContrato2"))  # Ajusta el NAME real
+    opciones_modalidad = [option.text for option in select_modalidad.options if option.text.strip() != ""]
+    opciones_numeradas = "\n".join([f"{i+1}. {opcion}" for i, opcion in enumerate(opciones_modalidad)])
+    modalidad_seleccionada_numero = ask_input(f"Elige una modalidad (número): \n{opciones_numeradas}\n")
+    if modalidad_seleccionada_numero and modalidad_seleccionada_numero.isdigit():
+        modalidad_seleccionada_numero = int(modalidad_seleccionada_numero)
+        if 1 <= modalidad_seleccionada_numero <= len(opciones_modalidad):
+            modalidad_seleccionada = opciones_modalidad[modalidad_seleccionada_numero - 1]
+            select_modalidad.select_by_visible_text(modalidad_seleccionada)
+        else:
+            print("Por favor, introduce un número válido.")
+    else:
+        print("Se omite")    
+        
+    # Seleccionar "Procedimiento"
+    select_procedimiento = Select(driver.find_element(By.ID, "tipoPro"))
+    opciones_procedimiento = [option.text for option in select_procedimiento.options if option.text.strip() != ""]
+    opciones_numeradas = "\n".join([f"{i+1}. {opcion}" for i, opcion in enumerate(opciones_procedimiento)])
+    procedimiento_seleccionada_numero = ask_input(f"Elige un procedimiento (número): \n{opciones_numeradas}\n")
+    if procedimiento_seleccionada_numero and procedimiento_seleccionada_numero.isdigit():
+        procedimiento_seleccionada_numero = int(procedimiento_seleccionada_numero)
+        if 1 <= procedimiento_seleccionada_numero <= len(opciones_procedimiento):
+            procedimiento_seleccionado = opciones_procedimiento[procedimiento_seleccionada_numero - 1]
+            select_procedimiento.select_by_visible_text(procedimiento_seleccionado)
+        else:
+            print("Por favor, introduce un número válido.")
+    else:
+        print("Se omite")  
+        
+    # Seleccionar "Forma de Adjudicación"
+    select_adjudicacion = Select(driver.find_element(By.ID, "tipoReso"))  
+    # Obtener las opciones del desplegable de Modalidad
+    opciones_adjudicacion = [option.text for option in select_adjudicacion.options if option.text.strip() != ""]
+    # Mostrar las opciones numeradas para el usuario
+    opciones_numeradas = "\n".join([f"{i+1}. {opcion}" for i, opcion in enumerate(opciones_adjudicacion)])
+    # Solicitar al usuario que ingrese un número
+    adjudicacion_seleccionada_numero = ask_input(f"Elige una forma de adjudicación (número): \n{opciones_numeradas}\n")
+    # Validar si la entrada es un número válido y está dentro del rango de opciones
+    if adjudicacion_seleccionada_numero and adjudicacion_seleccionada_numero.isdigit()  :
+        adjudicacion_seleccionada_numero = int(adjudicacion_seleccionada_numero)
+        if 1 <= adjudicacion_seleccionada_numero <= len(opciones_adjudicacion):
+            adjudicacion_seleccionado = opciones_adjudicacion[adjudicacion_seleccionada_numero - 1]  # Restar 1 para la indexación en Python
+            select_adjudicacion.select_by_visible_text(adjudicacion_seleccionado)
+        else:
+            print("Número de modalidad no válido.")
+    else:
+        print("Se omite")
+
+
+    # Rellenar Importe Desde y Hasta
+    campo_importe_desde = driver.find_element(By.ID, "importesDe")  
+    fecha_importe_desde = ask_input("Ingresa el importe (desde):")
+    if fecha_importe_desde:
+        campo_importe_desde.send_keys(fecha_importe_desde)
+    campo_importe_hasta = driver.find_element(By.ID, "importesHa")  
+    fecha_importe_hasta = ask_input("Ingresa el importe (hasta):")
+    if fecha_importe_hasta:
+        campo_importe_hasta.send_keys(fecha_importe_hasta)
+        
+    # Fechas de Fin de Licitación
+    campo_fecha_desde = driver.find_element(By.ID, "fechaDe")  
+    fecha_desde = ask_input("Ingresa la fecha desde (formato DD/MM/AAAA):")
+    if fecha_desde:
+        campo_fecha_desde.send_keys(fecha_desde)
+
+    campo_fecha_hasta = driver.find_element(By.ID, "fechaHa")  
+    fecha_hasta = ask_input("Ingresa la fecha hasta (formato DD/MM/AAAA):")
+    if fecha_hasta:
+        campo_fecha_hasta.send_keys(fecha_hasta)
+
+
+    # Seleccionar "Sistema de Contratación"
+    select_sistema = Select(driver.find_element(By.ID, "tipoSisCont"))  
+    # Obtener las opciones del desplegable de Sistema de contratación
+    opciones_sistema = [option.text for option in select_sistema.options if option.text.strip() != ""]
+    # Mostrar las opciones numeradas para el usuario
+    opciones_numeradas = "\n".join([f"{i+1}. {opcion}" for i, opcion in enumerate(opciones_sistema)])
+    # Solicitar al usuario que ingrese un número
+    sistema_seleccionada_numero = ask_input(f"Elige un sistema de contratación (número): \n{opciones_numeradas}\n")
+    # Validar si la entrada es un número válido y está dentro del rango de opciones
+    if sistema_seleccionada_numero and sistema_seleccionada_numero.isdigit() :
+        sistema_seleccionada_numero = int(sistema_seleccionada_numero)
+        if 1 <= sistema_seleccionada_numero <= len(opciones_sistema):
+            sistema_seleccionado = opciones_sistema[sistema_seleccionada_numero - 1]  # Restar 1 para la indexación en Python
+            select_sistema.select_by_visible_text(sistema_seleccionado)
+        else:
+            print("Número de modalidad no válido.")
+    else:
+        print("Se omite")
+
+
+    # Seleccionar "Fase Expediente"
+    select_fase = Select(driver.find_element(By.ID, "faseExpt"))  
+    # Obtener las opciones del desplegable de Expediente
+    opciones_fase = [option.text for option in select_fase.options if option.text.strip() != ""]
+    # Mostrar las opciones numeradas para el usuario
+    opciones_numeradas = "\n".join([f"{i+1}. {opcion}" for i, opcion in enumerate(opciones_fase)])
+    # Solicitar al usuario que ingrese un número
+    fase_seleccionada_numero = ask_input(f"Elige un sistema de contratación (número): \n{opciones_numeradas}\n")
+    # Validar si la entrada es un número válido y está dentro del rango de opciones
+    if fase_seleccionada_numero and fase_seleccionada_numero.isdigit() :
+        fase_seleccionada_numero = int(fase_seleccionada_numero)
+        if 1 <= fase_seleccionada_numero <= len(opciones_fase):
+            fase_seleccionado = opciones_fase[fase_seleccionada_numero - 1]  # Restar 1 para la indexación en Python
+            select_fase.select_by_visible_text(fase_seleccionado)
+        else:
+            print("Número de modalidad no válido.")
+    else:
+        print("Se omite")
+
+    # Marcar la casilla "Ver expedientes de organismos dependientes"
+    casilla_organismos = driver.find_element(By.NAME, "descendientes")  # Ajusta el NAME real
+    seleccion_organismos = ask_checkbox("¿Deseas ver expedientes de organismos dependientes?")
+    if seleccion_organismos:
+        if not casilla_organismos.is_selected():
+            casilla_organismos.click()  # Marcar la casilla si no está seleccionada
+
+    # Hacer clic en el botón de búsqueda
+    boton_buscar = driver.find_element(By.NAME, "busquedaFormAvanz")  # Ajusta el NAME real
+    boton_buscar.click()
+
+    # Encuentra todas las filas de la tabla con la clase 'resultados'
+    resultados = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".resultados tbody tr")))
+
+    # Verifica si hay resultados
+    if len(resultados) == 0:
+        print("No se encontraron resultados.")
+    else:
+        for resultado in resultados:
+            columnas = resultado.find_elements(By.TAG_NAME, "td")  # Extraer columnas de cada fila
+            datos = [col.text.strip() for col in columnas]  # Obtener el texto de cada celda
+            # Extraer el enlace de la primera columna (suponiendo que está en la primera columna)
+            enlace = None
+            enlace_elemento = resultado.find_element(By.CSS_SELECTOR, "a")
+            if enlace_elemento:
+                enlace = enlace_elemento.get_attribute("href")  # Obtener el atributo href del enlace
+                # Guardar los enlaces en un archivo Excel
+                excel_path = os.path.join(base_dir, "enlaces.xlsx")
+                guardar_enlaces_en_excel([enlace], excel_path)
+
+                print(enlace)  # Imprimir los resultados con el enlace
+
+    # Cerrar el navegador cuando termine
+    driver.quit()
+
+
 # Función que llama en el orden correcto al resto de funciones.
-def generar():
-    extraer_licitaciones()
-    ejecutar_API()
-    generar_informe()
+def generar(metodo):
+    
+    if metodo == "RSS":
+        extraer_licitaciones()
+        continuar_o_generar()
+        
+
+    
+    elif metodo == "BUSCAR":
+        buscar()
+        continuar_o_generar()
+
+
+
+def continuar_o_generar():
+    respuesta = ask_download()
+    if respuesta:  # Si la respuesta es 'Sí', continuar descargando más
+        messagebox.showinfo("Continuar", "Selecciona nuevamente un método para descargar más archivos.")
+        metodo_selector()  # Vuelve a mostrar el selector de método
+    else:  # Si la respuesta es 'No', generar el informe
+        
+        ejecutar_API(os.path.join(base_dir, "enlaces.xlsx"))
+        generar_informe()
+        messagebox.showinfo("Informe", "Informe generado con éxito.")
+
+
+def metodo_selector():
+    metodo = crear_gui()  # Aquí se obtiene el método seleccionado desde la interfaz gráfica
+    if metodo:
+        generar(metodo)
+    else:
+        messagebox.showwarning("Advertencia", "Por favor, selecciona un método para proceder.")
+
+def crear_gui():
+    global base_dir, metodo_var
+    
+    base_dir = os.getcwd()  # Directorio base, ajusta según sea necesario
+    window = tk.Tk()
+    window.title("Gestión de Descargas e Informes")
+
+    # Variable para seleccionar el método
+    metodo_var = tk.StringVar()
+
+    # Selector de métodos
+    tk.Label(window, text="Selecciona el método de descarga:").pack(pady=10)
+    tk.Radiobutton(window, text="RSS", variable=metodo_var, value="RSS").pack()
+    tk.Radiobutton(window, text="BUSCAR", variable=metodo_var, value="BUSCAR").pack()
+
+    # Función para que el botón cierre la ventana y devuelva el valor seleccionado
+    def on_select():
+        window.destroy()
+
+    # Botón para iniciar el proceso
+    tk.Button(window, text="Iniciar Descarga y Selección de Método", command=on_select).pack(pady=10)
+
+    # Iniciar la interfaz gráfica
+    window.mainloop()
+
+    # Devolver el valor del método seleccionado por el usuario
+    return metodo_var.get()
+
+
+    
 
