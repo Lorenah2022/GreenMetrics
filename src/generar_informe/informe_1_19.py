@@ -120,6 +120,10 @@ def ask_input(question):
     root.withdraw()  # Ocultar la ventana principal
 
     response = simpledialog.askstring("Entrada", question)
+    if response is None:  # Si el usuario presiona 'Cancel'
+        print("Operación cancelada por el usuario.")
+        sys.exit()  # Finaliza la ejecución del script
+    
     return response
 
 def ask_checkbox(question):
@@ -128,6 +132,10 @@ def ask_checkbox(question):
     root.withdraw()  # Ocultar la ventana principal
     
     respuesta = messagebox.askyesno("Pregunta", question)
+    if respuesta is None:  # Si el usuario presiona 'Cancel'
+        print("Operación cancelada por el usuario.")
+        sys.exit()  # Finaliza la ejecución del script
+    
     return respuesta
 
 
