@@ -97,6 +97,8 @@ textos = {
         'IA_tit': 'IA',
         'ingles': 'English',
         'iniciar_sesion': 'Login',
+        'informe_1_19':'Report 1_19',
+        'informe_6_1':'Report 6_1',
         'myModel': 'Model',
         'mensaje_cargando': 'Loading... This might take a few minutes...',
         'modo_daltonismo': 'Daltonism',
@@ -158,6 +160,8 @@ textos = {
         'IA_tit': 'IA',
         'ingles': 'Inglés',
         'iniciar_sesion': 'Iniciar sesión',
+        'informe_1_19':'Informe 1_19',
+        'informe_6_1':'Informe 6_1',
         'myModel': 'Modelo',
         'mensaje_cargando': 'Cargando... Esto puede tardar algunos minutos...',
         'modo_daltonismo': 'Modo Daltonismo',
@@ -795,8 +799,8 @@ def progreso():
 
 #  ----------------------- GENERAR INFORMES ----------------------------------------------------
 # Ruta para la página donde se realiza la descarga del informe
-@app.route('/informe')
-def informe():
+@app.route('/pagina_informe_1_19')
+def pagina_informe_1_19():
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
@@ -812,7 +816,7 @@ def informe():
         nuevos_anhos_disponibles.append(row[0])
 
     if 'user_id' not in session:
-        return render_template('informe.html', 
+        return render_template('pagina_informe_1_19.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
@@ -820,24 +824,84 @@ def informe():
                                nuevos_anhos_disponibles=nuevos_anhos_disponibles)
     else:
         rol = session['rol']
-        return render_template('informe.html', 
+        return render_template('pagina_informe_1_19.html', 
                                rol=rol, 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
                                nuevos_anhos_disponibles=nuevos_anhos_disponibles)
-        
+      
+@app.route('/pagina_informe_6_1')
+def pagina_informe_6_1():
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+
+    # Obtener años únicos desde la base de datos
+    anhos_disponibles = db.session.query(Busqueda.anho).distinct().order_by(Busqueda.anho.desc()).all()
+    # Crear una nueva lista para almacenar los años disponibles
+    nuevos_anhos_disponibles = []
+
+    # Iterar sobre cada fila de anhos_disponibles
+    for row in anhos_disponibles:
+        # Asegúrate de extraer el primer valor de cada tupla
+        nuevos_anhos_disponibles.append(row[0])
+
+    if 'user_id' not in session:
+        return render_template('pagina_informe_6_1.html', 
+                               rol='visitante', 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+    else:
+        rol = session['rol']
+        return render_template('pagina_informe_6_1.html', 
+                               rol=rol, 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+   
+   
+         
+@app.route('/selecciona_anho_informe')
+def selecciona_anho_informe():
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+
+    # Obtener años únicos desde la base de datos
+    anhos_disponibles = db.session.query(Busqueda.anho).distinct().order_by(Busqueda.anho.desc()).all()
+    # Crear una nueva lista para almacenar los años disponibles
+    nuevos_anhos_disponibles = []
+
+    # Iterar sobre cada fila de anhos_disponibles
+    for row in anhos_disponibles:
+        # Asegúrate de extraer el primer valor de cada tupla
+        nuevos_anhos_disponibles.append(row[0])
+
+
+    return render_template('selecciona_anho_informe.html',  
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)  
+         
 @app.route('/generar_informe', methods=['POST'])
 def generar_informe():
     try:
-        # Obtener el año seleccionado desde el formulario
-        anho_seleccionado = request.form.get('anho')
-        informe_seleccionado = request.form.get('informe')
+        informe_seleccionado = determinar_tipo_informe()
+        anho_seleccionado = ''
+        if informe_seleccionado == '6_1':
+            # Obtener el año seleccionado desde el formulario
+            anho_seleccionado = request.form.get('anho')
+            
 
-        if not anho_seleccionado or not informe_seleccionado:
-            return "Error: No se seleccionaron todos los campos", 400
+            if not anho_seleccionado:
+                return "Error: No se seleccionaron todos los campos", 400
 
-
+        
         # Iniciar un hilo para ejecutar el informe con el año como argumento
         hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado,informe_seleccionado))
         hilo.start()
@@ -862,7 +926,16 @@ def ejecutar_informe(anho,informe):
     except Exception as e:
         print(f"Error en el hilo de ejecución: {str(e)}")
         
-         
+# Función que devuelve el informe a descargar en función de la URL
+def determinar_tipo_informe():
+    referrer = request.headers.get("Referer", "")
+
+    if "pagina_informe_1_19" in referrer:
+        return "1_19"
+    elif "pagina_informe_6_1" in referrer:
+        return "6_1"
+
+     
 #  ----------------------- MAIN  ----------------------------------------------------
 if __name__ == '__main__':
     # Crear las tablas de la base de datos

@@ -277,13 +277,7 @@
                     {% endfor %}
                 </select>
             </div>
-        
-            <label for="informe">{{textos.selecionar_informe}}</label>
-            <select name="informe" id="informe">
-                <option value="1_19">1_19 Percentage of operation and maintenance activities of building in one year</option>
-                <option value="6_1">6_1 Number of courses or modules related to environment and sustainability offered</option>
-
-            </select>
+            
             <div class="button-container">
                 <button id="genInformeBtn" class="btn btn-secondary">{{textos.descargar_informe}}</button>
                 <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>

@@ -138,6 +138,50 @@
             color: #555;
         }
 
+        /* Contenedor para los botones al lado */
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;  /* Espacio entre los botones */
+            margin-top: 20px;
+        }
+        /* Estilo de los botones */
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+            border-radius: 30px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+        }
+        /* Botón de volver atrás */
+        .btn-secondary {
+            background-color: {% if daltonismo %}#00FF00{% else %}#006400{% endif %};
+            color: white;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background-color: {% if daltonismo %}#800080{% else %}#8fbc8f{% endif %};  
+            transform: scale(1.05);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+        }
+        /* Mejorar la visualización en pantallas pequeñas */
+        @media (max-width: 600px) {
+            .navbar h1 {
+                font-size: 18px;
+            }
+
+            .main-content {
+                padding: 15px;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -157,15 +201,15 @@
 
     <!-- Contenido principal -->
     <div class="main-content">
-        <h2>{{ textos.texto_bienvenida }}</h2>
-        <form method="GET" action="{{ url_for('pagina_informe_1_19') }}">
-            <button type="submit" class="btn-option">{{ textos.informe_1_19 }}</button>
-        </form>
-        <form method="GET" action="{{ url_for('pagina_informe_6_1') }}">
-            <button type="submit" class="btn-option">{{ textos.informe_6_1 }}</button>
-        </form>
+        <h2>{{  textos.informe_1_19 }}</h2>
         
-        
+        <form method="POST" action="{{ url_for('generar_informe') }}">
+            <button type="submit" class="btn-option">{{ textos.descargar_informe}}</button>
+        </form>
+
+        <div class="button-container">
+            <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
+        </div>
     </div>
 
 </body>
