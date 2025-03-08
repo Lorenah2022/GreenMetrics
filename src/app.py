@@ -681,7 +681,7 @@ def actualizar_api():
         hilo.start()
 
         # Redirigir a la página de IA después de iniciar el proceso
-        return redirect(url_for('pagina_pedir_IA'))
+        return redirect(url_for('pagina_informe_6_1'))
     
     except Exception as e:
         # En caso de error, devolver un mensaje
@@ -893,7 +893,7 @@ def generar_informe():
     try:
         informe_seleccionado = determinar_tipo_informe()
         anho_seleccionado = ''
-        if informe_seleccionado == '6_1':
+        if informe_seleccionado == "6_1":
             # Obtener el año seleccionado desde el formulario
             anho_seleccionado = request.form.get('anho')
             
@@ -916,7 +916,8 @@ def generar_informe():
 def ejecutar_informe(anho,informe):
     try:
         ruta_informe = os.path.join(os.getcwd(), 'generar_informe', 'general.py')
-
+        if not os.path.exists(ruta_informe):
+            raise FileNotFoundError(f"El archivo {ruta_informe} no existe.")
         # Ejecutar el script con el año seleccionado como argumento
         subprocess.run(['python3', ruta_informe, anho, informe], check=True)
 
@@ -929,10 +930,9 @@ def ejecutar_informe(anho,informe):
 # Función que devuelve el informe a descargar en función de la URL
 def determinar_tipo_informe():
     referrer = request.headers.get("Referer", "")
-
     if "pagina_informe_1_19" in referrer:
         return "1_19"
-    elif "pagina_informe_6_1" in referrer:
+    if "selecciona_anho_informe" in referrer:
         return "6_1"
 
      

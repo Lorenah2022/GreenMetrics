@@ -113,14 +113,14 @@ def ejecutar_informe_especifico(anho, informe):
     try:
         if informe == "6_1":
             informe_6_1 = importlib.import_module('informe_6_1')  # Importa dinámicamente el archivo informe_6_1.py
-            informe_6_1.generar_informe(anho)  # Ejecuta la función específica de informe_6_1
+            informe_6_1.generar(anho)  # Ejecuta la función específica de informe_6_1
         if informe == "1_19":
             metodo = pedir_tipo_busqueda()
             informe_1_19 = importlib.import_module('informe_1_19')  # Importa dinámicamente el archivo informe_6_1.py
             informe_1_19.generar(metodo)
-        else:
-            informe_X = importlib.import_module(f'informe_{informe}')  # Importa el informe genérico, ejemplo: informe_X.py
-            informe_X.generar_descripcion(anho)  # Ejecuta la función específica del informe
+        # else:
+        #     informe_X = importlib.import_module(f'informe_{informe}')  # Importa el informe genérico, ejemplo: informe_X.py
+        #     informe_X.generar_descripcion(anho)  # Ejecuta la función específica del informe
     except Exception as e:
         print(f"Error al cargar informe_{informe}.py: {e}")
 

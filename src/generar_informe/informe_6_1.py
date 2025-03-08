@@ -5,7 +5,7 @@ from docx2pdf import convert
 import os
 import sys
 
-def generar_informe(anho):
+def generar(anho):
    
     base_dir = os.path.dirname(__file__)  # Directorio base donde se encuentra el script
     template_path = os.path.join(base_dir, 'informe_general.docx')

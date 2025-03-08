@@ -268,7 +268,8 @@
 
     <div class="container">
         <h1>{{textos.descargar_informe}} </h1>
-        <form method="POST" action="{{ url_for('generar_informe') }}">
+        <form id="informeForm" method="POST" action="{{ url_for('generar_informe') }}">
+
             <div class="form-group">
                 <label for="anho">{{textos.anho}}:</label>
                 <select name="anho" id="anho" class="form-control" required>
@@ -277,7 +278,7 @@
                     {% endfor %}
                 </select>
             </div>
-            
+
             <div class="button-container">
                 <button id="genInformeBtn" class="btn btn-secondary">{{textos.descargar_informe}}</button>
                 <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
@@ -294,16 +295,16 @@
     </div>
 
     <script>
-        document.getElementById("genInformeBtn").addEventListener("click", function() {
-            event.preventDefault(); // Evita el envío del formulario inmediato
-
+        document.getElementById("genInformeBtn").addEventListener("click", function(event) {
+            event.preventDefault(); // Detiene el envío inmediato del formulario
             document.getElementById("myModal").style.display = "flex";
         });
 
         function closeModal() {
             document.getElementById("myModal").style.display = "none";
-            document.querySelector("form").submit(); // Envía el formulario solo cuando se cierra el modal
 
+            // Encuentra el formulario correcto y envíalo
+            document.getElementById("informeForm").submit();
         }
     </script>
 </body>
