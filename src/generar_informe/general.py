@@ -7,56 +7,6 @@ import importlib  # Importar dinámicamente el código de los informes
 import tkinter as tk
 from tkinter import ttk
 
-def pedir_tipo_busqueda():
-    """Muestra una ventana emergente personalizada para que el usuario confirme si desea realizar la búsqueda mediante RSS."""
-
-    def on_yes():
-        nonlocal user_response
-        user_response = "RSS"  # Asignar respuesta positiva
-        root.destroy()  # Cerrar la ventana
-
-    def on_no():
-        nonlocal user_response
-        user_response = "BUSCAR"  # Asignar respuesta negativa
-        root.destroy()  # Cerrar la ventana
-
-    root = tk.Tk()  # Crear la ventana
-    root.title("Confirmación")  # Título de la ventana
-    root.geometry("400x250")  # Tamaño de la ventana
-    root.configure(bg="#f0f0f0")  # Configuración del fondo
-    
-    # Frame principal
-    frame = tk.Frame(root, bg="#f0f0f0")
-    frame.pack(padx=20, pady=20, fill="both", expand=True)
-    
-    # Etiqueta con el texto de la pregunta
-    label = tk.Label(frame, text="¿Desea realizar la búsqueda mediante RSS?", font=("Arial", 14, "bold"), bg="#006400", fg="white", pady=10)
-    label.pack(pady=(0, 10))
-    
-    # Botones de respuesta
-    button_frame = tk.Frame(frame, bg="#f0f0f0")
-    button_frame.pack(pady=10)
-    
-    # Estilo de los botones
-    style = ttk.Style()
-    style.configure("TButton", font=("Arial", 12), padding=10)
-    style.configure("Green.TButton", background="#008000", foreground="#008000")
-    
-    # Botón "Sí"
-    yes_button = ttk.Button(button_frame, text="Sí", command=on_yes, style="Green.TButton")
-    yes_button.pack(side="left", padx=20)
-    
-    # Botón "No"
-    no_button = ttk.Button(button_frame, text="No", command=on_no, style="Green.TButton")
-    no_button.pack(side="right", padx=20)
-    
-    user_response = None  # Variable para almacenar la respuesta del usuario
-    
-    # Ejecutar el ciclo de eventos de Tkinter
-    root.mainloop()
-    
-    return user_response
-
 def crear_word_documento():
     """
     Crea el documento Word utilizando la plantilla y rellena los datos generales.
@@ -115,9 +65,8 @@ def ejecutar_informe_especifico(anho, informe):
             informe_6_1 = importlib.import_module('informe_6_1')  # Importa dinámicamente el archivo informe_6_1.py
             informe_6_1.generar(anho)  # Ejecuta la función específica de informe_6_1
         if informe == "1_19":
-            metodo = pedir_tipo_busqueda()
-            informe_1_19 = importlib.import_module('informe_1_19')  # Importa dinámicamente el archivo informe_6_1.py
-            informe_1_19.generar(metodo)
+            informe_1_19 = importlib.import_module('informe_1_19')  # Importa dinámicamente el archivo informe_1_19.py
+            informe_1_19.generar()
         # else:
         #     informe_X = importlib.import_module(f'informe_{informe}')  # Importa el informe genérico, ejemplo: informe_X.py
         #     informe_X.generar_descripcion(anho)  # Ejecuta la función específica del informe
