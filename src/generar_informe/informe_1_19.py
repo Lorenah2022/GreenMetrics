@@ -70,12 +70,28 @@ def extraer_datos_llm(html_texto, url):
                         "Extract and return only the following fields:\n"
                         "1. Building: Extracted from Objeto. If the text mentions 'buildings', return 'All university buildings'.\n"
                         "2. Contract: Extracted from the CPV section, including the text after the number [CPV Code]. This will be the detailed description of the contract, e.g., 'Servicios de reparación y mantenimiento de equipos eléctricos de edificios'.\n"
-                        "3. Maintenance Type: Extracted from the CPV section, typically indicating the type of maintenance. For example, 'Mantenimiento de equipos eléctricos de edificios'.\n"
+                        "3. Maintenance Type:  Return the information following the format X(Y), where X is the type and Y the number\n"
+                            "Base on the type of contract chose to which one it belongs."
+                            "1. Preventive Maintenance --- Routine maintenance tasks performed to prevent equipment failures and extend the lifespan of building systems\n"
+                            "2. Corrective Maintenance --- Reactive maintenance tasks performed to correct issues as they arise\n"
+                            "3. Predictive Maintenance --- Maintenance activities based on the analysis of data and condition monitoring to predict and prevent potential failures \n"
+                            "4. Routine Maintenance --- Regular, often daily or weekly, maintenance tasks that ensure the smooth operation and cleanliness of campus buildings\n"
+                            "5. Emergency Maintenance --- Urgent maintenance tasks performed in response to unexpected breakdowns or safety hazards that require immediate attention\n"
+                            "6. Deferred Maintenance --- Maintenance tasks that are postponed due to budget constraints, resource limitations, or scheduling issues\n"
+                            "7. Sustainable Maintenance --- Maintenance activities focused on sustainability and energy efficiency to reduce environmental impact\n"
+                            "8. Capital Maintenance --- Large-scale maintenance projects that involve significant investments and are often planned and budgeted for in advance \n"
+                            "9. Seasonal Maintenance --- Maintenance tasks specific to certain times of the year to prepare buildings for seasonal changes \n"
+                            "10. Compliance Maintenance --- Maintenance activities conducted to ensure compliance with legal, safety, and regulatory standards\n"
+                            "11. Custodial Maintenance --- Daily cleaning and janitorial tasks that maintain the cleanliness and hygiene of campus buildings\n"
+                            "12. Technical Maintenance --- Specialized maintenance tasks that require technical knowledge and skills\n"
+                            "13. Grounds Maintenance --- Maintenance tasks focused on the outdoor areas and landscaping of the campus \n"
+                            "14. Building Services Maintenance --- Maintenance of essential building services and utilities \n"                     
+                        
                         "4. File: Extracted from 'Expediente'. If the text appears in the format 'Expediente X UBU/2023/0018 (Company Name)', return only 'UBU/2023/0018' and ignore the company name inside parentheses.\n"
                         "5. Link:"
                         "Extract and return only the following fields in a single line, separated by commas in this format:\n"
                         "Building,Contract,Maintenance Type,File,Link\n"
-                        "Do NOT include extra text, explanations, or headers.\n"
+                        "Do NOT include extra text (like the format), explanations, or headers.\n"
                         "Ensure that you return ONLY these five fields in a single line, without extra text."
 
                             )
@@ -241,23 +257,23 @@ def buscar():
     time.sleep(3)
    
     # # Llenar el campo "Expediente"
-    # campo_expediente = driver.find_element(By.ID, "expediente")  # Usar ID correcto
+    # campo_expediente = driver.find_element(By.ID, "expediente")  
     # campo_expediente.send_keys('UBU/2023/0018')
 
     # Llenar el campo "Objeto"
-    campo_objeto = driver.find_element(By.ID, "ObjContrato")  # Ajusta el NAME real
-    objeto = "Mantenimiento"
+    campo_objeto = driver.find_element(By.ID, "ObjContrato")  
+    objeto = "Mantenimiento"    
     campo_objeto.send_keys(objeto)
 
 
 
     # Marcar la casilla "Ver expedientes de organismos dependientes"
-    casilla_organismos = driver.find_element(By.NAME, "descendientes")  # Ajusta el NAME real
+    casilla_organismos = driver.find_element(By.NAME, "descendientes")  
     if not casilla_organismos.is_selected():
         casilla_organismos.click()  # Marcar la casilla si no está seleccionada
 
     # Hacer clic en el botón de búsqueda
-    boton_buscar = driver.find_element(By.NAME, "busquedaFormAvanz")  # Ajusta el NAME real
+    boton_buscar = driver.find_element(By.NAME, "busquedaFormAvanz")  
     boton_buscar.click()
 
     # Encuentra todas las filas de la tabla con la clase 'resultados'
@@ -270,14 +286,12 @@ def buscar():
         print("No se encontraron resultados.")
     else:
         for resultado in resultados:
-            #columnas = resultado.find_elements(By.TAG_NAME, "td")  # Extraer columnas de cada fila
-            #datos = [col.text.strip() for col in columnas]  # Obtener el texto de cada celda
             # Extraer el enlace de la primera columna (suponiendo que está en la primera columna)
             enlace = None
             enlace_elemento = resultado.find_element(By.CSS_SELECTOR, "a")
             if enlace_elemento:
                 enlace = enlace_elemento.get_attribute("href")  # Obtener el atributo href del enlace
-                enlaces.append(enlace)  # Guardar todos los enlaces en la 
+                enlaces.append(enlace) 
     print("enlaces", enlaces)
     # Cerrar el navegador cuando termine
     driver.quit()
