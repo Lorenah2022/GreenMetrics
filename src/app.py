@@ -888,6 +888,8 @@ def pagina_informe_1_19():
 #  ----------------------- INFORME 6_1 --------------------------------------
 @app.route('/pagina_informe_6_1')
 def pagina_informe_6_1():
+    session['origen'] = 'pagina_informe_6_1'
+
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
@@ -922,6 +924,8 @@ def pagina_informe_6_1():
          
 @app.route('/selecciona_anho_informe')
 def selecciona_anho_informe():
+    origen = session.get('origen', '')  # Obtiene el valor de sesión
+
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
@@ -937,7 +941,7 @@ def selecciona_anho_informe():
         nuevos_anhos_disponibles.append(row[0])
 
 
-    return render_template('selecciona_anho_informe.html',  
+    return render_template('selecciona_anho_informe.html',   origen=origen,
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
@@ -948,6 +952,8 @@ def selecciona_anho_informe():
 # Ruta para la página donde se realiza la descarga del informe
 @app.route('/pagina_informe_6_7')
 def pagina_informe_6_7():
+    session['origen'] = 'pagina_informe_6_7'
+
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)

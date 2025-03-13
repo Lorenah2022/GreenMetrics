@@ -272,11 +272,15 @@
 
             <div class="form-group">
                 <label for="anho">{{textos.anho}}:</label>
-                <select name="anho" id="anho" class="form-control" required>
-                    {% for anho in nuevos_anhos_disponibles %}
-                        <option value="{{ anho }}">{{ anho }}</option>
-                    {% endfor %}
-                </select>
+                {% if origen == 'pagina_informe_6_1'%}
+                    <select name="anho" id="anho" class="form-control" required>
+                        {% for anho in nuevos_anhos_disponibles %}
+                            <option value="{{ anho }}">{{ anho }}</option>
+                        {% endfor %}
+                    </select>
+                {% elif origen == 'pagina_informe_6_7'%}
+                    <input type="number" name="anho" id="anho" class="form-control" required placeholder="Ingrese el año">
+                {% endif %}
             </div>
 
             <div class="button-container">

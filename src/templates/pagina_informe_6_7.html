@@ -201,12 +201,10 @@
 
     <!-- Contenido principal -->
     <div class="main-content">
-        <h2>{{  textos.informe_6_7 }}</h2>
-        
-        <form method="POST" action="{{ url_for('generar_informe') }}">
+        <h2>{{ textos.informe_6_7 }}</h2>
+        <form method="GET" action="{{ url_for('selecciona_anho_informe') }}">
             <button type="submit" class="btn-option">{{ textos.descargar_informe}}</button>
         </form>
-
         <div class="button-container">
             <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
         </div>
