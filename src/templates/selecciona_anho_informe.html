@@ -279,7 +279,7 @@
                         {% endfor %}
                     </select>
                 {% elif origen == 'pagina_informe_6_7'%}
-                    <input type="number" name="anho" id="anho" class="form-control" required placeholder="Ingrese el año">
+                    <input type="text" name="anho" id="anho" class="form-control" required placeholder="Ingrese el año" min="1900" max="2100">
                 {% endif %}
             </div>
 
@@ -311,5 +311,16 @@
             document.getElementById("informeForm").submit();
         }
     </script>
+    <script>
+        document.getElementById("informeForm").addEventListener("submit", function(event) {
+            let anho = document.getElementById("anho").value;
+            console.log("Año enviado:", anho);
+            if (!anho) {
+                alert("Por favor, ingrese un año antes de continuar.");
+                event.preventDefault(); // Evita que el formulario se envíe si el año está vacío
+            }
+        });
+    </script>
+    
 </body>
 </html>

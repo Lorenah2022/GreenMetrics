@@ -809,11 +809,11 @@ def generar_informe():
         if informe_seleccionado == "6_1":
             # Obtener el año seleccionado desde el formulario
             anho_seleccionado = request.form.get('anho')
-            
-
             if not anho_seleccionado:
                 return "Error: No se seleccionaron todos los campos", 400
-
+        if informe_seleccionado == "6_7":
+            # Obtener el año seleccionado desde el formulario
+            anho_seleccionado = request.form.get('anho')
         
         # Iniciar un hilo para ejecutar el informe con el año como argumento
         hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado,informe_seleccionado))
@@ -842,12 +842,14 @@ def ejecutar_informe(anho,informe):
         
 # Función que devuelve el informe a descargar en función de la URL
 def determinar_tipo_informe():
+    origen = session.get('origen', '')  # Obtiene el valor de sesión
     referrer = request.headers.get("Referer", "")
     if "pagina_informe_1_19" in referrer:
         return "1_19"
-    elif "selecciona_anho_informe" in referrer:
+    # No se puede usar referrer ya que como ambos informes usan la misma página, el referrer de ambos es el mismo.
+    elif origen == "pagina_informe_6_1":
         return "6_1"
-    elif "pagina_informe_6_7" in referrer:
+    elif origen == "pagina_informe_6_7":
         return "6_7"
     
 #  ----------------------- INFORME 1_19 --------------------------------------

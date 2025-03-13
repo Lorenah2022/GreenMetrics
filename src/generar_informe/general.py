@@ -69,7 +69,7 @@ def ejecutar_informe_especifico(anho, informe):
             informe_6_1.generar(anho)  # Ejecuta la función específica de informe_6_1
         elif informe == "6_7":
             informe_6_7 = importlib.import_module('informe_6_7')  # Importa dinámicamente el archivo informe_1_19.py
-            informe_6_7.generar()
+            informe_6_7.generar(anho)
        
     except Exception as e:
         print(f"Error al cargar informe_{informe}.py: {e}")
