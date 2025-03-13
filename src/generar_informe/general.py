@@ -61,15 +61,16 @@ def ejecutar_informe_especifico(anho, informe):
     Ejecuta el código específico de cada informe.
     """
     try:
-        if informe == "6_1":
-            informe_6_1 = importlib.import_module('informe_6_1')  # Importa dinámicamente el archivo informe_6_1.py
-            informe_6_1.generar(anho)  # Ejecuta la función específica de informe_6_1
-        if informe == "1_19":
+        if  informe == "1_19":
             informe_1_19 = importlib.import_module('informe_1_19')  # Importa dinámicamente el archivo informe_1_19.py
             informe_1_19.generar()
-        # else:
-        #     informe_X = importlib.import_module(f'informe_{informe}')  # Importa el informe genérico, ejemplo: informe_X.py
-        #     informe_X.generar_descripcion(anho)  # Ejecuta la función específica del informe
+        elif informe == "6_1":
+            informe_6_1 = importlib.import_module('informe_6_1')  # Importa dinámicamente el archivo informe_6_1.py
+            informe_6_1.generar(anho)  # Ejecuta la función específica de informe_6_1
+        elif informe == "6_7":
+            informe_6_7 = importlib.import_module('informe_6_7')  # Importa dinámicamente el archivo informe_1_19.py
+            informe_6_7.generar()
+       
     except Exception as e:
         print(f"Error al cargar informe_{informe}.py: {e}")
 
