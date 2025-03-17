@@ -207,7 +207,7 @@
         <form method="POST" action="{{ url_for('procesar_anho') }}">
             <div class="container">
                 <h1>{{textos.informe_6_1}} </h1>
-                <h2>{{textos.descargar_informe}} </h2>
+                <h2>{{textos.descargar_datos_nuevos}} </h2>
                 <label for="anho">{{ textos.introducir_anho }}</label>
                 <input type="text" id="anho" name="anho"class="form-control" required placeholder="{{textos.ingrese_anho}}" min="1900" max="2100">
                 <label for="tipo_estudio">{{ textos.seleccionar_tipo_estudio }}</label>
@@ -218,7 +218,7 @@
                     </select>
                 <div>
                     <button type="submit" class="btn-aceptar">{{ textos.aceptar }}</button>
-                    <button type="button" class="btn-aceptar" onclick="window.location.href='{{ url_for('pagina_principal') }}'">{{ textos.volver_atras }}</button>
+                    <button type="button" class="btn-aceptar" onclick="window.location.href='{{ url_for('pagina_informe_6_1') }}'">{{ textos.volver_atras }}</button>
                 </div>
 
         </form>
