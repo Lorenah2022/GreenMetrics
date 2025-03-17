@@ -160,6 +160,30 @@
             border-radius: 5px;
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        /* Contenedor principal */
+        .container {
+            background-color: rgba(255, 255, 255, 0.9); 
+            padding: 20px 40px;
+            border: 5px solid{% if daltonismo %}#800080{% else %}#006400{% endif %};
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 700px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+        }
+
     </style>
 </head>
 <body>
@@ -179,20 +203,24 @@
 
     <!-- Contenido principal -->
     <div class="main-content">
-        <h2>{{ textos.texto_bienvenida }}</h2>
+        
         <form method="POST" action="{{ url_for('procesar_anho') }}">
-            <label for="anho">{{ textos.introducir_anho }}</label>
-            <input type="text" id="anho" name="anho" pattern="\d{4}-\d{4}" required>
-            <label for="tipo_estudio">{{ textos.seleccionar_tipo_estudio }}</label>
-                <select id="tipo_estudio" name="tipo_estudio">
-                    <option value="ambos">{{ textos.opcion_ambos }}</option>
-                    <option value="grado">{{ textos.opcion_grado }}</option>
-                    <option value="master">{{ textos.opcion_master }}</option>
-                </select>
-            <div>
-                 <button type="submit" class="btn-aceptar">{{ textos.aceptar }}</button>
-                 <button type="button" class="btn-aceptar" onclick="window.location.href='{{ url_for('pagina_principal') }}'">{{ textos.volver_atras }}</button>
-            </div>
+            <div class="container">
+                <h1>{{textos.informe_6_1}} </h1>
+                <h2>{{textos.descargar_informe}} </h2>
+                <label for="anho">{{ textos.introducir_anho }}</label>
+                <input type="text" id="anho" name="anho"class="form-control" required placeholder="{{textos.ingrese_anho}}" min="1900" max="2100">
+                <label for="tipo_estudio">{{ textos.seleccionar_tipo_estudio }}</label>
+                    <select id="tipo_estudio" name="tipo_estudio">
+                        <option value="ambos">{{ textos.opcion_ambos }}</option>
+                        <option value="grado">{{ textos.opcion_grado }}</option>
+                        <option value="master">{{ textos.opcion_master }}</option>
+                    </select>
+                <div>
+                    <button type="submit" class="btn-aceptar">{{ textos.aceptar }}</button>
+                    <button type="button" class="btn-aceptar" onclick="window.location.href='{{ url_for('pagina_principal') }}'">{{ textos.volver_atras }}</button>
+                </div>
+
         </form>
     </div>
 
@@ -203,6 +231,31 @@
             <button class="close" onclick="closeModal()">{{ textos.aceptar}}</button>
         </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const inputAnho = document.getElementById("anho");
+        
+            inputAnho.addEventListener("input", function () {
+                const value = inputAnho.value.trim();
+                const regex = /^(\d{4})-(\d{4})$/; // Formato YYYY-YYYY
+        
+                if (regex.test(value)) {
+                    const [, startYear, endYear] = value.match(regex).map(Number);
+                    if ((endYear - startYear) !== 1) { // Debe ser un rango de exactamente 3 años
+                        inputAnho.setCustomValidity("Los años introducidos no se corresponden a un año academico (Ejemplo: 2021-2022).");
+                    } else {
+                        inputAnho.setCustomValidity("");
+                    }
+                } else {
+                    inputAnho.setCustomValidity("Formato incorrecto. Use el formato YYYY-YYYY.");
+                }
+        
+                // Forzar la comprobación del formulario para mostrar los errores
+                inputAnho.reportValidity();
+            });
+        });
+    </script>
 
     <script>
         // Mostrar el modal si hay mensajes flash

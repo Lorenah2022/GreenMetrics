@@ -20,29 +20,21 @@
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
 
-        /* Filtro translúcido para mejorar la visibilidad del contenido */
-        .background-overlay {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.4); /* Negro con 40% de opacidad */
-            z-index: -1; /* Asegura que el overlay esté detrás del contenido */
-        }
+       
 
         /* Barra de navegación */
         .navbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            background-color:{% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
             padding: 10px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 10;
         }
 
         .navbar h1 {
             margin: 0;
-            font-size: 20px;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
 
         form button:hover {
@@ -108,7 +100,7 @@
             border: 5px solid{% if daltonismo %}#800080{% else %}#006400{% endif %};
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 500px;
+            width: 700px;
             position: absolute;
             top: 50%;
             left: 50%;
@@ -116,14 +108,7 @@
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
         }
 
-        /* Título */
-        h1 {
-            color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            margin-bottom: 30px;
-            font-size: 2rem;
-            font-weight: 600;
-            text-align: center;
-        }
+        
 
         /* Estilo de los formularios */
         .form-label {
@@ -191,6 +176,13 @@
             margin-bottom: 15px;
         }
 
+        /* Contenedor principal */
+        .main-content {
+            padding: 20px;
+            color: #333;
+            text-align: center;
+            flex: 1;
+        }
         /* Mejorar la visualización en pantallas pequeñas */
         @media (max-width: 600px) {
             .navbar h1 {
@@ -243,6 +235,15 @@
             gap: 10px;  /* Espacio entre los botones */
             margin-top: 20px;
         }
+        .main-content h2 {
+            color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            margin-bottom: 20px;
+        }
+        .main-content p {
+            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            color: #555;
+        }
+
     </style>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -266,28 +267,35 @@
         </div>
     </div>
 
-    <div class="container">
-        <h1>{{textos.descargar_informe}} </h1>
-        <form id="informeForm" method="POST" action="{{ url_for('generar_informe') }}">
+    <div class="main-content">
+            
+        <div class="container">
+            {% if origen == 'pagina_informe_6_1'%}
+            <h1>{{textos.informe_6_1}} </h1>
+            {% elif origen == 'pagina_informe_6_7'%}
+                <h1>{{textos.informe_6_7}} </h1>
+            {% endif %}
+            <h2>{{textos.descargar_informe}} </h2>
+            <form id="informeForm" method="POST" action="{{ url_for('generar_informe') }}">
+                    {% if origen == 'pagina_informe_6_1'%}
+                        <label for="anho">{{textos.anho}}:</label>
+                        <select name="anho" id="anho" class="form-control" required>
+                            {% for anho in nuevos_anhos_disponibles %}
+                                <option value="{{ anho }}">{{ anho }}</option>
+                            {% endfor %}
+                        </select>
+                    {% elif origen == 'pagina_informe_6_7'%}
+                        <label for="anho">{{textos.introducir_rango_anho}}:</label>
+                        <input type="text" name="anho" id="anho" class="form-control" required placeholder="{{textos.ingrese_anho}}" min="1900" max="2100">
+                    {% endif %}
+                
 
-            <div class="form-group">
-                <label for="anho">{{textos.anho}}:</label>
-                {% if origen == 'pagina_informe_6_1'%}
-                    <select name="anho" id="anho" class="form-control" required>
-                        {% for anho in nuevos_anhos_disponibles %}
-                            <option value="{{ anho }}">{{ anho }}</option>
-                        {% endfor %}
-                    </select>
-                {% elif origen == 'pagina_informe_6_7'%}
-                    <input type="text" name="anho" id="anho" class="form-control" required placeholder="Ingrese el año" min="1900" max="2100">
-                {% endif %}
-            </div>
-
-            <div class="button-container">
-                <button id="genInformeBtn" class="btn btn-secondary">{{textos.descargar_informe}}</button>
-                <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
-            </div>
-        </form>
+                <div class="button-container">
+                    <button id="genInformeBtn" class="btn btn-secondary">{{textos.descargar_informe}}</button>
+                    <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Modal -->
@@ -312,15 +320,29 @@
         }
     </script>
     <script>
-        document.getElementById("informeForm").addEventListener("submit", function(event) {
-            let anho = document.getElementById("anho").value;
-            console.log("Año enviado:", anho);
-            if (!anho) {
-                alert("Por favor, ingrese un año antes de continuar.");
-                event.preventDefault(); // Evita que el formulario se envíe si el año está vacío
-            }
+        document.addEventListener("DOMContentLoaded", function () {
+            const inputAnho = document.getElementById("anho");
+        
+            inputAnho.addEventListener("input", function () {
+                const value = inputAnho.value.trim();
+                const regex = /^(\d{4})-(\d{4})$/; // Formato YYYY-YYYY
+        
+                if (regex.test(value)) {
+                    const [, startYear, endYear] = value.match(regex).map(Number);
+                    if ((endYear - startYear) !== 2) { // Debe ser un rango de exactamente 3 años
+                        inputAnho.setCustomValidity("{{textos.rango_incorrecto}}")
+                    } else {
+                        inputAnho.setCustomValidity("");
+                    }
+                } else {
+                    inputAnho.setCustomValidity("{{textos.formato_incorrecto}}");
+                }
+        
+                // Forzar la comprobación del formulario para mostrar los errores
+                inputAnho.reportValidity();
+            });
         });
-    </script>
+        </script>
     
 </body>
 </html>
