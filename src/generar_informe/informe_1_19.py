@@ -14,6 +14,8 @@ from bs4 import BeautifulSoup
 from docx import Document
 from docx.shared import Inches
 from docx2pdf import convert
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from dotenv import load_dotenv
 from fpdf import FPDF
 from PyPDF2 import PdfReader
@@ -101,7 +103,7 @@ def extraer_datos_llm(html_texto, url):
                     "content": html_texto
                 }
             ],
-            "temperature": 0.2
+            "temperature": 0
         }
         
         body_json = json.dumps(body)
@@ -162,7 +164,7 @@ def ejecutar_API(enlaces):
     for res in resultados:  # Iteramos sobre todos los elementos de la lista "resultados"
         if res:  # Verificamos si el elemento "res" es considerado verdadero (es decir, no es None, vacío, etc.)
             resultados_filtrados.append(res)  # Si es verdadero, lo agregamos a la lista "resultados_filtrados"
-
+    print(resultados)
     # Paso 3: Eliminar duplicados basados en el valor de "File"
     resultados_unicos = {}
     for res in resultados_filtrados:
@@ -200,9 +202,47 @@ def fill_table(table, headers, data):
     for row_data in data:
         row = table.add_row()
         for col_idx, value in enumerate(row_data):
-            row.cells[col_idx].text = str(value)
+            cell = row.cells[col_idx]
+            if isinstance(value, str) and (value.startswith("http://") or value.startswith("https://")):
+                add_hyperlink(cell.paragraphs[0], value, "Link")
+            else:
+                cell.text = str(value)
 
-  
+ 
+# Función que crea un hipervínculo, para el correcto funcionamiento de los enlaces
+def add_hyperlink(paragraph, url, text):
+    """Agrega un hipervínculo a un párrafo en un documento Word."""
+    # Crear la relación del hipervínculo en el documento
+    part = paragraph._element
+    rId = paragraph._parent.part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
+
+    hyperlink = OxmlElement("w:hyperlink")
+    hyperlink.set(qn("r:id"), rId)
+
+    # Crear el run del enlace
+    new_run = OxmlElement("w:r")
+    rPr = OxmlElement("w:rPr")
+
+    # Color azul
+    color = OxmlElement("w:color")
+    color.set(qn("w:val"), "0000FF")  # Azul
+    rPr.append(color)
+
+    # Subrayado manual
+    u = OxmlElement("w:u")
+    u.set(qn("w:val"), "single")  # Subrayado
+    rPr.append(u)
+
+    new_run.append(rPr)
+
+    # Agregar el texto visible
+    text_element = OxmlElement("w:t")
+    text_element.text = text
+    new_run.append(text_element)
+
+    hyperlink.append(new_run)
+    part.append(hyperlink)
+     
 # Función que genera el informe
 def generar_informe(datos):
     """Genera el informe en memoria sin leer de Excel."""
