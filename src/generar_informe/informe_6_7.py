@@ -17,6 +17,8 @@ from bs4 import BeautifulSoup
 from docx import Document
 from docx.shared import Inches
 from docx2pdf import convert
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from dotenv import load_dotenv
 from fpdf import FPDF
 from PyPDF2 import PdfReader
@@ -29,10 +31,6 @@ from selenium.webdriver.chrome.options import Options
 
 # Variable global
 base_dir = os.path.dirname(__file__)
-load_dotenv()
-base_url = "http://127.0.0.1:1234"
-api_key = os.getenv("API_KEY")
-myModel = "lmstudio-community/DeepSeek-R1-Distill-Llama-8B-GGUF"
 
 
 def generar_enlace (year_range) :
@@ -53,18 +51,17 @@ def fill_description(doc, year_range, num_courses):
     )
     
     Additional_evidence_text=(
-        f"Additional evidence link (i.e., for videos, more images, or other files that are not included in this file):\n\n"
-        f"{enlace}"
+        f"Additional evidence link (i.e., for videos, more images, or other files that are not included in this file):"
     )
 
     for para in doc.paragraphs:
         if "Description:" in para.text:
             para.text = f"Description:\n\n{description_text}"
             
-        elif "Additional evidence link (i.e., for videos, more images, or other files that are not included in this file):" in para.text:
-            para.text = f"{Additional_evidence_text}"
+        elif f"{Additional_evidence_text}" in para.text:
+            add_hyperlink(para, enlace, "Link")
             break
- 
+
 def agregar_imagen_a_tabla(doc, captura_pantalla):
     # Buscar la tabla en el documento (se asume que es la primera tabla en el documento)
     table = doc.tables[0]  # Suponiendo que es la primera tabla en el documento
@@ -93,12 +90,46 @@ def agregar_imagen_a_tabla(doc, captura_pantalla):
         new_row.cells[0].text = 'Scholarly publications on sustainability (Universidad de Burgos, Spain)'
         # La segunda celda estará vacía (podrías agregar algo más si lo necesitas)
         new_row.cells[1].text = ''
-  
+
+
+# Función que crea un hipervínculo, para el correcto funcionamiento de los enlaces
+def add_hyperlink(paragraph, url, text):
+    """Agrega un hipervínculo a un párrafo en un documento Word."""
+    # Crear la relación del hipervínculo en el documento
+    part = paragraph._element
+    rId = paragraph._parent.part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
+
+    hyperlink = OxmlElement("w:hyperlink")
+    hyperlink.set(qn("r:id"), rId)
+
+    # Crear el run del enlace
+    new_run = OxmlElement("w:r")
+    rPr = OxmlElement("w:rPr")
+
+    # Color azul
+    color = OxmlElement("w:color")
+    color.set(qn("w:val"), "0000FF")  # Azul
+    rPr.append(color)
+
+    # Subrayado manual
+    u = OxmlElement("w:u")
+    u.set(qn("w:val"), "single")  # Subrayado
+    rPr.append(u)
+
+    new_run.append(rPr)
+
+    # Agregar el texto visible
+    text_element = OxmlElement("w:t")
+    text_element.text = text
+    new_run.append(text_element)
+
+    hyperlink.append(new_run)
+    part.append(hyperlink)
+
 # Función que genera el informe
 def generar_informe(captura_pantalla,anho,numero_resultados):
         
     """Genera el informe en memoria sin leer de Excel."""
-    base_dir = os.path.dirname(__file__)
     template_path = os.path.join(base_dir, 'informe_general.docx')
    
     if not os.path.exists(template_path):
@@ -121,7 +152,6 @@ def generar_informe(captura_pantalla,anho,numero_resultados):
     agregar_imagen_a_tabla(doc, captura_pantalla)
 
     fill_description(doc,anho,numero_resultados)
-
 
     doc.save(output_docx_path)
 
@@ -159,11 +189,15 @@ def buscar(anho):
         else:
             print("No se encontró el número de resultados.")
         
+
         # Captura de pantalla
         captura_pantalla = driver.get_screenshot_as_png()
         
     except Exception as e:
         print("Error al extraer los resultados:", e)
+    
+    print("resultados",numero_resultados)
+
     numero_resultados_convertido=int(numero_resultados)
     # Cerrar el navegador
     driver.quit()
@@ -175,6 +209,7 @@ def buscar(anho):
 def generar(anho):
     captura_pantalla, numero_resultados= buscar(anho)
     generar_informe(captura_pantalla,anho,numero_resultados)
+
 
 
 
