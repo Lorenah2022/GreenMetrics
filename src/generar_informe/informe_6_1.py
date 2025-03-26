@@ -2,8 +2,48 @@ import pandas as pd
 from docx import Document
 from docx.shared import Inches
 from docx2pdf import convert
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 import os
 import sys
+
+# Función que crea un hipervínculo, para el correcto funcionamiento de los enlaces
+def add_hyperlink(paragraph, url, text):
+    """Agrega un hipervínculo a un párrafo en un documento Word."""
+    # Limpiar espacios no rompibles y espacios finales/iniciales
+    url = url.replace("\u00A0", "").strip()
+
+    # Crear la relación del hipervínculo en el documento
+    part = paragraph._element
+    rId = paragraph._parent.part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
+
+    hyperlink = OxmlElement("w:hyperlink")
+    hyperlink.set(qn("r:id"), rId)
+
+    # Crear el run del enlace
+    new_run = OxmlElement("w:r")
+    rPr = OxmlElement("w:rPr")
+
+    # Color azul
+    color = OxmlElement("w:color")
+    color.set(qn("w:val"), "0000FF")  # Azul
+    rPr.append(color)
+
+    # Subrayado manual
+    u = OxmlElement("w:u")
+    u.set(qn("w:val"), "single")  # Subrayado
+    rPr.append(u)
+
+    new_run.append(rPr)
+
+    # Agregar el texto visible
+    text_element = OxmlElement("w:t")
+    text_element.text = text
+    new_run.append(text_element)
+
+    hyperlink.append(new_run)
+    part.append(hyperlink)
+
 
 def generar(anho):
    
@@ -54,7 +94,12 @@ def generar(anho):
                 if row_idx + 1 >= len(table.rows):
                     table.add_row()
                 for col_idx, value in enumerate(row):
-                    table.cell(row_idx + 1, col_idx).text = str(value)
+                    cell = table.cell(row_idx + 1, col_idx)
+                    if col_idx == 2 and isinstance(value, str) and value.startswith("http"):
+                        cell.text = ""
+                        add_hyperlink(cell.paragraphs[0], value, "Link")
+                    else:
+                        cell.text = str(value)
             break
 
 
@@ -113,8 +158,8 @@ def combinar_excels(debug=False):
     df_combined = df_combined[columnas_deseadas]
 
     # Guardar el nuevo Excel con solo las columnas seleccionadas
-    combined_path = os.path.join(base_dir, 'resultados_guias_con_link.xlsx')
+    combined_path = os.path.join(base_dir, 'resultados_guias_con_link.xlsx')   
     df_combined.to_excel(combined_path, index=False)
-
+    
     return combined_path
 
