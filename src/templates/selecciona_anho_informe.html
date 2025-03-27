@@ -274,6 +274,8 @@
             <h1>{{textos.informe_6_1}} </h1>
             {% elif origen == 'pagina_informe_6_7'%}
                 <h1>{{textos.informe_6_7}} </h1>
+            {% elif origen == 'pagina_informe_6_8'%}
+                <h1>{{textos.informe_6_8}} </h1>
             {% endif %}
             <h2>{{textos.descargar_informe}} </h2>
             <form id="informeForm" method="POST" action="{{ url_for('generar_informe') }}">
@@ -284,7 +286,7 @@
                                 <option value="{{ anho }}">{{ anho }}</option>
                             {% endfor %}
                         </select>
-                    {% elif origen == 'pagina_informe_6_7'%}
+                    {% elif origen == 'pagina_informe_6_7' or origen == 'pagina_informe_6_8' %}
                         <label for="anho">{{textos.introducir_rango_anho}}:</label>
                         <input type="text" name="anho" id="anho" class="form-control" required placeholder="{{textos.ingrese_anho}}" min="1900" max="2100">
                     {% endif %}
@@ -292,10 +294,12 @@
 
                 <div class="button-container">
                     <button id="genInformeBtn" class="btn btn-secondary">{{textos.descargar_informe}}</button>
+                    <!-- Como la página del informe     tiene más opciones, al presionar el botón de volver atrás debería mostrar otra vez las opciones-->
                     {% if origen == 'pagina_informe_6_1'%}
                         <a href="{{ url_for('pagina_informe_6_1') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
-                    {% elif origen == 'pagina_informe_6_7'%}
-                    <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
+                    <!-- Como estos informes solo tienen la opción de descarga, al dar al botón deberían volver a la página principal-->
+                    {% elif origen == 'pagina_informe_6_7' or origen == 'pagina_informe_6_8'%}
+                         <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
                     {% endif %}
                     
                 </div>

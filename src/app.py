@@ -102,6 +102,7 @@ textos = {
         'informe_1_19':'Annual Operation Maintenance Percentage (1_19)',
         'informe_6_1':'Number of Courses on Environment and Sustainability (6_1)',
         'informe_6_7':'Number of Scholarly Publications on Sustainability (6_7)',
+        'informe_6_8':'Number of Events on Environment and Sustainability(6_8)',
         'ingrese_anho':'Introduce the year',
         'myModel': 'Model',
         'mensaje_cargando': 'Loading... This might take a few minutes...',
@@ -170,6 +171,8 @@ textos = {
         'informe_1_19':'Porcentaje Anual de Operación y Mantenimiento (1_19)',
         'informe_6_1':'Número de cursos sobre Medio Ambiente y Sostenibilidad (6_1)',
         'informe_6_7':'Número de publicaciones académicas sobre sostenibilidad (6_7)',
+        'informe_6_8':'Número de eventos relacionados con el Medio Ambiente y Sostenibilidad (6_8)',
+
         'ingrese_anho':'Ingrese el año',
         'myModel': 'Modelo',
         'mensaje_cargando': 'Cargando... Esto puede tardar algunos minutos...',
@@ -819,10 +822,16 @@ def generar_informe():
             anho_seleccionado = request.form.get('anho')
             if not anho_seleccionado:
                 return "Error: No se seleccionaron todos los campos", 400
-        if informe_seleccionado == "6_7":
+        elif informe_seleccionado == "6_7":
             # Obtener el año seleccionado desde el formulario
             anho_seleccionado = request.form.get('anho')
-        
+            if not anho_seleccionado:
+                return "Error: No se seleccionaron todos los campos", 400
+        elif informe_seleccionado == "6_8":
+            # Obtener el año seleccionado desde el formulario
+            anho_seleccionado = request.form.get('anho')
+            if not anho_seleccionado:
+                return "Error: No se seleccionaron todos los campos", 400
         # Iniciar un hilo para ejecutar el informe con el año como argumento
         hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado,informe_seleccionado))
         hilo.start()
@@ -859,6 +868,8 @@ def determinar_tipo_informe():
         return "6_1"
     elif origen == "pagina_informe_6_7":
         return "6_7"
+    elif origen == "pagina_informe_6_8":
+        return "6_8"
     
 #  ----------------------- INFORME 1_19 --------------------------------------
 
@@ -988,6 +999,42 @@ def pagina_informe_6_7():
     else:
         rol = session['rol']
         return render_template('pagina_informe_6_7.html', 
+                               rol=rol, 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles) 
+        
+#  ----------------------- INFORME 6_8 -------------------------------------- 
+# Ruta para la página donde se realiza la descarga del informe
+@app.route('/pagina_informe_6_8')
+def pagina_informe_6_8():
+    session['origen'] = 'pagina_informe_6_8'
+
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+
+    # Obtener años únicos desde la base de datos
+    anhos_disponibles = db.session.query(Busqueda.anho).distinct().order_by(Busqueda.anho.desc()).all()
+    # Crear una nueva lista para almacenar los años disponibles
+    nuevos_anhos_disponibles = []
+
+    # Iterar sobre cada fila de anhos_disponibles
+    for row in anhos_disponibles:
+        # Asegúrate de extraer el primer valor de cada tupla
+        nuevos_anhos_disponibles.append(row[0])
+
+    if 'user_id' not in session:
+        return render_template('pagina_informe_6_8.html', 
+                               rol='visitante', 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+    else:
+        rol = session['rol']
+        return render_template('pagina_informe_6_8.html', 
                                rol=rol, 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
