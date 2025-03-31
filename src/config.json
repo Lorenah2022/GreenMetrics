@@ -1,0 +1,5 @@
+{
+    "base_url": "http://127.0.0.1:1234",
+    "api_key": "deepseek-r1-distill-llama-8b:2",
+    "model": "lmstudio-community/DeepSeek-R1-Distill-Llama-8B-GGUF"
+}

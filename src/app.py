@@ -632,69 +632,80 @@ def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
         
 #  ----------------------- PÁGINA PARA EJECUTAR LA API ----------------------------------------------------
 # Ruta para la página donde se solicitan los datos de la IA
-@app.route('/pagina_pedir_IA')
+@app.route('/pagina_pedir_IA', methods=['GET','POST'])
 def pagina_pedir_IA():
+    origen = session.get('origen', '')  # Obtiene el valor de sesión
+    anho_seleccionado = request.form.get('anho')
+    session['anho'] = anho_seleccionado
+
+    print("Año recibido: ", anho_seleccionado)
+
+
     # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
     # Comprobar si el usuario está autenticado
     if 'user_id' not in session:
-        return render_template('pagina_pedir_IA.html', 
+        return render_template('pagina_pedir_IA.html', origen=origen,
                                rol='visitante', 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido para visitantes
+                               tamano_texto=tamano_texto,daltonismo=daltonismo,anho_seleccionado=session.get('anho'))  # Contenido para visitantes
     else:
         rol = session['rol']
-        return render_template('pagina_pedir_IA.html', 
+        return render_template('pagina_pedir_IA.html', origen=origen,
                                rol=rol, 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
+                               tamano_texto=tamano_texto,daltonismo=daltonismo,anho_seleccionado=session.get('anho'))  # Contenido según el rol
+    
+
+from config import cargar_configuracion, guardar_configuracion
 
 #Función donde se piden los paramétros para la configuración de la API.
-@app.route('/actualizar_api', methods=['POST'])
+@app.route('/actualizar_api', methods=['GET','POST'])
 def actualizar_api():
     try:
-        # Ruta donde se encuentra el archivo API.py
-        ruta_api = os.path.join(os.getcwd(), 'sostenibilidad', 'API.py')
+        # Obtener la configuración actual
+        config_actual = cargar_configuracion()
+        origen = session.get('origen', '')
 
-        # Obtener los datos del formulario (si están disponibles)
-        base_url = request.form['base_url'] or None
-        api_key = request.form['api_key'] or None
-        model = request.form['model'] or None
-        
-        # Leer el contenido actual de API.py
-        with open(ruta_api, 'r') as file:
-            contenido = file.read()
-        
-        # Obtener los valores actuales de las variables (si no se introducen nuevos valores)
-        base_url_actual = re.search(r'base_url = "(.*?)"', contenido)
-        api_key_actual = re.search(r'api_key = "(.*?)"', contenido)
-        model_actual = re.search(r'myModel = "(.*?)"', contenido)
-        
-        # Si no se ha introducido un valor, se mantiene el valor actual del archivo
-        if base_url is None:
-            base_url = base_url_actual.group(1) if base_url_actual else ''
-        if api_key is None:
-            api_key = api_key_actual.group(1) if api_key_actual else ''
-        if model is None:
-            model = model_actual.group(1) if model_actual else ''
-        
-        # Actualizar las variables en el archivo, solo si se ha proporcionado un valor
-        contenido_actualizado = re.sub(r'base_url = ".*?"', f'base_url = "{base_url}"', contenido)
-        contenido_actualizado = re.sub(r'api_key = ".*?"', f'api_key = "{api_key}"', contenido_actualizado)
-        contenido_actualizado = re.sub(r'myModel = ".*?"', f'myModel = "{model}"', contenido_actualizado)
-        
-        # Guardar los cambios en API.py
-        with open(ruta_api, 'w') as file:
-            file.write(contenido_actualizado)
+        # Obtener los datos del formulario y usar los valores actuales si están vacíos
+        base_url = request.form.get('base_url').strip() or config_actual["base_url"]
+        api_key = request.form.get('api_key').strip() or config_actual["api_key"]
+        model = request.form.get('model').strip() or config_actual["model"]
 
-        # Crear y lanzar un hilo para ejecutar la función
-        hilo = threading.Thread(target=ejecutar_api)
-        hilo.start()
+        # Guardar la nueva configuración en config.json
+        guardar_configuracion({
+            "base_url": base_url,
+            "api_key": api_key,
+            "model": model
+        })
 
-        # Redirigir a la página de IA después de iniciar el proceso
-        return redirect(url_for('pagina_informe_6_1'))
+        if origen == "pagina_informe_6_1":
+            # Reiniciar la API si es necesario
+            hilo = threading.Thread(target=ejecutar_api)
+            hilo.start()
+            return redirect(url_for('pagina_principal'))
+
+        else:
+            # Para el 1_19 y el 6_8 es necesario seleccionar la API
+            try:
+                informe_seleccionado = determinar_tipo_informe()
+                anho_seleccionado = session.get('anho')
+                if informe_seleccionado == "6_8":
+                    # Obtener el año seleccionado desde el formulario
+                    anho_seleccionado = session.get('anho')
+                    if not anho_seleccionado:
+                        return "Error: No se seleccionaron todos los campos", 400
+                # Iniciar un hilo para ejecutar el informe con el año como argumento
+                hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado,informe_seleccionado))
+                hilo.start()
+
+                # Redirigir a la página principal después de iniciar el proceso
+                return redirect(url_for('pagina_principal'))
+
+            except Exception as e:
+                return f"Error al generar el informe: {str(e)}", 500
     
     except Exception as e:
         # En caso de error, devolver un mensaje
@@ -811,10 +822,11 @@ def progreso():
                            daltonismo=daltonismo)
 
 #  ----------------------- GENERAR INFORMES ----------------------------------------------------
-        
+# No es necesario seleccionar la API para generar el informe
 @app.route('/generar_informe', methods=['POST'])
 def generar_informe():
     try:
+        
         informe_seleccionado = determinar_tipo_informe()
         anho_seleccionado = ''
         if informe_seleccionado == "6_1":
@@ -825,11 +837,7 @@ def generar_informe():
         elif informe_seleccionado == "6_7":
             # Obtener el año seleccionado desde el formulario
             anho_seleccionado = request.form.get('anho')
-            if not anho_seleccionado:
-                return "Error: No se seleccionaron todos los campos", 400
-        elif informe_seleccionado == "6_8":
-            # Obtener el año seleccionado desde el formulario
-            anho_seleccionado = request.form.get('anho')
+            print(anho_seleccionado)
             if not anho_seleccionado:
                 return "Error: No se seleccionaron todos los campos", 400
         # Iniciar un hilo para ejecutar el informe con el año como argumento
@@ -860,8 +868,7 @@ def ejecutar_informe(anho,informe):
 # Función que devuelve el informe a descargar en función de la URL
 def determinar_tipo_informe():
     origen = session.get('origen', '')  # Obtiene el valor de sesión
-    referrer = request.headers.get("Referer", "")
-    if "pagina_informe_1_19" in referrer:
+    if origen == "pagina_informe_1_19":
         return "1_19"
     # No se puede usar referrer ya que como ambos informes usan la misma página, el referrer de ambos es el mismo.
     elif origen == "pagina_informe_6_1":
@@ -876,6 +883,8 @@ def determinar_tipo_informe():
 # Ruta para la página donde se realiza la descarga del informe
 @app.route('/pagina_informe_1_19')
 def pagina_informe_1_19():
+    session['origen'] = 'pagina_informe_1_19'
+
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
@@ -943,14 +952,13 @@ def pagina_informe_6_1():
    
    
          
-@app.route('/selecciona_anho_informe')
+@app.route('/selecciona_anho_informe', methods=['GET', 'POST'])
 def selecciona_anho_informe():
     origen = session.get('origen', '')  # Obtiene el valor de sesión
-
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
-
+          
     # Obtener años únicos desde la base de datos
     anhos_disponibles = db.session.query(Busqueda.anho).distinct().order_by(Busqueda.anho.desc()).all()
     # Crear una nueva lista para almacenar los años disponibles

@@ -1,13 +1,24 @@
 import os
 import requests
 import json
+import sys
+
 import pandas as pd
 from PyPDF2 import PdfReader
 from dotenv import load_dotenv
+# Obtener la ruta absoluta del directorio `src`
+SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Agregar `src` al sys.path para poder importar `config.py`
+if SRC_DIR not in sys.path:
+    sys.path.append(SRC_DIR)
+
+from config import cargar_configuracion
 
 # Cargar variables desde .env, como no esta en el mismo directorio que el script, especifico la ubicación del fichero .env
 directorio = os.path.join(os.path.dirname(__file__), 'data', 'guias')
 load_dotenv()
+
 
 # Definir rutas
 directorio = os.path.join("sostenibilidad","data", "guias")  # Carpeta con los archivos PDF
@@ -17,9 +28,10 @@ archivo_salida = os.path.join("sostenibilidad","data", "resultados_guias.xlsx") 
 archivos_guias = [f for f in os.listdir(directorio) if f.endswith('.pdf')]
 
 # Configuración de la API
-base_url = "http://127.0.0.1:1234"
-api_key =  os.getenv("API_KEY")
-myModel = "lmstudio-community/DeepSeek-R1-Distill-Llama-8B-GGUF"
+config = cargar_configuracion()
+base_url = config["base_url"]
+api_key = config["api_key"]
+myModel = config["model"]
 
 # Crear DataFrame vacío
 resultados = pd.DataFrame(columns=["Name", "Degree_Master", "Code", "Competences"])

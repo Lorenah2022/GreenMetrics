@@ -278,8 +278,8 @@
                 <h1>{{textos.informe_6_8}} </h1>
             {% endif %}
             <h2>{{textos.descargar_informe}} </h2>
-            <form id="informeForm" method="POST" action="{{ url_for('generar_informe') }}">
-                    {% if origen == 'pagina_informe_6_1'%}
+            <form id="informeForm" method="POST" action="{% if origen == 'pagina_informe_6_8' %}{{ url_for('pagina_pedir_IA') }}{% endif %}">
+                {% if origen == 'pagina_informe_6_1'%}
                         <label for="anho">{{textos.anho}}:</label>
                         <select name="anho" id="anho" class="form-control" required>
                             {% for anho in nuevos_anhos_disponibles %}
@@ -304,6 +304,7 @@
                     
                 </div>
             </form>
+
         </div>
     </div>
 
@@ -314,7 +315,13 @@
             <button class="close" onclick="closeModal()">{{textos.aceptar}}</button>
         </div>
     </div>
-
+    <script>
+        document.getElementById("informeForm").addEventListener("submit", function(event) {
+            var anhoValue = document.getElementById("anho").value;
+            console.log("Año seleccionado: ", anhoValue);  // Verifica si el valor está siendo enviado
+        });
+    </script>
+    
     <script>
         document.getElementById("genInformeBtn").addEventListener("click", function(event) {
             event.preventDefault(); // Detiene el envío inmediato del formulario

@@ -25,13 +25,24 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.chrome.options import Options
 
+# Obtener la ruta absoluta del directorio `src`
+SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Agregar `src` al sys.path para poder importar `config.py`
+if SRC_DIR not in sys.path:
+    sys.path.append(SRC_DIR)
+
+from config import cargar_configuracion
+
 
 # Variable global
 base_dir = os.path.dirname(__file__)
 load_dotenv()
-base_url = "http://127.0.0.1:1234"
-api_key = os.getenv("API_KEY")
-myModel = "lmstudio-community/DeepSeek-R1-Distill-Llama-8B-GGUF"
+# Configuración de la API
+config = cargar_configuracion()
+base_url = config["base_url"]
+api_key = config["api_key"]
+myModel = config["model"]
 
 # Función para reemplazar texto en un documento de Word
 def replace_text_in_docx(doc, old_text, new_text):
@@ -103,7 +114,7 @@ def extraer_datos_llm(html_texto, url):
                     "content": html_texto
                 }
             ],
-            "temperature": 0
+            "temperature": 0.2
         }
         
         body_json = json.dumps(body)
