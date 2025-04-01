@@ -691,7 +691,7 @@ def actualizar_api():
             # Para el 1_19 y el 6_8 es necesario seleccionar la API
             try:
                 informe_seleccionado = determinar_tipo_informe()
-                anho_seleccionado = session.get('anho')
+                anho_seleccionado = ''
                 if informe_seleccionado == "6_8":
                     # Obtener el año seleccionado desde el formulario
                     anho_seleccionado = session.get('anho')

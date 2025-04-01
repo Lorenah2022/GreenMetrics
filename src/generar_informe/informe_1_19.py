@@ -24,6 +24,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import TimeoutException
+
+from deep_translator import GoogleTranslator
 
 # Obtener la ruta absoluta del directorio `src`
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -184,7 +187,7 @@ def ejecutar_API(enlaces):
 
     # Convertir el diccionario de resultados únicos a una lista de valores
     resultados_filtrados_unicos = list(resultados_unicos.values())
-
+    print("Resultados de los enlaces", resultados_filtrados_unicos)
     return list(resultados_filtrados_unicos)
 
 def initialize_table(doc, headers):
@@ -294,8 +297,43 @@ def generar_informe(datos):
         print(f"Error al convertir a PDF: {e}")
 
     print(f"Documento PDF generado en: {output_pdf_path}")
+
+
+def traducir_texto(texto):
+    """Traduce un texto del inglés al español."""
+    return GoogleTranslator(source="en", target="es").translate(texto)
+
+
+  
+def obtener_tipos_mantenimiento(ruta_docx):
+    """Lee el archivo DOCX y extrae los tipos de mantenimiento de la última columna."""
+    doc = Document(ruta_docx)
+    tipos_mantenimiento = set()
     
-def buscar():  
+    for tabla in doc.tables:
+        for fila in tabla.rows[1:]:  # Omitir la primera fila si es encabezado
+            ultima_celda = fila.cells[-1].text.strip()
+            tipos = [t.strip() for t in ultima_celda.split(',') if t.strip()]
+            tipos_mantenimiento.update(tipos)
+    
+    return list(tipos_mantenimiento)
+  
+def ejecutar_busquedas(ruta_docx):
+    tipos_mantenimiento = obtener_tipos_mantenimiento(ruta_docx)
+    resultados_totales = []
+    
+    for tipo in tipos_mantenimiento:
+        tipo_traducido = traducir_texto(tipo)
+        print(f"Buscando: {tipo} -> {tipo_traducido}")
+        resultados_totales.extend(buscar(tipo_traducido))
+    
+    resultados_totales.extend(buscar('mantenimiento'))
+
+    print("resultados totales", resultados_totales)
+    return resultados_totales
+
+
+def buscar(mantenimiento):  
     # El navegador no muestra su interfaz gráfica.
     chrome_options = Options()
     chrome_options.add_argument("--headless")  # Habilita el modo headless
@@ -310,11 +348,12 @@ def buscar():
     # # Llenar el campo "Expediente"
     # campo_expediente = driver.find_element(By.ID, "expediente")  
     # campo_expediente.send_keys('UBU/2023/0018')
-
-    # Llenar el campo "Objeto"
-    campo_objeto = driver.find_element(By.ID, "ObjContrato")  
-    objeto = "Mantenimiento"    
-    campo_objeto.send_keys(objeto)
+    try:
+        # Llenar el campo "Objeto"
+        campo_objeto = driver.find_element(By.ID, "ObjContrato")    
+        campo_objeto.send_keys(mantenimiento)
+    except Exception as e:
+        print(f"Error al encontrar el campo de búsqueda: {e}")
 
 
 
@@ -327,8 +366,15 @@ def buscar():
     boton_buscar = driver.find_element(By.NAME, "busquedaFormAvanz")  
     boton_buscar.click()
 
-    # Encuentra todas las filas de la tabla con la clase 'resultados'
-    resultados = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".resultados tbody tr")))
+     # Encuentra todas las filas de la tabla con la clase 'resultados'
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".resultados"))
+        )
+        resultados = driver.find_elements(By.CSS_SELECTOR, ".resultados tbody tr")
+    except TimeoutException:
+        print(f"No se encontraron resultados para {mantenimiento}")
+        resultados = []
 
     enlaces = []  
     
@@ -342,16 +388,18 @@ def buscar():
             enlace_elemento = resultado.find_element(By.CSS_SELECTOR, "a")
             if enlace_elemento:
                 enlace = enlace_elemento.get_attribute("href")  # Obtener el atributo href del enlace
-                enlaces.append(enlace) 
-    print("enlaces", enlaces)
+                enlaces.append(enlace)  # Guardar todos los enlaces en la 
     # Cerrar el navegador cuando termine
     driver.quit()
     return enlaces
     
     
 def generar():
-    enlaces= buscar()
+    docx_path =os.path.join(base_dir, 'Campus_Building_Maintenance.docx')
+    enlaces= ejecutar_busquedas(docx_path)
+    "HA BUSCADO ENLACES"
     datos = ejecutar_API(enlaces)
+    "GENERA DATOS"
     generar_informe(datos)
 
 
