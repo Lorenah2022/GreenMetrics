@@ -101,6 +101,7 @@ textos = {
         'iniciar_sesion': 'Login',
         'informe_1_19':'Annual Operation Maintenance Percentage (1_19)',
         'informe_6_1':'Number of Courses on Environment and Sustainability (6_1)',
+        'informe_6_4':'Total Research Funds Dedicated to Sustainability Research (in US Dollars) (6_4)',
         'informe_6_7':'Number of Scholarly Publications on Sustainability (6_7)',
         'informe_6_8':'Number of Events on Environment and Sustainability(6_8)',
         'ingrese_anho':'Introduce the year',
@@ -170,9 +171,9 @@ textos = {
         'iniciar_sesion': 'Iniciar sesión',
         'informe_1_19':'Porcentaje Anual de Operación y Mantenimiento (1_19)',
         'informe_6_1':'Número de cursos sobre Medio Ambiente y Sostenibilidad (6_1)',
+        'informe_6_4':'Fondos totales de investigación dedicados a la investigación en sostenibilidad (en dólares estadounidenses) (6_4)',
         'informe_6_7':'Número de publicaciones académicas sobre sostenibilidad (6_7)',
         'informe_6_8':'Número de eventos relacionados con el Medio Ambiente y Sostenibilidad (6_8)',
-
         'ingrese_anho':'Ingrese el año',
         'myModel': 'Modelo',
         'mensaje_cargando': 'Cargando... Esto puede tardar algunos minutos...',
@@ -629,7 +630,7 @@ def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
         with lock:
             estado_proceso["en_proceso"] = False
         
-        
+import tempfile
 #  ----------------------- PÁGINA PARA EJECUTAR LA API ----------------------------------------------------
 # Ruta para la página donde se solicitan los datos de la IA
 @app.route('/pagina_pedir_IA', methods=['GET','POST'])
@@ -637,8 +638,18 @@ def pagina_pedir_IA():
     origen = session.get('origen', '')  # Obtiene el valor de sesión
     anho_seleccionado = request.form.get('anho')
     session['anho'] = anho_seleccionado
+    archivo_excel = request.files.get('archivo_excel')
+   
+    # Guardar en un archivo temporal
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+        archivo_excel.save(tmp.name)
+        ruta_temporal = tmp.name
+
+    # Guardas solo la ruta en sesión o en algún estado
+    session['ruta_excel'] = ruta_temporal
 
     print("Año recibido: ", anho_seleccionado)
+    print("Archivo exccel, ", archivo_excel)
 
 
     # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
@@ -665,9 +676,11 @@ from config import cargar_configuracion, guardar_configuracion
 @app.route('/actualizar_api', methods=['GET','POST'])
 def actualizar_api():
     try:
+        informe_seleccionado = determinar_tipo_informe()
+
         # Obtener la configuración actual
         config_actual = cargar_configuracion()
-        origen = session.get('origen', '')
+        # origen = session.get('origen', '')
 
         # Obtener los datos del formulario y usar los valores actuales si están vacíos
         base_url = request.form.get('base_url').strip() or config_actual["base_url"]
@@ -681,7 +694,7 @@ def actualizar_api():
             "model": model
         })
 
-        if origen == "pagina_informe_6_1":
+        if informe_seleccionado == "6_1":
             # Reiniciar la API si es necesario
             hilo = threading.Thread(target=ejecutar_api)
             hilo.start()
@@ -690,15 +703,19 @@ def actualizar_api():
         else:
             # Para el 1_19 y el 6_8 es necesario seleccionar la API
             try:
-                informe_seleccionado = determinar_tipo_informe()
                 anho_seleccionado = ''
+                excel =''
                 if informe_seleccionado == "6_8":
                     # Obtener el año seleccionado desde el formulario
                     anho_seleccionado = session.get('anho')
                     if not anho_seleccionado:
                         return "Error: No se seleccionaron todos los campos", 400
+                elif informe_seleccionado == "6_4":
+                    excel =  session.get('ruta_excel')
+                    if not excel:
+                        return "Error: No se ha subido ningún fichero.", 400
                 # Iniciar un hilo para ejecutar el informe con el año como argumento
-                hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado,informe_seleccionado))
+                hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado,informe_seleccionado, excel))
                 hilo.start()
 
                 # Redirigir a la página principal después de iniciar el proceso
@@ -821,6 +838,18 @@ def progreso():
                            tamano_texto=tamano_texto, 
                            daltonismo=daltonismo)
 
+#  ----------------------- SUBIDA DE FICHEROS  ----------------------------------------------------
+
+# @app.route('/sube_fichero', methods=['POST'])
+# def sube_fichero():
+#     archivo = request.files.get('archivo_excel')
+#     if archivo:
+        
+        
+        
+        
+#     return redirect(url_for('pagina_principal')) 
+
 #  ----------------------- GENERAR INFORMES ----------------------------------------------------
 # No es necesario seleccionar la API para generar el informe
 @app.route('/generar_informe', methods=['POST'])
@@ -829,6 +858,7 @@ def generar_informe():
         
         informe_seleccionado = determinar_tipo_informe()
         anho_seleccionado = ''
+        excel = ''
         if informe_seleccionado == "6_1":
             # Obtener el año seleccionado desde el formulario
             anho_seleccionado = request.form.get('anho')
@@ -841,7 +871,7 @@ def generar_informe():
             if not anho_seleccionado:
                 return "Error: No se seleccionaron todos los campos", 400
         # Iniciar un hilo para ejecutar el informe con el año como argumento
-        hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado,informe_seleccionado))
+        hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado,informe_seleccionado,excel))
         hilo.start()
 
         # Redirigir a la página principal después de iniciar el proceso
@@ -851,15 +881,14 @@ def generar_informe():
         return f"Error al generar el informe: {str(e)}", 500
 
 # Función que ejecutará el script en segundo plano con el año seleccionado
-def ejecutar_informe(anho,informe):
+def ejecutar_informe(anho,informe,excel):
     try:
         ruta_informe = os.path.join(os.getcwd(), 'generar_informe', 'general.py')
         if not os.path.exists(ruta_informe):
             raise FileNotFoundError(f"El archivo {ruta_informe} no existe.")
+        
         # Ejecutar el script con el año seleccionado como argumento
-        subprocess.run(['python3', ruta_informe, anho, informe], check=True)
-
-        print(f"Proceso completado correctamente para el año {anho}.")
+        subprocess.run(['python3', ruta_informe, anho, informe,excel], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error ejecutando el script: {str(e)}")
     except Exception as e:
@@ -873,6 +902,8 @@ def determinar_tipo_informe():
     # No se puede usar referrer ya que como ambos informes usan la misma página, el referrer de ambos es el mismo.
     elif origen == "pagina_informe_6_1":
         return "6_1"
+    elif origen == "pagina_informe_6_4":
+        return "6_4"
     elif origen == "pagina_informe_6_7":
         return "6_7"
     elif origen == "pagina_informe_6_8":
@@ -976,8 +1007,45 @@ def selecciona_anho_informe():
                                daltonismo=daltonismo,
                                nuevos_anhos_disponibles=nuevos_anhos_disponibles)  
  
+#  ----------------------- INFORME 6_4 -------------------------------------- 
+# Ruta para la página donde se realiza la descarga del informe
+@app.route('/pagina_informe_6_4')
+def pagina_informe_6_4():
+    session['origen'] = 'pagina_informe_6_4'
 
- #  ----------------------- INFORME 6_7 -------------------------------------- 
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+
+    # Obtener años únicos desde la base de datos
+    anhos_disponibles = db.session.query(Busqueda.anho).distinct().order_by(Busqueda.anho.desc()).all()
+    # Crear una nueva lista para almacenar los años disponibles
+    nuevos_anhos_disponibles = []
+
+    # Iterar sobre cada fila de anhos_disponibles
+    for row in anhos_disponibles:
+        # Asegúrate de extraer el primer valor de cada tupla
+        nuevos_anhos_disponibles.append(row[0])
+
+    if 'user_id' not in session:
+        return render_template('pagina_informe_6_4.html', 
+                               rol='visitante', 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+    else:
+        rol = session['rol']
+        return render_template('pagina_informe_6_4.html', 
+                               rol=rol, 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)  
+
+
+
+#  ----------------------- INFORME 6_7 -------------------------------------- 
 # Ruta para la página donde se realiza la descarga del informe
 @app.route('/pagina_informe_6_7')
 def pagina_informe_6_7():
@@ -1048,6 +1116,7 @@ def pagina_informe_6_8():
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
                                nuevos_anhos_disponibles=nuevos_anhos_disponibles)  
+
 #  ----------------------- MAIN  ----------------------------------------------------
 if __name__ == '__main__':
     # Crear las tablas de la base de datos

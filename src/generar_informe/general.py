@@ -56,7 +56,7 @@ def crear_word_documento():
     doc.save(output_docx_path)
     print(f"Documento Word creado en: {output_docx_path}")
 
-def ejecutar_informe_especifico(anho, informe):
+def ejecutar_informe_especifico(anho, informe, excel):
     """
     Ejecuta el código específico de cada informe.
     """
@@ -68,6 +68,9 @@ def ejecutar_informe_especifico(anho, informe):
         elif informe == "6_1":
             informe_6_1 = importlib.import_module('informe_6_1') 
             informe_6_1.generar(anho)  
+        elif informe == "6_4":
+            informe_6_4 = importlib.import_module('informe_6_4') 
+            informe_6_4.generar(excel) 
         elif informe == "6_7":
             informe_6_7 = importlib.import_module('informe_6_7')  
             informe_6_7.generar(anho)
@@ -78,7 +81,7 @@ def ejecutar_informe_especifico(anho, informe):
     except Exception as e:
         print(f"Error al cargar informe_{informe}.py: {e}")
 
-def generar_informe(anho, informe):
+def generar_informe(anho, informe,excel):
     """
     Función principal que coordina la creación del Word y la ejecución de los informes específicos.
     """
@@ -86,13 +89,14 @@ def generar_informe(anho, informe):
     crear_word_documento()
     
     # Luego, ejecutar el informe específico
-    ejecutar_informe_especifico(anho, informe)
+    ejecutar_informe_especifico(anho, informe,excel)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Uso correcto: python script.py <anho> <informe>")
+    if len(sys.argv) != 4:
+        print("Uso correcto: python script.py <anho> <informe><excel>")
         sys.exit(1)
     
     anho = sys.argv[1]
     informe = sys.argv[2]
-    generar_informe(anho, informe)
+    excel = sys.argv[3]
+    generar_informe(anho, informe, excel)
