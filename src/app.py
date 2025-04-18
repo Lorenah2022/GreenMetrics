@@ -70,7 +70,9 @@ textos = {
         'actualizar_perfil': 'Update profile',
         'ajustes': 'Settings',
         'anho':'Select the year range (start date - end date) e.g. 2022-2023',
+        'anho_tabla':'Year',
         'api_key': 'API key',
+        'archivo_requerido': 'Please, upload an excel file.',
         'base_url': 'URL base',
         'busquedas_anteriores':'Previous Searches',
         'cancelar': 'Cancel',
@@ -91,11 +93,14 @@ textos = {
         'error_script': 'Error running the script:',
         'espanol': 'Spanish',
         'formato_incorrecto':'Incorrect format. Use the YYYY-YYYY format.',
+        'formato_excel_incorrecto':'Incorrect format. Make sure the file has one of the following extensions: .xlsx or .xls',
+        'filtrar': 'Filter',
         'guardar':'Save changes',
         'grande':'Big',
         'introducir_rango_anho': 'Enter the range of three years (start year - end year) e.g. 2021-2023',
         'introducir_anho': 'Enter the academic year for which you want to extract the metrics: (start year - end year) e.g. 2023-2024',
         'introducir_datos_IA': 'Enter the following data, if not the default IA will be used (Llama-8B-GGUF)',
+        'introducir_codigo': 'Introduce the subject code',
         'IA_tit': 'IA',
         'ingles': 'English',
         'iniciar_sesion': 'Login',
@@ -113,6 +118,7 @@ textos = {
         'nombre_archivo':'File name',
         'normal': 'Medium',
         'no_busquedas':'No previous searches were found.',
+        'no_resultados':'No results were found for the year ',
         'opcion_ambos':'Both',
         'opcion_grado':'Degree',
         'opcion_master':'Master',
@@ -126,6 +132,7 @@ textos = {
         'sel_letra': 'Select Font Size:',
         'seleccionar_tipo_estudio' : 'Choose the type: ',
         'seleccionar_informe':'Select the report:',
+        'subir_excel': 'Upload your Excel file',
         'texto_bienvenida': 'Welcome to Greenmetrics',
         'tit_admin': 'Administrator profile',
         'tit_user': 'User profile.',
@@ -140,7 +147,9 @@ textos = {
         'actualizar_perfil': 'Actualizar perfil.',
         'ajustes': 'Ajustes',
         'anho':'Seleccione el rango de años (fecha inicial - fecha final) Ej. 2022-2023',
+        'anho_tabla':'Año',
         'api_key': 'API key',
+        'archivo_requerido': 'Por favor, añada un fichero excel',
         'base_url': 'Base URL',
         'busquedas_anteriores':'Búsquedas anteriores',
         'cancelar': 'Cancelar',
@@ -161,11 +170,14 @@ textos = {
         'error_script': 'Error al ejecutar el script:',
         'espanol': 'Español',
         'formato_incorrecto':'Formato incorrecto. Use el formato YYYY-YYYY.',
+        'formato_excel_incorrecto':'Formato incorrecto. Asegurese del que fichero tiene alguna de las siguientes extesiones .xlsx o .xls',
+        'filtrar': 'Filtrar',
         'guardar':'Guardar cambios',
         'grande':'Grande',
         'introducir_anho': 'Introduzca el curso académico para el que desea extraer las métricas: (año inicio - año final) Ej. 2023-2024 ',
         'introducir_rango_anho': 'Introduzca el rango de tres años  (año inicio - año final) Ej.2021-2023 ',
         'introducir_datos_IA': 'Introduce los siguientes datos, sino se usará la IA predeterminada (Llama-8B-GGUF)',
+        'introducir_codigo': 'Introduce el código de asignatura',
         'IA_tit': 'IA',
         'ingles': 'Inglés',
         'iniciar_sesion': 'Iniciar sesión',
@@ -183,6 +195,7 @@ textos = {
         'nombre_archivo':'Nombre del archivo:',
         'normal': 'Medio',
         'no_busquedas':'No se encontraron búsquedas anteriores.',
+        'no_resultados':'No se encontraron resultados para el año ',
         'opcion_ambos':'Ambos',
         'opcion_grado':'Grado',
         'opcion_master':'Master',
@@ -196,6 +209,7 @@ textos = {
         'sel_letra': 'Seleccionar Tamaño de Letra:',
         'seleccionar_tipo_estudio' : 'Selecciona el tipo de estudio',
         'seleccionar_informe':'Selecciona el informe a generar:',
+        'subir_excel': 'Suba su fichero excel',
         'texto_bienvenida': 'Bienvenido a Greenmetrics',
         'tit_admin': 'Perfil de administrador',
         'tit_user': 'Perfil de usuario',
@@ -743,26 +757,45 @@ def ejecutar_api():
 
 #  ----------------------- PÁGINA PARA VISUALIZAR LA BASE DE DATOS ----------------------------------------------------
 #  Ruta para la página donde se muestra la base de datos
+from flask import request, session, render_template, jsonify
+
 @app.route('/consultar_busquedas', methods=['GET'])
 def consultar_busquedas():
-    idioma = session.get('idioma', 'es')  # Obtener el idioma actual
+    # --- Si es una petición AJAX, devolvemos JSON para autocompletar ---
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        codigo_asignatura = request.args.get('codigo_asignatura', '')
+
+        sugerencias = [a[0] for a in db.session.execute(
+            db.select(Busqueda.codigo_asignatura)
+              .distinct()
+              .filter(Busqueda.codigo_asignatura.like(f'%{codigo_asignatura}%'))
+              .execution_options(bind_key='busqueda')
+        ).all()]
+
+        return jsonify(sugerencias)
+
+    # --- Si no es AJAX, se continúa con el flujo normal para renderizar la página ---
+    idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
-    
-    # Obtener los filtros seleccionados desde los parámetros de la URL
-    anho_seleccionado = request.args.get('anho')  
+
+    # Filtros desde la URL
+    anho_seleccionado = request.args.get('anho')
     tipo_programa = request.args.get('tipo_programa')
     codigo_asignatura = request.args.get('codigo_asignatura')
     nombre_archivo = request.args.get('nombre_archivo')
     modalidad = request.args.get('modalidad')
 
-    # Consultar los valores únicos para los filtros desde la base de datos secundaria
+    # Paginación
+    page = request.args.get('page', 1, type=int)
+    per_page = 100
+
     anhos_disponibles = [a[0] for a in db.session.execute(
         db.select(Busqueda.anho).distinct().execution_options(bind_key='busqueda')
     ).all()]
 
     tipos_programa = ["grado", "master"]
-    
+
     codigo_asignaturas = [a[0] for a in db.session.execute(
         db.select(Busqueda.codigo_asignatura).distinct().execution_options(bind_key='busqueda')
     ).all()]
@@ -774,28 +807,35 @@ def consultar_busquedas():
     modalidad_disponibles = [a[0] for a in db.session.execute(
         db.select(Busqueda.modalidad).distinct().execution_options(bind_key='busqueda')
     ).all()]
-    
-    # Construir la consulta con los filtros aplicados
+
     query = db.session.query(Busqueda).execution_options(bind_key='busqueda')
 
-    if anho_seleccionado and anho_seleccionado != "Todos":
+    if anho_seleccionado:
         query = query.filter(Busqueda.anho == anho_seleccionado)
-    if tipo_programa and tipo_programa != "Todos":
-        query = query.filter(Busqueda.tipo_programa == tipo_programa)
-    if codigo_asignatura and codigo_asignatura != "Todos":
-        query = query.filter(Busqueda.codigo_asignatura == codigo_asignatura)
-    if nombre_archivo and nombre_archivo != "Todos":
-        query = query.filter(Busqueda.nombre_archivo == nombre_archivo)
-    if modalidad and modalidad != "Todos":
-        query = query.filter(Busqueda.modalidad == modalidad)
+        if tipo_programa and tipo_programa != "Todos":
+            query = query.filter(Busqueda.tipo_programa == tipo_programa)
+        if codigo_asignatura and codigo_asignatura != "Todos":
+            query = query.filter(Busqueda.codigo_asignatura == codigo_asignatura)
+        if nombre_archivo and nombre_archivo != "Todos":
+            query = query.filter(Busqueda.nombre_archivo == nombre_archivo)
+        if modalidad and modalidad != "Todos":
+            query = query.filter(Busqueda.modalidad == modalidad)
 
-    busquedas = query.all()
+    busquedas_paginadas = query.paginate(page=page, per_page=per_page, error_out=False)
 
-    # Pasar los datos al template
+    params = request.args.to_dict(flat=False)
+    if 'page' in params:
+        del params['page']
+
+    total_pages = busquedas_paginadas.pages
+    start_page = max(1, page - 3)
+    end_page = min(total_pages, page + 3)
+
     return render_template(
-        'consultar_busquedas.html',  
-        textos=textos[idioma], tamano_texto=tamano_texto, daltonismo=daltonismo,
-        busquedas=busquedas,
+        'consultar_busquedas.html',
+        textos=textos[idioma],
+        tamano_texto=tamano_texto,
+        daltonismo=daltonismo,
         anhos=anhos_disponibles,
         tipos_programa=tipos_programa,
         codigo_asignaturas=codigo_asignaturas,
@@ -805,8 +845,15 @@ def consultar_busquedas():
         selected_tipo_programa=tipo_programa,
         selected_codigo_asignatura=codigo_asignatura,
         selected_nombre_archivo=nombre_archivo,
-        selected_modalidad=modalidad  
+        selected_modalidad=modalidad,
+        busquedas=busquedas_paginadas.items,
+        page=page,
+        total_pages=total_pages,
+        start_page=start_page,
+        end_page=end_page,
+        params=params
     )
+
 
 
 #  ----------------------- BARRA DE PROGRESO  ----------------------------------------------------

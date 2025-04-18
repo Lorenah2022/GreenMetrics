@@ -2,10 +2,11 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Consultas Anteriores</title>
+    <title>Búsquedas anteriores</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            color: black;
             margin: 0;
             padding: 0;
             display: flex;
@@ -15,9 +16,11 @@
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
-            color: black;
-        }
+            text-align: center;
+            background-attachment: fixed;
 
+        }
+    
         /* Barra de navegación */
         .navbar {
             display: flex;
@@ -30,72 +33,17 @@
             top: 0;
             z-index: 10;
         }
-
+    
         .navbar h1 {
             margin: 0;
-            font-size: 20px;
+            font-size:  {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
         }
-
-        /* Título centrado */
-        .title {
-            text-align: center;
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin: 20px 0;
-            color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-        }
-
-        /* Tabla de resultados */
-        table {
-            width: 80%;
-            margin: 0 auto 20px;
-            border-collapse: collapse;
-            background: rgba(255, 255, 255, 0.9);
-            color: black;
-        }
-
-        table th, table td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: center;
-        }
-
-        table th {
-            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            color: white;
-        }
-
-        /* Filtros de búsqueda */
-        form {
-            width: 80%;
-            margin: 0 auto 20px;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-
-        form label, form select, form button {
-            margin: 5px;
-        }
-
-        form button {
-            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        form button:hover {
-            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-        }
-
+    
         /* Contenedor del menú */
         .dropdown {
-            position: relative; /* Importante para posicionar el menú desplegable */
+            position: relative;
         }
-
+    
         /* Botón del menú */
         .dropdown button {
             background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
@@ -105,18 +53,20 @@
             font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
             cursor: pointer;
             border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease-in-out;
         }
-
+    
         .dropdown button:hover {
             background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+            transform: scale(1.1); /* Escalado del botón */
         }
-
+    
         /* Elementos del menú desplegable */
         .dropdown-content {
             display: none;
             position: absolute;
-            top: 100%; /* Alineado justo debajo del botón */
-            right: 0; /* Alinea el texto al borde derecho del contenedor */
+            top: 100%;
+            right: 0;
             background-color: white;
             color: black;
             min-width: 150px;
@@ -125,25 +75,33 @@
             border-radius: 5px;
             overflow: hidden;
         }
-
+    
         .dropdown-content a {
             color: black;
             padding: 10px 15px;
             text-decoration: none;
             display: block;
+            transition: background-color 0.3s ease, padding-left 0.3s ease;
         }
-
+    
         .dropdown-content a:hover {
             background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
             color: white;
+            padding-left: 20px; /* Desplazamiento al pasar el ratón */
         }
-
+    
         /* Mostrar el menú al pasar el ratón */
         .dropdown:hover .dropdown-content {
             display: block;
         }
-
-        /* Botón de cancelar */
+    
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin: 40px 0;
+        }
+    
+        /* Botón de volver atrás */
         .btn {
             display: inline-block;
             padding: 12px 25px;
@@ -152,47 +110,246 @@
             border-radius: 30px;
             text-decoration: none;
             cursor: pointer;
-            transition: all 0.3s ease-in-out;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
-
+    
         .btn-secondary {
             background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
             color: white;
             border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
         }
-
+    
         .btn-secondary:hover {
-            background-color:{% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
+            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
             transform: scale(1.05);
             box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+            animation: bounce 0.5s ease-in-out;
         }
-        .form-group {
-            display: flex;
-            align-items: center;
-          }
-          
-          .form-group label {
-            width: 150px; /* Ancho fijo para las etiquetas */
-            text-align: left;
-            margin-left: 10px;
-          }
-          
-          .button-container {
-            display: flex;
-            justify-content: center;
-            margin: 40px 0;
+    
+        /* Animación de rebote para el botón */
+        @keyframes bounce {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.1); }
+            50% { transform: scale(1); }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    
+        .btn-anho {
+            padding: 12px 24px;
+            margin: 10px;
+            border: none;
+            background-color:{% if daltonismo %}#00FF00{% else %}#007F00{% endif %};
+            color: white;
+            font-weight: bold;
+            font-size:  {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            border-radius: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+    
+        .btn-anho:hover {
+            background-color: {% if daltonismo %}#00FF00{% else %}#005c00{% endif %};
+            transform: translateY(-5px); /* Animación de elevación */
+        }
+    
+        .btn-filtrar {
+            background-color: #007F00;
+            color: white;
+            font-weight: bold;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+
+        }
+    
+        .btn-filtrar:hover {
+            background-color: #005c00;
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Sombra ampliada */
+
+        }
+    
+        #filtros-container {
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: opacity 0.5s ease, max-height 0.5s ease;
+            margin-top: 20px;
+        }
+    
+        #filtros-container.visible {
+            opacity: 1;
+            max-height: 600px;
+        }
+    
+        select {
+            padding: 6px;
+            margin: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+    
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 90%;
+        }
+    
+        th, td {
+            border: 1px solid #888;
+            padding: 10px;
+        }
+    
+        th {
+            background-color: #007F00;
+            color: white;
+        }
+    
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
         }
 
-          .form-group input {
-            flex: 1; /* El input ocupa todo el espacio disponible */
-            padding: 5px;
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
-            border-color: #5a6268;  
-          }
-    </style>
+
+        
+
+
+        .input-container {
+            position: relative;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+        
+        /* Estilo del input */
+        #codigo_asignatura {
+            width: 100%;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #007F00;
+            font-size:  {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            transition: box-shadow 0.3s ease;
+        }
+        
+        #codigo_asignatura:focus {
+            outline: none;
+            box-shadow: 0 0 10px #88cc88;
+        }
+        
+        /* Contenedor de sugerencias */
+        #sugerencias-codigo {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: #f0fff0; /* color inicial */
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            margin-top: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            animation: fadeInBackground 0.4s ease-in-out;
+
+        }
+        
+        /* Estilo de cada sugerencia */
+        #sugerencias-codigo li {
+            padding: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+
+        }
+        
+        #sugerencias-codigo li:hover {
+            background-color: #d4f4d4 !important;  /* verde claro */
+            color: #222 !important;
+            transform: scale(1.02);
+            font-weight: bold; /* NEGRITA */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Opcional: mensaje si no hay sugerencias */
+        .no-suggestions {
+            padding: 10px;
+            color: #888;
+        } 
+
+
+        /* Estilo del los botones para pasar a la siguiente página de la tabla */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .pagination {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        
+        .pagination .page-item {
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            margin: 0 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        
+        .pagination .page-item a.page-link {
+            text-decoration: none;
+            color: black;
+            font-weight: 600;
+            font-size:  {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            padding: 8px 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .pagination .page-item a.page-link:hover {
+            background-color: #007F00;  /* Cambia el color de fondo al pasar el ratón */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+            color: white;
+            cursor: pointer;
+            transform: scale(1.1);
+        }
+        
+        .pagination .page-item.active a.page-link {
+            background-color: #007F00;
+            color: white;
+            cursor: default;
+            transform: scale(1.1);
+        }
+        
+        .pagination .page-item.disabled a.page-link {
+            color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        
+        #mensaje-sin-resultados {
+            margin-top: 20px;
+            font-weight: bold;
+            color: red;
+            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
+            text-align: center;
+            padding: 10px;
+            border: 2px solid red;
+            border-radius: 5px;
+            background-color: #f8d7da;
+        }
+        
+        
+    </style> 
 </head>
 <body>
 
@@ -209,90 +366,148 @@
         </div>
     </div>
 
-    <!-- Título centrado -->
-    <h1 class="title">{{textos.busquedas_anteriores}}</h1>
+    <h2>{{textos.busquedas_anteriores}}</h2>
 
-    <!-- Filtros de búsqueda -->
-    <form method="GET">
-        <label for="anho">{{textos.anho}}</label>
-        <select name="anho" id="anho">
-            <option value="">{{textos.todos}}</option>
-            {% for anho in anhos %}
-                <option value="{{ anho }}" {% if selected_anho == anho %}selected{% endif %}>{{ anho }}</option>
-            {% endfor %}
-        </select>
+    <p  style="font-size: {{'14px' if session.get('tamano_texto') == 'pequeño' else '20px'if session.get('tamano_texto') == 'grande'else '16px'}};">{{textos.anho}} </p>
 
-        <label for="codigo_asignatura">{{textos.codigo_Asignatura}}</label>
-        <select name="codigo_asignatura">
-            <option value="Todos">{{textos.todos}}</option>
-            {% for codigo_asignatura in codigo_asignaturas %}
-                <option value="{{ codigo_asignatura }}" {% if selected_codigo_asignatura == codigo_asignatura %}selected{% endif %}>{{ codigo_asignatura }}</option>
-            {% endfor %}
-        </select>
-        
-
-        <label for="tipo_programa">{{textos.tipo}}</label>
-        <select name="tipo_programa" id="tipo_programa">
-            <option value="">{{textos.todos}}</option>
-            {% for tipo in tipos_programa %}
-                <option value="{{ tipo }}" {% if selected_tipo_programa == tipo %}selected{% endif %}>{{ tipo }}</option>
-            {% endfor %}
-        </select>
-
-        <label for="nombre_archivo">{{textos.nombre_archivo}}</label>
-        <select name="nombre_archivo" id="nombre_archivo">
-            <option value="">{{textos.todos}}</option>
-            {% for archivo in nombre_archivos %}
-                <option value="{{ archivo }}" {% if selected_nombre_archivo == archivo %}selected{% endif %}>{{ archivo }}</option>
-            {% endfor %}
-        </select>
-
-        <label for="modalidad">{{textos.modalidad}}</label>
-        <select name="modalidad" id="modalidad">
-            <option value="">{{ textos.todos }}</option>
-            {% for modo in modalidad %}
-                <option value="{{ modo }}" {% if selected_modalidad == modo %}selected{% endif %}>{{ modo }}</option>
-            {% endfor %}
-        </select>
-       
-        <button type="submit">Filtrar</button>
-        
-    </form>
+    <div class="year-buttons">
+        {% for anho in anhos %}
+            <button type="button" class="btn-anho" onclick="mostrarFiltros('{{ anho }}')">{{ anho }}</button>
+        {% endfor %}
+    </div>
     <div class="button-container">
         <a href="{{ url_for('pagina_informe_6_1') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
     </div>
-    <!-- Tabla de resultados -->
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>{{ textos.anho }}</th>
-                <th>{{ textos.codigo_Asignatura }}</th>
-                <th>{{ textos.tipo }}</th>
-                <th>{{ textos.nombre_archivo }}</th>
-                <th>{{ textos.modalidad }}</th> 
-            </tr>
-        </thead>
-        <tbody>
-            {% if busquedas %}
-                {% for busqueda in busquedas %}
-                    <tr>
-                        <td>{{ busqueda.id }}</td>
-                        <td>{{ busqueda.anho }}</td>
-                        <td>{{ busqueda.codigo_asignatura if busqueda.codigo_asignatura else "N/A" }}</td>
-                        <td>{{ busqueda.tipo_programa }}</td>
-                        <td>{{ busqueda.nombre_archivo }}</td>
-                        <td>{{ busqueda.modalidad }}</td>  <!-- Mostrar modalidad -->
-                    </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="6">{{ textos.no_busquedas }}</td>  <!-- Actualizamos el colspan a 6 -->
-                </tr>
+    <div id="filtros-container">
+        <form method="get" action="{{ url_for('consultar_busquedas') }}">
+            <input type="hidden" name="anho" id="input-anho">
+
+            <div class="input-container">
+                <label for="codigo_asignatura" style="font-size: {{'14px' if session.get('tamano_texto') == 'pequeño' else '20px'if session.get('tamano_texto') == 'grande'else '16px'}};" >{{textos.codigo_Asignatura}}:</label>
+                <input type="text" id="codigo_asignatura" name="codigo_asignatura" autocomplete="off"     placeholder="{{textos.introducir_codigo}}">
+                <ul id="sugerencias-codigo"></ul>
+            </div>
+            
+
+            <label style="font-size: {{'14px' if session.get('tamano_texto') == 'pequeño' else '20px'if session.get('tamano_texto') == 'grande'else '16px'}};" >{{textos.tipo}}
+                <select name="tipo_programa">
+                    <option value="Todos" style="font-size: {{'14px' if session.get('tamano_texto') == 'pequeño' else '20px'if session.get('tamano_texto') == 'grande'else '16px'}};" >{{textos.todos}}</option>
+                    {% for tipo in tipos_programa %}
+                        <option value="{{ tipo }}" {% if selected_tipo_programa == tipo %}selected{% endif %}>{{ tipo }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label style="font-size: {{'14px' if session.get('tamano_texto') == 'pequeño' else '20px'if session.get('tamano_texto') == 'grande'else '16px'}};" >{{textos.modalidad}}
+                <select name="modalidad">
+                    <option value="Todos" style="font-size: {{'14px' if session.get('tamano_texto') == 'pequeño' else '20px'if session.get('tamano_texto') == 'grande'else '16px'}};" >{{textos.todos}}</option>
+                    {% for m in modalidad %}
+                        <option value="{{ m }}" {% if selected_modalidad == m %}selected{% endif %}>{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <br>
+            <button type="submit" class="btn-filtrar " >{{textos.filtrar}}</button>
+        </form>
+    </div>
+    {% if selected_anho %}
+        {% if busquedas %}
+            <div id="tabla-resultados">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{{textos.anho_tabla}}</th>
+                            <th>{{textos.tipo}}</th>
+                            <th>{{textos.codigo_Asignatura}}</th>
+                            <th>{{textos.modalidad}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in busquedas %}
+                        <tr>
+                            <td>{{ b.anho }}</td>
+                            <td>{{ b.tipo_programa }}</td>
+                            <td>{{ b.codigo_asignatura }}</td>
+                            <td>{{ b.modalidad }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="pagination-container">
+                    <ul class="pagination">
+                        {% for page_num in range(start_page, end_page + 1) %}
+                            <li class="page-item{% if page_num == page %} active{% endif %}">
+                                <a class="page-link" href="{{ url_for('consultar_busquedas', page=page_num, **params) }}">{{ page_num }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {%else%}
+            <div id="mensaje-sin-resultados">
+               {{textos.no_resultados}} {{ selected_anho }}.
+            </div>
             {% endif %}
-        </tbody>
-    </table>
+        {% endif %}
+
+    </div>
+    
+    
+
+    
+
+    <script>
+        function mostrarFiltros(anho) {
+            const filtros = document.getElementById("filtros-container");
+            const inputAnho = document.getElementById("input-anho");
+
+            filtros.classList.add("visible");
+            inputAnho.value = anho;
+
+            // Scroll suave hacia filtros
+            filtros.scrollIntoView({ behavior: "smooth" });
+        }
+    </script>
+
 
    
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const input = document.getElementById("codigo_asignatura");
+            const sugerencias = document.getElementById("sugerencias-codigo");
+        
+            input.addEventListener("input", function () {
+                const valor = input.value;
+        
+                if (valor.length >= 1) {
+                    fetch(`/consultar_busquedas?codigo_asignatura=${encodeURIComponent(valor)}`, {
+                        headers: {
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        sugerencias.innerHTML = "";
+                        data.forEach(opcion => {
+                            const li = document.createElement("li");
+                            li.textContent = opcion;
+                            li.style.cursor = "pointer";
+                            li.style.padding = "5px";
+                            li.style.background = "#fff";
+                            li.style.border = "1px solid #ccc";
+                            li.addEventListener("click", () => {
+                                input.value = opcion;
+                                sugerencias.innerHTML = "";
+                            });
+                            sugerencias.appendChild(li);
+                        });
+                    });
+                } else {
+                    sugerencias.innerHTML = "";
+                }
+            });
+        });
+        </script>     
 </body>
 </html>
