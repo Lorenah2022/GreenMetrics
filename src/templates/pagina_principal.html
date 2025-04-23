@@ -7,9 +7,9 @@
   <!-- Incluir el archivo CSS de la barra de navegación -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
 </head>
-<body  <body class="{% if session.get('tamano_texto') == 'pequeño' %}texto-pequeno
-{% elif session.get('tamano_texto') == 'grande' %}texto-grande
-{% endif %}">
+<body class="{% if session.get('tamano_texto') == 'pequeño' %}texto-pequeno{% elif session.get('tamano_texto') == 'grande' %}texto-grande{% else %}texto-mediano{% endif %} 
+{% if daltonismo %}modo-daltonismo{% endif %}">
+
   <!-- Barra de navegación -->
   <div class="navbar">
     <h1>Greenmetrics</h1>

@@ -1,3 +1,4 @@
+/* Estilos comunes */
 * {
     margin: 0;
     padding: 0;
@@ -6,14 +7,14 @@
   
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    
     position: relative;
     margin: 0;
     padding: 0;
     min-height: 100vh; /* Asegura que la imagen de fondo cubra toda la altura de la ventana */
-  }  
+  }
   
-body::before {
+  /* Imagen de fondo */
+  body::before {
     content: "";
     position: absolute;
     top: 0;
@@ -25,11 +26,11 @@ body::before {
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed; /* Añadir este atributo */
-
     filter: brightness(50%); /* Ajusta el brillo de la imagen */
     z-index: -1; /* Mantiene el fondo detrás del contenido */
   }
-
+  
+  /* Estilos del contenedor */
   .container {
     max-width: 1200px;
     margin: auto;
@@ -38,11 +39,11 @@ body::before {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 24px;
     padding: 20px;
-
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
   }
   
+  /* Estilo de las tarjetas */
   .card {
     position: relative;
     width: 280px;
@@ -97,6 +98,7 @@ body::before {
     margin-bottom: 15px;
   }
   
+  /* Estilo del dropdown */
   .dropdown-list {
     display: none;
   }
@@ -117,23 +119,46 @@ body::before {
   }
   
   .dropdown-list li {
-    color: #333;;
+    color: #333;
     padding: 5px;
     transition: background 0.3s ease;
   }
   
   .dropdown-list li:hover {
-    background-color: #35a670;;
+    background-color: #35a670;
   }
-
+  
   /* Tamaño del texto según preferencia del usuario */
-.texto-pequeno {
+  .texto-pequeno {
     font-size: 14px;
   }
-    
+  
+  .texto-mediano {
+    font-size: 16px; /* Este tamaño es el predeterminado */
+  }
+  
   .texto-grande {
     font-size: 20px;
   }
   
+  /* Estilos para el modo daltonismo */
+  /* Modo daltonismo */
+.modo-daltonismo {
+    background-color: #581c87; /* Fondo verde */
+    color: #d8b4fe; /* Texto negro */
+  }
   
-  
+.modo-daltonismo   .card:hover .dropdown-list {
+    display: block;
+    position: absolute;
+    bottom: 60px; /* Ubicación del listado debajo del título */
+    left: 0;
+    background: #d8b4fe;
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+.modo-daltonismo .dropdown-list li:hover {
+    background-color: #7e22ce;
+  }
