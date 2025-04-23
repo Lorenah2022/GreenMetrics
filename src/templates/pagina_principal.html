@@ -1,184 +1,252 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página Principal</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-image:url('/static/images/fondo.webp');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center;
-            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-
-        }
-        /* Filtro translúcido para mejorar la visibilidad del contenido */
-        .background-overlay {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.4); /* Negro con 40% de opacidad */
-            z-index: -1; /* Asegura que el overlay esté detrás del contenido */
-        }
-
-        /* Barra de navegación */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            color: white;
-            padding: 10px 20px; /* Unificación del grosor */
-            z-index: 1;
-        }
-
-        .navbar h1 {
-            margin: 0;
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
-        }
-
-        /* Título */
-        h1.text-center {
-            color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            margin-bottom: 30px;
-            font-size: 2rem;
-            font-weight: 600;
-            text-align: center;
-        }
-      
-
-        .btn-option {
-            display: block;
-            margin: 20px auto;
-            padding: 15px 30px;
-            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: {% if tamano_texto == 'pequeño' %}14px{% elif tamano_texto == 'grande' %}22px{% else %}18px{% endif %};
-            cursor: pointer;
-            width: 100%;
-            max-width: 300px;
-        }
-
-        .btn-option:hover {
-            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-        }
-        /* Contenedor del menú */
-        .dropdown {
-            position: relative; /* Importante para posicionar el menú desplegable */
-        }
-
-        /* Botón del menú */
-        .dropdown button {
-            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        .dropdown button:hover {
-            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-        }
-
-        /* Elementos del menú desplegable */
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            top: 100%; /* Alineado justo debajo del botón */
-            right: 0; /* Alinea el texto al borde derecho del contenedor */
-            background-color: white;
-            color: black;
-            min-width: 150px;
-            box-shadow: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-            z-index: 1;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        .dropdown-content a {
-            color: black;
-            padding: 10px 15px;
-            text-decoration: none;
-            display: block;
-        }
-
-        .dropdown-content a:hover {
-            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-            color: white;
-        }
-
-        /* Mostrar el menú al pasar el ratón */
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-        /* Contenedor principal */
-        .main-content {
-            padding: 20px;
-            color: #333;
-            text-align: center;
-            flex: 1;
-        }
-
-        .main-content h2 {
-            color: #006400;
-            margin-bottom: 20px;
-        }
-
-        .main-content p {
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
-            color: #555;
-        }
-
-    </style>
+  <meta charset="UTF-8">
+  <title>Informes TFG</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tfg-style.css') }}">
+  <!-- Incluir el archivo CSS de la barra de navegación -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
 </head>
-<body>
+<body  <body class="{% if session.get('tamano_texto') == 'pequeño' %}texto-pequeno
+{% elif session.get('tamano_texto') == 'grande' %}texto-grande
+{% endif %}">
+  <!-- Barra de navegación -->
+  <div class="navbar">
+    <h1>Greenmetrics</h1>
+    <div class="dropdown">
+      <button>≡</button>
+      <div class="dropdown-content">
+        <a href="{{ url_for('perfil') }}">{{ textos.perfil }}</a>
+        <a href="{{ url_for('ajustes') }}">{{ textos.ajustes }}</a>
+        <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion }}</a>
+      </div>
+    </div>
+  </div>
 
-    <!-- Barra de navegación -->
-    <div class="navbar">
-        <h1>Greenmetrics</h1>
-        <div class="dropdown">
-            <button>≡</button>
-            <div class="dropdown-content">
-                <a href="{{ url_for('perfil') }}">{{ textos.perfil }}</a>
-                <a href="{{ url_for('ajustes') }}">{{ textos.ajustes }}</a>
-                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion }}</a>
-            </div>
+  <!-- Contenido principal de la página -->
+  <div class="container">
+    <!-- Primer tarjeta -->
+    <div class="card">
+      <div class="background"
+        style="background-image: url('https://estaticos2.burgosnoticias.com/resources/files/2018/7/20/1532087105209universidad-burgos.jpg');">
+      </div>
+      <div class="content">
+        <h3 class="heading">Setting & Infrastructure</h3>
+        <div class="dropdown-list">
+          <div style="max-height: 200px; overflow-y: auto;">
+            <ul>
+              <li>Total area on campus for water absorption (excluding forest and planted vegetation)</li>
+              <li>Conservation of plant, animal, and wildlife genetic resources for food and agriculture</li>
+              <li>Use of ICT in planning, monitoring, and evaluating infrastructure programs</li>
+              <li>Type of higher education institution</li>
+              <li>Climate</li>
+              <li>Number of campus site</li>
+              <li>Campus setting</li>
+              <li>Total campus area (m2)</li>
+              <li>Total campus ground floor area of buildings (m2)</li>
+              <li>Total campus buildings area (m2)</li>
+              <li>The ratio of open space to total area</li>
+              <li>Total area on campus covered in forest vegetation</li>
+              <li>Total area on campus covered in planted vegetation</li>
+              <li>Total number of regular students (part time and full time)</li>
+              <li>Total number of online students (part time and full time)</li>
+              <li>Total number of academic and administrative staff</li>
+              <li>The total open space area divided by total campus population</li>
+              <li>Total university's budget (in US Dollars)</li>
+              <li>University's budget for sustainability effort (in US Dollars)</li>
+              <li>Percentage of University's budget for sustainability effort</li>
+              <li> <a href="{{ url_for('pagina_informe_1_19') }}"> <strong>Percentage of operation and maintenance activities of building in one year period </a></strong></li>
+              <li>Campus facilities for disable and maternity care</li>
+              <li>Security and safety facilities</li>
+              <li>Health infrastructure</li>
+            </ul>
+          </div>
         </div>
+      </div>
     </div>
 
-    <!-- Contenido principal -->
-    <div class="main-content">
-        <h2>{{ textos.texto_bienvenida }}</h2>
-        <form method="GET" action="{{ url_for('pagina_informe_1_19') }}">
-            <button type="submit" class="btn-option">{{ textos.informe_1_19 }}</button>
-        </form>
-        <form method="GET" action="{{ url_for('pagina_informe_6_1') }}">
-            <button type="submit" class="btn-option">{{ textos.informe_6_1 }}</button>
-        </form>
-        <form method="GET" action="{{ url_for('pagina_informe_6_2') }}">
-            <button type="submit" class="btn-option">{{ textos.informe_6_2 }}</button>
-        </form>
-        <form method="GET" action="{{ url_for('pagina_informe_6_4') }}">
-            <button type="submit" class="btn-option">{{ textos.informe_6_4 }}</button>
-        </form>
-        <form method="GET" action="{{ url_for('pagina_informe_6_7') }}">
-            <button type="submit" class="btn-option">{{ textos.informe_6_7 }}</button>
-        </form>
-        <form method="GET" action="{{ url_for('pagina_informe_6_8') }}">
-            <button type="submit" class="btn-option">{{ textos.informe_6_8 }}</button>
-        </form>
-        
-        
+    <!-- Segunda tarjeta -->
+    <div class="card">
+      <div class="background"
+        style="background-image: url('https://gef.eu/wp-content/uploads/2016/11/Climate_and_energy1-640x488.jpg');">
+      </div>
+      <div class="content">
+        <h3 class="heading">Energy & Climate Change</h3>
+        <div class="dropdown-list">
+          <div style="max-height: 200px; overflow-y: auto;">
+            <ul>
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <ul>
+                      <li>Energy efficient appliances usage</li>
+                      <li>Total campus smart building area (m2)</li>
+                      <li>Smart Building implementation</li>
+                      <li>Number of renewable energy sources in campus</li>
+                      <li>Renewable energy sources and their amount of the energy produced (in kilowatt-hour)</li>
+                      <li>Electricity usage per year (in kilo watt hour)</li>
+                      <li>The total electricity usage divided by total campus population (kWh per person)</li>
+                      <li>The ratio of renewable energy production divided by total energy usage per year</li>
+                      <li>Elements of green building implementation as reflected in all construction and renovation policies</li>
+                      <li>Greenhouse gas emission reduction program</li>
+                      <li>Total carbon footprint (CO2 emission in the last 12 months, in metric tons)</li>
+                      <li>The total carbon footprint divided by total campus population (metric tons per person)</li>
+                      <li>The number of innovative program(s) in Energy and Climate Change</li>
+                      <li>Impactful university program(s) on climate change</li>
+                      <li>Planning, implementation, monitoring and/or evaluation of all programs related to Energy and Climate Change through the utilization of Information and Communication Technology (ICT)</li>
+                    </ul>
+                  </div>
+                  
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- Tercera tarjeta -->
+    <div class="card">
+        <div class="background"
+          style="background-image: url('https://delsapparel.com/wp-content/uploads/2021/04/6-Proper-Waste-Management-Tips-1024x682.jpg');">
+        </div>
+        <div class="content">
+          <h3 class="heading">Waste</h3>
+          <div class="dropdown-list">
+            <div style="max-height: 200px; overflow-y: auto;">
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <ul>
+                      <li>3R (Reduce, Reuse, Recycle) program for university's waste</li>
+                      <li>Program to reduce the use of paper and plastic on campus</li>
+                      <li>Total volume organic waste produced (ton)</li>
+                      <li>Total volume organic waste treated (tons)</li>
+                      <li>Organic waste treatment</li>
+                      <li>Total volume inorganic waste produced (tons)</li>
+                      <li>Total volume inorganic waste treated (tons)</li>
+                      <li>Inorganic waste treatment</li>
+                      <li>Total volume toxic waste produced (tons)</li>
+                      <li>Total volume toxic waste treated (tons)</li>
+                      <li>Toxic waste treatment</li>
+                      <li>Sewage disposal</li>
+                      <li>Waste management through the utilization of Information and Communication Technology (ICT)</li>
+                    </ul>
+                  </div>
+                  
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cuarta tarjeta -->
+    <div class="card">
+        <div class="background"
+          style="background-image: url('https://c02.purpledshub.com/uploads/sites/41/2018/08/GettyImages-499425462pth-bd3c05d.jpg?w=910&webp=1');">
+        </div>
+        <div class="content">
+          <h3 class="heading">Water</h3>
+          <div class="dropdown-list">
+            <div style="max-height: 200px; overflow-y: auto;">
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <ul>
+                      <li>Water conservation program and implementation</li>
+                      <li>Water recycling program implementation</li>
+                      <li>Water efficient appliance usage</li>
+                      <li>Consumption of treated water</li>
+                      <li>Water pollution control in campus area</li>
+                      <li>Planning, implementation, monitoring and/or evaluation of all programs related to Water Management through the utilization of Information and Communication Technology (ICT)</li>
+                    </ul>
+                  </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      
+    <!-- Quinta tarjeta -->
+    <div class="card">
+        <div class="background"
+          style="background-image: url('https://www.actu-environnement.com/images/illustrations/news/42223_large.jpg');">
+        </div>
+        <div class="content">
+          <h3 class="heading">Transportation</h3>
+          <div class="dropdown-list">
+            <div style="max-height: 200px; overflow-y: auto;">
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <ul>
+                      <li>Number of cars actively used and managed by University</li>
+                      <li>Number of cars entering the university daily</li>
+                      <li>Number of motorcycles entering the university daily</li>
+                      <li>The total number of vehicles (cars and motorcycles) divided by total campus population</li>
+                      <li>Shuttle service</li>
+                      <li>Number of shuttles operated in your university</li>
+                      <li>Average number of passengers of each shuttle</li>
+                      <li>Total trips of shuttle services each day</li>
+                      <li>Zero Emission Vehicles (ZEV) policy on campus</li>
+                      <li>Average number of Zero Emission Vehicles (e.g. bicycles, canoe, snowboard, electric car, etc.) on campus per day</li>
+                      <li>The total number of Zero Emission Vehicles (ZEV) divided by total campus population</li>
+                      <li>Total ground parking area (m2)</li>
+                      <li>Ratio of parking area to total campus area</li>
+                      <li>Transportation program designed to limit or decrease the parking area on campus for the last 3 years (from 2021 to 2023)</li>
+                      <li>Number of initiatives to decrease private vehicles on campus</li>
+                      <li>Pedestrian path on campus</li>
+                      <li>Approximate daily travel distance of a vehicle inside campus only (in Kilometers)</li>
+                      <li>Planning, implementation, monitoring and/or evaluation of all programs related to Transportation through the utilization of Information and Communication Technology (ICT)</li>
+                    </ul>
+                  </div>
+                  
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <!-- Sexta tarjeta -->
+    <div class="card">
+        <div class="background"
+          style="background-image: url('https://wonkhe.com/wp-content/wonkhe-uploads/2018/03/wonkhe-isometric-research-teaching-930x515@2x.jpg');">
+        </div>
+        <div class="content">
+          <h3 class="heading">Education & Research </h3>
+          <div class="dropdown-list">
+            <div style="max-height: 200px; overflow-y: auto;">
+                <div style="max-height: 200px; overflow-y: auto;">
+                    <ul>
+                      <li><strong><a href="{{ url_for('pagina_informe_6_1') }}">Number of courses/subjects related to sustainability offered</a></strong></li>
+                      <li><strong><a href="{{ url_for('pagina_informe_6_2') }}">Total number of courses/subjects offered</a></strong></li>
+                      <li><strong>The ratio of sustainability courses to total courses/subjects</strong></li> <!--  poner enlace cuando este la interfaz-->
+                      <li><strong><a href="{{ url_for('pagina_informe_6_4') }}">Total research funds dedicated to sustainability research (in US Dollars)</a></strong></li>
+                      <li>Total research funds (in US Dollars) (average per annum over the last 3 years)</li>
+                      <li>The ratio of sustainability research funding to total research funding</li>
+                      <li><strong><a href="{{ url_for('pagina_informe_6_7') }}"> >Number of scholarly publications on sustainability published</a></strong></li>
+                      <li><strong><a href="{{ url_for('pagina_informe_6_8') }}">Number of events related to sustainability</a></strong></li>
+                      <li>Number of activities organized by student organizations related to sustainability per year</li>
+                      <li>University-run sustainability website</li>
+                      <li>Sustainability website address (URL) if available</li>
+                      <li>Sustainability report</li>
+                      <li>Sustainability report link address (URL) if available</li>
+                      <li>Number of cultural activities on campus</li>
+                      <li>Number of university program(s) with international collaborations</li>
+                      <li>Number of community services related to sustainability organized by university and involving students</li>
+                      <li>Number of sustainability-related startups</li>
+                      <li>Total number of graduates with green jobs (new)</li>
+                      <li>Availability of units or offices that coordinate or are related to sustainability (new)</li>
+                      <li>Planning, implementation, monitoring and/or evaluation of university governance through the utilization of Information and Communication Technology (ICT)</li>
+                    </ul>
+                  </div>
+                  
+                  
+            </div>
+          </div>
+        </div>
+      </div>
+
+  </div> <!-- Fin del contenedor -->
+
+  <script>
+    window.addEventListener('scroll', function() {
+      const navbar = document.querySelector('.navbar');
+      if (window.scrollY > 10) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    });
+  </script>
 
 </body>
 </html>

@@ -1,0 +1,111 @@
+/* Barra de navegación */
+.navbar {
+    background-color: #333;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;  /* Para asegurarse de que la barra esté siempre encima */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);  /* Sombra para darle un toque más moderno */
+    transition: background-color 0.3s ease; /* Transición suave de color de fondo */
+  }
+  
+  /* Estilo del título */
+  .navbar h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  
+  .navbar h1:hover {
+    transform: scale(1.1);  /* Efecto de animación en el título */
+  }
+  
+  /* Estilos para el dropdown (menú desplegable) */
+  .dropdown {
+    position: relative;
+  }
+  
+  .dropdown button {
+    background-color: #333;
+    color: white;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+  
+  .dropdown button:hover {
+    background-color: #555;  /* Color de fondo cuando el botón está en hover */
+    transform: scale(1.1);  /* Animación de agrandar el botón */
+  }
+  
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: #333;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    border-radius: 5px;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s 0.3s;
+  }
+  
+  .dropdown:hover .dropdown-content {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0s 0s;
+  }
+  
+  .dropdown-content a {
+    color: white;
+    padding: 12px 20px;
+    text-decoration: none;
+    display: block;
+    font-size: 1rem;
+    transition: background-color 0.3s ease, padding 0.3s ease;
+  }
+  
+  .dropdown-content a:hover {
+    background-color: #444;  /* Color de fondo al pasar el ratón */
+    padding-left: 30px;  /* Desplazamiento hacia la izquierda en el hover */
+  }
+  
+  /* Ajuste de la posición del contenido principal para no tapar la barra de navegación */
+  body {
+    padding-top: 80px;  /* Ajusta según la altura de tu barra */
+  }
+  
+  /* Asegúrate de que el contenedor tenga un margen suficiente para no estar detrás de la barra */
+  .container {
+    margin-top: 80px;
+  }
+  
+  /* Efecto de cambio de color de fondo cuando el usuario hace scroll */
+  .navbar.scrolled {
+    background-color: #222;  /* Cambia el color de fondo cuando se hace scroll */
+    transition: background-color 0.3s ease;
+  }
+  
+  /* Estilo para los enlaces dentro del menú */
+  .dropdown-content a {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  
+  
