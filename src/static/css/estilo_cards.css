@@ -141,11 +141,12 @@
     font-size: 20px;
   }
   
+
   /* Estilos para el modo daltonismo */
   /* Modo daltonismo */
 .modo-daltonismo {
-    background-color: #581c87; /* Fondo verde */
-    color: #d8b4fe; /* Texto negro */
+    background-color: #581c87; 
+    color: #d8b4fe; 
   }
   
 .modo-daltonismo   .card:hover .dropdown-list {

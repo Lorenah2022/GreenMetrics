@@ -103,9 +103,19 @@
   }
   
   /* Estilo para los enlaces dentro del menú */
-  .dropdown-content a {
-    font-size: 1rem;
-    font-weight: 500;
+  .texto-pequeno .dropdown-content a {
+    font-size: 14px;
   }
+  
+  .texto-mediano .dropdown-content a {
+    font-size: 16px;
+  }
+  
+  .texto-grande .dropdown-content a {
+    font-size: 20px;
+  }
+  
+  
+  
   
   

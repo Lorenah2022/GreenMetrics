@@ -1,0 +1,121 @@
+.btn-option {
+    display: block;
+    margin: 20px auto;
+    padding: 15px 30px;
+    background-color: #D9F2E1;
+    color: black;
+    border: none;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 300px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    animation: pulse 2s infinite;
+    font-size: 16px; /* Establece un tamaño de fuente predeterminado */
+
+}
+
+.btn-option:hover {
+    background-color: #35a670;
+    color: white;
+    transform: translateY(-6px) scale(1.1) rotate(5deg);  /* Efecto rebote + ligera rotación */
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2); /* Sombra más marcada */
+    transition: all 0.3s ease-in-out;
+
+}
+
+}
+
+/* Definición de la animación "pulse" */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Contenedor principal */
+.main-content {
+    padding: 20px;
+    color: #333;
+    text-align: center;
+    flex: 1;
+}
+
+/* Título con cambio de color según daltonismo */
+.main-content h2 {
+    color: #D9F2E1; /* Cambiar de color dependiendo de daltonismo */
+    margin-bottom: 20px;
+}
+
+.main-content p {
+    font-size: 16px;
+    color: #555;
+}
+
+/* Contenedor para los botones al lado */
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;  /* Espacio entre los botones */
+    margin-top: 20px;
+}
+/* Estilo de los botones */
+.btn {
+    display: inline-block;
+    padding: 12px 25px;
+    margin-top: 20px;
+    text-align: center;
+    font-weight: bold;
+    border-radius: 30px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    font-size: var(--font-size-medium); /* Establece un tamaño de fuente predeterminado */
+}
+/* Botón de volver atrás */
+.btn-secondary {
+    background-color: #D9F2E1;
+    color: black;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary:hover {
+    background-color:#35a670;
+    transform: scale(1.05);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+    color:white;
+}
+
+.texto-pequeno .btn-option {
+    font-size: var(--font-size-small); /* Aplicar tamaño pequeño */
+}
+
+.texto-grande .btn-option {
+    font-size: var(--font-size-large); /* Aplicar tamaño grande */
+}
+
+
+  /* Estilos para el modo daltonismo */
+  .modo-daltonismo .btn-option{
+    background-color:#d8b4fe ;
+  }
+
+  .modo-daltonismo .btn-option:hover{
+    color: white;
+    background-color: #581c87;
+  }
+  .modo-daltonismo .btn-secondary {
+    background-color: #d8b4fe;
+  }
+
+  .modo-daltonismo .btn-secondary:hover{
+    color:white;
+    background-color: #581c87;
+  }
+  .modo-daltonismo .main-content h2{
+    color: #d8b4fe;
+  }
+
+
+
