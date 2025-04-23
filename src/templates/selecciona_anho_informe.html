@@ -271,15 +271,17 @@
             
         <div class="container">
             {% if origen == 'pagina_informe_6_1'%}
-            <h1>{{textos.informe_6_1}} </h1>
+                <h1>{{textos.informe_6_1}} </h1>
+            {% elif origen == 'pagina_informe_6_2'%}
+                <h1>{{textos.informe_6_2}} </h1>
             {% elif origen == 'pagina_informe_6_7'%}
                 <h1>{{textos.informe_6_7}} </h1>
             {% elif origen == 'pagina_informe_6_8'%}
                 <h1>{{textos.informe_6_8}} </h1>
             {% endif %}
             <h2>{{textos.descargar_informe}} </h2>
-            <form id="informeForm" method="POST" action="{% if origen == 'pagina_informe_6_8' %}{{ url_for('pagina_pedir_IA') }}{% endif %}">
-                {% if origen == 'pagina_informe_6_1'%}
+            <form id="informeForm" method="POST" action="{% if origen == 'pagina_informe_6_8' %}{{ url_for('pagina_pedir_IA') }}{% else %}{{ url_for('generar_informe') }} {% endif %}">
+                {% if origen == 'pagina_informe_6_1' or origen == 'pagina_informe_6_2' %}
                         <label for="anho">{{textos.anho}}:</label>
                         <select name="anho" id="anho" class="form-control" required>
                             {% for anho in nuevos_anhos_disponibles %}
@@ -289,16 +291,43 @@
                     {% elif origen == 'pagina_informe_6_7' or origen == 'pagina_informe_6_8' %}
                         <label for="anho">{{textos.introducir_rango_anho}}:</label>
                         <input type="text" name="anho" id="anho" class="form-control" required placeholder="{{textos.ingrese_anho}}" min="1900" max="2100">
+                        <!-- Verifica que el año este en el formato deseado. Si no es válido, muestra un mensaje de error, y si es válido, elimina el mensaje de error y permite el envío del formulario. -->
+                        <script>
+                            document.addEventListener("DOMContentLoaded", function () {
+                                const inputAnho = document.getElementById("anho");
+                            
+                                inputAnho.addEventListener("input", function () {
+                                    const value = inputAnho.value.trim();
+                                    const regex = /^(\d{4})-(\d{4})$/; // Formato YYYY-YYYY
+                            
+                                    if (regex.test(value)) {
+                                        const [, startYear, endYear] = value.match(regex).map(Number);
+                                        if ((endYear - startYear) !== 2) { // Debe ser un rango de exactamente 3 años
+                                            inputAnho.setCustomValidity("{{textos.rango_incorrecto}}")
+                                        } else {
+                                            inputAnho.setCustomValidity("");
+                                        }
+                                    } else {
+                                        inputAnho.setCustomValidity("{{textos.formato_incorrecto}}");
+                                    }
+                            
+                                    // Forzar la comprobación del formulario para mostrar los errores
+                                    inputAnho.reportValidity();
+                                });
+                            });
+                            </script>
+                    
+                    
                     {% endif %}
                 
 
                 <div class="button-container">
-                    <button id="genInformeBtn" class="btn btn-secondary">{{textos.descargar_informe}}</button>
-                    <!-- Como la página del informe     tiene más opciones, al presionar el botón de volver atrás debería mostrar otra vez las opciones-->
+                    <button type="submit" id="genInformeBtn" class="btn btn-secondary">{{textos.descargar_informe}}</button>
+                    <!-- Como la página del informe 6_1 tiene más opciones, al presionar el botón de volver atrás debería mostrar otra vez las opciones-->
                     {% if origen == 'pagina_informe_6_1'%}
                         <a href="{{ url_for('pagina_informe_6_1') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
                     <!-- Como estos informes solo tienen la opción de descarga, al dar al botón deberían volver a la página principal-->
-                    {% elif origen == 'pagina_informe_6_7' or origen == 'pagina_informe_6_8'%}
+                    {% elif origen == 'pagina_informe_6_7' or origen == 'pagina_informe_6_8' or origen == 'pagina_informe_6_2' %}
                          <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
                     {% endif %}
                     
@@ -329,30 +358,8 @@
             document.getElementById("informeForm").submit();
         }
     </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const inputAnho = document.getElementById("anho");
-        
-            inputAnho.addEventListener("input", function () {
-                const value = inputAnho.value.trim();
-                const regex = /^(\d{4})-(\d{4})$/; // Formato YYYY-YYYY
-        
-                if (regex.test(value)) {
-                    const [, startYear, endYear] = value.match(regex).map(Number);
-                    if ((endYear - startYear) !== 2) { // Debe ser un rango de exactamente 3 años
-                        inputAnho.setCustomValidity("{{textos.rango_incorrecto}}")
-                    } else {
-                        inputAnho.setCustomValidity("");
-                    }
-                } else {
-                    inputAnho.setCustomValidity("{{textos.formato_incorrecto}}");
-                }
-        
-                // Forzar la comprobación del formulario para mostrar los errores
-                inputAnho.reportValidity();
-            });
-        });
-        </script>
+
+    
     
 </body>
 </html>

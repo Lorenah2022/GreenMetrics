@@ -106,6 +106,7 @@ textos = {
         'iniciar_sesion': 'Login',
         'informe_1_19':'Annual Operation Maintenance Percentage (1_19)',
         'informe_6_1':'Number of Courses on Environment and Sustainability (6_1)',
+        'informe_6_2':'Total number of courses or modules offered (6_2)',
         'informe_6_4':'Total Research Funds Dedicated to Sustainability Research (in US Dollars) (6_4)',
         'informe_6_7':'Number of Scholarly Publications on Sustainability (6_7)',
         'informe_6_8':'Number of Events on Environment and Sustainability(6_8)',
@@ -183,6 +184,7 @@ textos = {
         'iniciar_sesion': 'Iniciar sesión',
         'informe_1_19':'Porcentaje Anual de Operación y Mantenimiento (1_19)',
         'informe_6_1':'Número de cursos sobre Medio Ambiente y Sostenibilidad (6_1)',
+        'informe_6_2':'Número total de cursos ofrecidos (6_2)',
         'informe_6_4':'Fondos totales de investigación dedicados a la investigación en sostenibilidad (en dólares estadounidenses) (6_4)',
         'informe_6_7':'Número de publicaciones académicas sobre sostenibilidad (6_7)',
         'informe_6_8':'Número de eventos relacionados con el Medio Ambiente y Sostenibilidad (6_8)',
@@ -906,7 +908,9 @@ def generar_informe():
         informe_seleccionado = determinar_tipo_informe()
         anho_seleccionado = ''
         excel = ''
-        if informe_seleccionado == "6_1":
+        print(informe_seleccionado)
+        if informe_seleccionado == "6_1" or informe_seleccionado == "6_2" :
+            print("entra en generar informe")
             # Obtener el año seleccionado desde el formulario
             anho_seleccionado = request.form.get('anho')
             if not anho_seleccionado:
@@ -949,6 +953,8 @@ def determinar_tipo_informe():
     # No se puede usar referrer ya que como ambos informes usan la misma página, el referrer de ambos es el mismo.
     elif origen == "pagina_informe_6_1":
         return "6_1"
+    elif origen == "pagina_informe_6_2":
+        return "6_2"
     elif origen == "pagina_informe_6_4":
         return "6_4"
     elif origen == "pagina_informe_6_7":
@@ -1054,6 +1060,43 @@ def selecciona_anho_informe():
                                daltonismo=daltonismo,
                                nuevos_anhos_disponibles=nuevos_anhos_disponibles)  
  
+ 
+ #  ----------------------- INFORME 6_2 -------------------------------------- 
+
+@app.route('/pagina_informe_6_2')
+def pagina_informe_6_2():
+    session['origen'] = 'pagina_informe_6_2'
+
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+
+    # Obtener años únicos desde la base de datos
+    anhos_disponibles = db.session.query(Busqueda.anho).distinct().order_by(Busqueda.anho.desc()).all()
+    # Crear una nueva lista para almacenar los años disponibles
+    nuevos_anhos_disponibles = []
+
+    # Iterar sobre cada fila de anhos_disponibles
+    for row in anhos_disponibles:
+        # Asegúrate de extraer el primer valor de cada tupla
+        nuevos_anhos_disponibles.append(row[0])
+
+    if 'user_id' not in session:
+        return render_template('pagina_informe_6_2.html', 
+                               rol='visitante', 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+    else:
+        rol = session['rol']
+        return render_template('pagina_informe_6_2.html', 
+                               rol=rol, 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+        
 #  ----------------------- INFORME 6_4 -------------------------------------- 
 # Ruta para la página donde se realiza la descarga del informe
 @app.route('/pagina_informe_6_4')

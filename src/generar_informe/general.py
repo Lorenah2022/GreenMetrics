@@ -68,6 +68,10 @@ def ejecutar_informe_especifico(anho, informe, excel):
         elif informe == "6_1":
             informe_6_1 = importlib.import_module('informe_6_1') 
             informe_6_1.generar(anho)  
+        elif informe == "6_2":
+            print("entra")
+            informe_6_2 = importlib.import_module('informe_6_2') 
+            informe_6_2.generar(anho) 
         elif informe == "6_4":
             informe_6_4 = importlib.import_module('informe_6_4') 
             informe_6_4.generar(excel) 
