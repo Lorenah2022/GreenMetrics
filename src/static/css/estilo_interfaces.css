@@ -18,15 +18,11 @@
 .btn-option:hover {
     background-color: #35a670;
     color: white;
-    transform: translateY(-6px) scale(1.1) rotate(5deg);  /* Efecto rebote + ligera rotación */
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2); /* Sombra más marcada */
     transition: all 0.3s ease-in-out;
 
 }
-
-}
-
-/* Definición de la animación "pulse" */
+/* Animación de rebote */
 @keyframes pulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.1); }
@@ -87,6 +83,14 @@
     color:white;
 }
 
+
+label {
+    color: #D9F2E1; /* Cambia este valor al color que desees */
+    font-weight: bold; /* Opcional: hace el texto más visible */
+    margin-top: 10px;
+    display: block;
+}
+
 .texto-pequeno .btn-option {
     font-size: var(--font-size-small); /* Aplicar tamaño pequeño */
 }
@@ -97,23 +101,16 @@
 
 
   /* Estilos para el modo daltonismo */
-  .modo-daltonismo .btn-option{
+  .modo-daltonismo .btn-option, .modo-daltonismo .btn-secondary {
     background-color:#d8b4fe ;
   }
 
-  .modo-daltonismo .btn-option:hover{
+  .modo-daltonismo .btn-option:hover, .modo-daltonismo .btn-secondary:hover{
     color: white;
     background-color: #581c87;
   }
-  .modo-daltonismo .btn-secondary {
-    background-color: #d8b4fe;
-  }
-
-  .modo-daltonismo .btn-secondary:hover{
-    color:white;
-    background-color: #581c87;
-  }
-  .modo-daltonismo .main-content h2{
+ 
+  .modo-daltonismo .main-content h2, .modo-daltonismo label{
     color: #d8b4fe;
   }
 

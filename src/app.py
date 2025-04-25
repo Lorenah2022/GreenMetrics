@@ -26,6 +26,8 @@ import re
 import threading
 import sys
 
+from werkzeug.utils import secure_filename
+
 # Cargar variables desde .env
 load_dotenv()
 
@@ -171,7 +173,7 @@ textos = {
         'error_script': 'Error al ejecutar el script:',
         'espanol': 'Español',
         'formato_incorrecto':'Formato incorrecto. Use el formato YYYY-YYYY.',
-        'formato_excel_incorrecto':'Formato incorrecto. Asegurese del que fichero tiene alguna de las siguientes extesiones .xlsx o .xls',
+        'formato_excel_incorrecto':'Formato incorrecto. Asegurese del que fichero tiene alguna de lantes extesiones .xlsx o .xls',
         'filtrar': 'Filtrar',
         'guardar':'Guardar cambios',
         'grande':'Grande',
@@ -563,6 +565,30 @@ def pagina_pedir_anho():
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
 
+
+
+def verificar_si_existen_datos(anho, tipo_estudio):
+    from sqlalchemy import or_
+    if tipo_estudio == "ambos":
+        count = Busqueda.query.filter(
+            Busqueda.anho == anho,
+            or_(Busqueda.tipo_programa == 'grado', Busqueda.tipo_programa == 'master')
+        ).count()
+    else:
+        count = Busqueda.query.filter_by(anho=anho, tipo_programa=tipo_estudio).count()
+    return count > 0
+
+
+
+@app.route('/verificar_datos', methods=['POST'])
+def verificar_datos():
+    anho = request.form.get('anho')
+    tipo_estudio = request.form.get('tipo_estudio')
+
+    datos_existentes = verificar_si_existen_datos(anho, tipo_estudio)
+    return jsonify({'datos_existentes': datos_existentes})
+
+
 @app.route("/", methods=["GET", "POST"])
 def procesar_anho():
     global estado_proceso
@@ -583,7 +609,9 @@ def procesar_anho():
         if tipo_estudio not in ["grado", "master", "ambos"]:
             flash("Opción de tipo de estudio no válida", "error")
             return redirect(url_for('pagina_pedir_anho'))
-
+        if verificar_si_existen_datos(anho, tipo_estudio):
+            flash("Ya existen datos para ese año y tipo de estudio.", "info")
+            return redirect(url_for('pagina_pedir_anho'))
         with lock:
             estado_proceso["en_proceso"] = True
             estado_proceso["mensaje"] = textos[idioma]['mensaje_cargando']
@@ -603,12 +631,12 @@ def anho_pattern(anho):
     """ Verifica si el año tiene el formato correcto (####-####). """
     return bool(re.match(r"\d{4}-\d{4}", anho))
 
+
 # Función que ejecuta los scripts en el orden correcto.
 def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
     """ Función que ejecuta los scripts en orden y actualiza el estado. """
     global estado_proceso
     try:
-        
         # Ejecutar guias_docentes.py
         ruta_grados = os.path.join(os.getcwd(), 'sostenibilidad', 'grados.py')
         actualizar_estado(textos[idioma]['ejecutando_grados'], 10)
@@ -646,7 +674,7 @@ def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
         with lock:
             estado_proceso["en_proceso"] = False
         
-import tempfile
+
 #  ----------------------- PÁGINA PARA EJECUTAR LA API ----------------------------------------------------
 # Ruta para la página donde se solicitan los datos de la IA
 @app.route('/pagina_pedir_IA', methods=['GET','POST'])
@@ -654,18 +682,10 @@ def pagina_pedir_IA():
     origen = session.get('origen', '')  # Obtiene el valor de sesión
     anho_seleccionado = request.form.get('anho')
     session['anho'] = anho_seleccionado
-    archivo_excel = request.files.get('archivo_excel')
-   
-    # Guardar en un archivo temporal
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-        archivo_excel.save(tmp.name)
-        ruta_temporal = tmp.name
-
-    # Guardas solo la ruta en sesión o en algún estado
-    session['ruta_excel'] = ruta_temporal
+    
+    
 
     print("Año recibido: ", anho_seleccionado)
-    print("Archivo exccel, ", archivo_excel)
 
 
     # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
@@ -1133,6 +1153,45 @@ def pagina_informe_6_4():
                                daltonismo=daltonismo,
                                nuevos_anhos_disponibles=nuevos_anhos_disponibles)  
 
+# Función para verificar si el archivo tiene una extensión permitida
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'xlsx', 'xls'}  # Extensiones permitidas
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# Definir el directorio de subida
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+
+# Configurar el directorio de subida
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Asegurarse de que la carpeta de subida exista
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+@app.route('/subir_excel', methods=['POST'])
+def subir_excel():
+    if 'archivo_excel' not in request.files:
+        flash('No se encontró el archivo')
+        return redirect(url_for('pagina_informe_6_4'))
+
+    archivo = request.files['archivo_excel']
+
+    if archivo.filename == '':
+        flash('No se seleccionó ningún archivo')
+        return redirect(url_for('pagina_informe_6_4'))
+
+    if archivo and allowed_file(archivo.filename):
+        filename = secure_filename(archivo.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        archivo.save(filepath)
+
+        # Guarda la ruta del archivo en la sesión
+        session['ruta_excel'] = filepath
+        flash('Archivo subido correctamente')
+        return redirect(url_for('pagina_informe_6_4'))
+
+    flash('Tipo de archivo no permitido')
+    return redirect(url_for('pagina_informe_6_4'))
 
 
 #  ----------------------- INFORME 6_7 -------------------------------------- 
