@@ -6,6 +6,16 @@ import sys
 import pandas as pd
 from PyPDF2 import PdfReader
 from dotenv import load_dotenv
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from app import app, Busqueda, db  
+from sqlalchemy import text
+
+
+# Configurar la base de datos manualmente si es necesario
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")  # O el nombre que tengas en .env
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 # Obtener la ruta absoluta del directorio `src`
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,14 +34,38 @@ load_dotenv()
 directorio = os.path.join("sostenibilidad","data", "guias")  # Carpeta con los archivos PDF
 archivo_salida = os.path.join("sostenibilidad","data", "resultados_guias.xlsx")  # Archivo de salida
 
+
+# Verificar si el directorio de los archivos PDF existe
+if not os.path.exists(directorio):
+    print(f"❌ El directorio de los archivos PDF no existe: {directorio}")
+    sys.exit(1)  # Salir del programa si no existe el directorio
+
+# Verificar si el archivo de salida es una ruta válida
+if not os.path.isdir(os.path.dirname(archivo_salida)):
+    print(f"❌ La carpeta de salida no existe: {os.path.dirname(archivo_salida)}")
+    sys.exit(1)  # Salir si no existe la carpeta
+
+
+
 # Listar los archivos PDF en el directorio
 archivos_guias = [f for f in os.listdir(directorio) if f.endswith('.pdf')]
-
+if not archivos_guias:
+    print("❌ No se encontraron archivos PDF en el directorio especificado.")
+    sys.exit(1)  # Salir si no se encuentran archivos PDF
+    
 # Configuración de la API
 config = cargar_configuracion()
 base_url = config["base_url"]
 api_key = config["api_key"]
 myModel = config["model"]
+
+
+# Verificar que las configuraciones se cargan correctamente
+if not base_url or not api_key or not myModel:
+    print("❌ Las configuraciones de la API no están completas. Verifica tu archivo .env.")
+    sys.exit(1)
+
+
 
 # Crear DataFrame vacío
 resultados = pd.DataFrame(columns=["Name", "Degree_Master", "Code", "Competences"])
@@ -49,7 +83,7 @@ for pdf_file in archivos_guias:
         continue  # Si el PDF no tiene texto, pasamos al siguiente
 
 
-    # Construcción del prompt para la IA
+    # Construcción del prompt para la IAf
     body = {
         "model": myModel,
         "messages": [
@@ -132,19 +166,63 @@ for pdf_file in archivos_guias:
     if len(contenido_separado) >= 3:
         competences = contenido_separado[3] if len(contenido_separado) > 3 else "None"
         
+        # Aquí detectamos si el curso es sostenible
+        es_sostenible = False
+        if competences and competences.lower() != "none":
+            es_sostenible = True
+    
+        # Añadimos sostenibilidad también en el DataFrame
         nuevo_resultado = pd.DataFrame([{
             "Name": contenido_separado[0],
             "Degree_Master": contenido_separado[1],
             "Code": contenido_separado[2],
-            "Competences": competences
+            "Competences": competences,
+            "Sostenibilidad": es_sostenible,
+            "FileName": pdf_file.lower()  # <-- AÑADIDO AQUÍ
+
         }])
         resultados = pd.concat([resultados, nuevo_resultado], ignore_index=True)
     else:
         print(f" Error: La respuesta de la IA no tiene el formato correcto. Recibido:\n{message_content}")
 
+# Convertir el valor booleano a "Sí" o "No" para el Excel
+resultados["Sostenibilidad"] = resultados["Sostenibilidad"].apply(lambda x: "Sí" if x else "No")
+
 # Guardar los resultados en CSV
 if not resultados.empty:
+    
     resultados.to_excel(archivo_salida, index=False)
     print(f"\n Archivo guardado correctamente en: {archivo_salida}")
 else:
     print("\n No se guardaron datos porque ninguna respuesta fue válida.")
+
+
+with app.app_context():
+    # Verificar las columnas del DataFrame para asegurarse de que coinciden
+    print("Columnas del DataFrame:", resultados.columns)
+    for _, row in resultados.iterrows():
+        # Verificar que las columnas necesarias existen en el DataFrame
+        if 'Code' not in row or 'FileName' not in row or 'Sostenibilidad' not in row:
+            print("❌ Columna faltante en la fila, asegurándose de que las columnas existan en el DataFrame")
+            continue
+        print(f"{row['Code']},{row['FileName']}")
+
+
+        # Verificación de la consulta
+        busqueda_existente = Busqueda.query.filter_by(
+            codigo_asignatura=row["Code"],
+            nombre_archivo=row["FileName"]  # ahora usamos el FileName directamente
+        )
+
+        # Imprimir la consulta SQL generada para depuración
+        print("Consulta SQL generada:", str(busqueda_existente.statement))
+
+        # Ejecutar la consulta y verificar si existe el resultado
+        busqueda_existente = busqueda_existente.first()
+
+        if busqueda_existente:
+            busqueda_existente.sostenibilidad = row["Sostenibilidad"]
+        else:
+            print(f"❌ No encontrado para {row['Code']} {row['Name']}")
+
+    db.session.commit()

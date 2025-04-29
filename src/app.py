@@ -110,13 +110,14 @@ textos = {
         'informe_6_1':'Number of Courses on Environment and Sustainability (6_1)',
         'informe_6_2':'Total number of courses or modules offered (6_2)',
         'informe_6_4':'Total Research Funds Dedicated to Sustainability Research (in US Dollars) (6_4)',
+        'informe_6_3':'Ratio of sustainability courses to total courses/subjects (6_3)',
         'informe_6_7':'Number of Scholarly Publications on Sustainability (6_7)',
         'informe_6_8':'Number of Events on Environment and Sustainability(6_8)',
         'ingrese_anho':'Introduce the year',
         'myModel': 'Model',
         'mensaje_cargando': 'Loading... This might take a few minutes...',
         'modo_daltonismo': 'Daltonism',
-        'modalidad':'modality',
+        'modalidad':'Modality',
         'nueva_contrasenha': 'New password. *',
         'nombre_archivo':'File name',
         'normal': 'Medium',
@@ -135,6 +136,7 @@ textos = {
         'sel_letra': 'Select Font Size:',
         'seleccionar_tipo_estudio' : 'Choose the type: ',
         'seleccionar_informe':'Select the report:',
+        'sostenibilidad':'Sustainable',
         'subir_excel': 'Upload your Excel file',
         'texto_bienvenida': 'Welcome to Greenmetrics',
         'tit_admin': 'Administrator profile',
@@ -187,6 +189,7 @@ textos = {
         'informe_1_19':'Porcentaje Anual de Operación y Mantenimiento (1_19)',
         'informe_6_1':'Número de cursos sobre Medio Ambiente y Sostenibilidad (6_1)',
         'informe_6_2':'Número total de cursos ofrecidos (6_2)',
+        'informe_6_3':'Ratio de cursos sostenibles (6_3)',
         'informe_6_4':'Fondos totales de investigación dedicados a la investigación en sostenibilidad (en dólares estadounidenses) (6_4)',
         'informe_6_7':'Número de publicaciones académicas sobre sostenibilidad (6_7)',
         'informe_6_8':'Número de eventos relacionados con el Medio Ambiente y Sostenibilidad (6_8)',
@@ -194,7 +197,7 @@ textos = {
         'myModel': 'Modelo',
         'mensaje_cargando': 'Cargando... Esto puede tardar algunos minutos...',
         'modo_daltonismo': 'Modo Daltonismo',
-        'modalidad':'modalidad',
+        'modalidad':'Modalidad',
         'nueva_contrasenha': 'Nueva contraseña. *',
         'nombre_archivo':'Nombre del archivo:',
         'normal': 'Medio',
@@ -213,6 +216,7 @@ textos = {
         'sel_letra': 'Seleccionar Tamaño de Letra:',
         'seleccionar_tipo_estudio' : 'Selecciona el tipo de estudio',
         'seleccionar_informe':'Selecciona el informe a generar:',
+        'sostenibilidad':'Sostenible',
         'subir_excel': 'Suba su fichero excel',
         'texto_bienvenida': 'Bienvenido a Greenmetrics',
         'tit_admin': 'Perfil de administrador',
@@ -245,6 +249,8 @@ class Busqueda(db.Model):
     tipo_programa = db.Column(db.String(100), nullable=True)
     nombre_archivo=db.Column(db.String(100), nullable=True)
     modalidad=db.Column(db.String(100), nullable=True)
+    sostenibilidad = db.Column(db.String(10), nullable=True)
+
     
     __table_args__ = (
         db.UniqueConstraint('anho','codigo_asignatura','modalidad', name='unique_modalidad_anho_codigo'),
@@ -569,13 +575,8 @@ def pagina_pedir_anho():
 
 def verificar_si_existen_datos(anho, tipo_estudio):
     from sqlalchemy import or_
-    if tipo_estudio == "ambos":
-        count = Busqueda.query.filter(
-            Busqueda.anho == anho,
-            or_(Busqueda.tipo_programa == 'grado', Busqueda.tipo_programa == 'master')
-        ).count()
-    else:
-        count = Busqueda.query.filter_by(anho=anho, tipo_programa=tipo_estudio).count()
+    
+    count = Busqueda.query.filter_by(anho=anho, tipo_programa=tipo_estudio).count()
     return count > 0
 
 
@@ -929,7 +930,7 @@ def generar_informe():
         anho_seleccionado = ''
         excel = ''
         print(informe_seleccionado)
-        if informe_seleccionado == "6_1" or informe_seleccionado == "6_2" :
+        if informe_seleccionado == "6_1" or informe_seleccionado == "6_2" or informe_seleccionado=='6_3' :
             print("entra en generar informe")
             # Obtener el año seleccionado desde el formulario
             anho_seleccionado = request.form.get('anho')
@@ -975,6 +976,8 @@ def determinar_tipo_informe():
         return "6_1"
     elif origen == "pagina_informe_6_2":
         return "6_2"
+    elif origen == "pagina_informe_6_3":
+        return "6_3"
     elif origen == "pagina_informe_6_4":
         return "6_4"
     elif origen == "pagina_informe_6_7":
@@ -993,31 +996,19 @@ def pagina_informe_1_19():
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
 
-    # Obtener años únicos desde la base de datos
-    anhos_disponibles = db.session.query(Busqueda.anho).distinct().order_by(Busqueda.anho.desc()).all()
-    # Crear una nueva lista para almacenar los años disponibles
-    nuevos_anhos_disponibles = []
-
-    # Iterar sobre cada fila de anhos_disponibles
-    for row in anhos_disponibles:
-        # Asegúrate de extraer el primer valor de cada tupla
-        nuevos_anhos_disponibles.append(row[0])
-
     if 'user_id' not in session:
         return render_template('pagina_informe_1_19.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
-                               daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+                               daltonismo=daltonismo)
     else:
         rol = session['rol']
         return render_template('pagina_informe_1_19.html', 
                                rol=rol, 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
-                               daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+                               daltonismo=daltonismo)
 
 #  ----------------------- INFORME 6_1 --------------------------------------
 @app.route('/pagina_informe_6_1')
@@ -1111,6 +1102,43 @@ def pagina_informe_6_2():
     else:
         rol = session['rol']
         return render_template('pagina_informe_6_2.html', 
+                               rol=rol, 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+        
+         
+ #  ----------------------- INFORME 6_3 -------------------------------------- 
+
+@app.route('/pagina_informe_6_3')
+def pagina_informe_6_3():
+    session['origen'] = 'pagina_informe_6_3'
+
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+
+    # Obtener años únicos desde la base de datos
+    anhos_disponibles = db.session.query(Busqueda.anho).distinct().order_by(Busqueda.anho.desc()).all()
+    # Crear una nueva lista para almacenar los años disponibles
+    nuevos_anhos_disponibles = []
+
+    # Iterar sobre cada fila de anhos_disponibles
+    for row in anhos_disponibles:
+        # Asegúrate de extraer el primer valor de cada tupla
+        nuevos_anhos_disponibles.append(row[0])
+
+    if 'user_id' not in session:
+        return render_template('pagina_informe_6_3.html', 
+                               rol='visitante', 
+                               textos=textos[idioma], 
+                               tamano_texto=tamano_texto, 
+                               daltonismo=daltonismo,
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+    else:
+        rol = session['rol']
+        return render_template('pagina_informe_6_3.html', 
                                rol=rol, 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
