@@ -37,15 +37,21 @@
     flex: 1;
 }
 
-/* Título con cambio de color según daltonismo */
 .main-content h2 {
     color: #D9F2E1; /* Cambiar de color dependiendo de daltonismo */
     margin-bottom: 20px;
 }
 
+/* Título con cambio de color según daltonismo */
+.main-content h3 {
+    color: #D9F2E1; /* Cambiar de color dependiendo de daltonismo */
+    margin-bottom: 20px;
+}
+
+
 .main-content p {
     font-size: 16px;
-    color: #555;
+    color: #D9F2E1;
 }
 
 /* Contenedor para los botones al lado */
@@ -83,6 +89,19 @@
     color:white;
 }
 
+.btn-anho {
+    background-color: #D9F2E1;
+    color: black;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.btn-anho:hover {
+    background-color:#35a670;
+    transform: translateY(-5px); /* Animación de elevación */
+}
 
 label {
     color: #D9F2E1; /* Cambia este valor al color que desees */
@@ -91,26 +110,46 @@ label {
     display: block;
 }
 
-.texto-pequeno .btn-option {
+
+.mensaje_errores {
+    background-color: #f8d7da; /* Color de fondo suave para errores */
+    color: #721c24; /* Color de texto oscuro para contraste */
+    padding: 10px; /* Espacio interno */
+    border-radius: 8px; /* Esquinas redondeadas */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15); /* Sombra para darle efecto de elevación */
+    margin-top: 5px; /* Espacio arriba */
+    display: inline-block; /* Para que se ajuste al contenido */
+    transition: all 0.3s ease; /* Suaviza el efecto al aparecer */
+}
+
+.mensaje_errores:hover {
+    background-color: #f5c6cb; /* Efecto al pasar el mouse */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2); /* Sombra más fuerte al hacer hover */
+}
+
+
+
+
+.texto-pequeno .btn-option, .texto-pequeno label, .texto-pequeno .main-content p, .texto-pequeno .mensaje_errores {
     font-size: var(--font-size-small); /* Aplicar tamaño pequeño */
 }
 
-.texto-grande .btn-option {
+.texto-grande .btn-option, .texto-grande label, .texto-grande .main-content p, .texto-grande .mensaje_errores {
     font-size: var(--font-size-large); /* Aplicar tamaño grande */
 }
 
 
   /* Estilos para el modo daltonismo */
-  .modo-daltonismo .btn-option, .modo-daltonismo .btn-secondary {
+  .modo-daltonismo .btn-option, .modo-daltonismo .btn-secondary, .modo-daltonismo .btn-anho  {
     background-color:#d8b4fe ;
   }
 
-  .modo-daltonismo .btn-option:hover, .modo-daltonismo .btn-secondary:hover{
+  .modo-daltonismo .btn-option:hover, .modo-daltonismo .btn-secondary:hover, .modo-daltonismo .btn-anho:hover{
     color: white;
     background-color: #581c87;
   }
  
-  .modo-daltonismo .main-content h2, .modo-daltonismo label{
+  .modo-daltonismo .main-content h2,  .modo-daltonismo label, .modo-daltonismo .main-content h3, .modo-daltonismo .main-content p  {
     color: #d8b4fe;
   }
 

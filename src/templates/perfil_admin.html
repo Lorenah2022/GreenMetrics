@@ -3,197 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil de Administrador</title>
+    <title>Perfil de Usuario</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_cards.css') }}">
+    <!-- Incluir el archivo CSS de la barra de navegación -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_interfaces.css') }}">
+
     <style>
-        /* Estilo general para la página */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-image:url('/static/images/fondo.webp');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center;
-            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-
-        }
-
-        /* Filtro translúcido para mejorar la visibilidad del contenido */
-        .background-overlay {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.4); /* Negro con 40% de opacidad */
-            z-index: -1; /* Asegura que el overlay esté detrás del contenido */
-        }
-
-        /* Barra de navegación */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color:  {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            color: white;
-            padding: 10px 20px; /* Unificación del grosor */
-            z-index: 1;
-        }
-
-        .navbar h1 {
-            margin: 0;
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
-        }
-
-        /* Contenedor del menú */
-        .dropdown {
-            position: relative; /* Importante para posicionar el menú desplegable */
-        }
-
-        /* Botón del menú */
-        .dropdown button {
-            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            font-size: {% if session.get('tamano_texto') == 'pequeño' %}14px{% elif session.get('tamano_texto') == 'grande' %}20px{% else %}16px{% endif %};
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        .dropdown button:hover {
-            background-color:  {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-        }
-
-        /* Elementos del menú desplegable */
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            top: 100%; /* Alineado justo debajo del botón */
-            right: 0; /* Alinea el texto al borde derecho del contenedor */
-            background-color: white;
-            color: black;
-            min-width: 150px;
-            box-shadow: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-            z-index: 1;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        .dropdown-content a {
-            color: black;
-            padding: 10px 15px;
-            text-decoration: none;
-            display: block;
-        }
-
-        .dropdown-content a:hover {
-            background-color:  {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-            color: white;
-        }
-
-        /* Mostrar el menú al pasar el ratón */
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-
-
-        /* Contenedor principal */
-        .container {
-            background-color: rgba(255, 255, 255, 0.9); 
-            padding: 20px 40px;
-            border: 5px solid  {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 400px;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* Título */
-        h1.text-center {
-            color:  {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            margin-bottom: 30px;
-            font-size: 2rem;
-            font-weight: 600;
-        }
-
-        /* Estilo de los formularios */
-        .form-label {
-            font-size: 1rem;
-            color: #555;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
-
-        /* Estilo de los botones */
-        .btn {
-            display: inline-block;
-            padding: 12px 25px;
-            margin-top: 20px;
-            text-align: center;
-            font-weight: bold;
-            border-radius: 30px;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.3s ease-in-out;
-        }
-
-        /* Botón de actualizar. */
-        .btn-success {
-            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            color: white;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-success:hover {
-            background-color:  {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-            transform: scale(1.05);
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Botón de cancelar */
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-secondary:hover {
-            background-color: #5a6268;  
-            transform: scale(1.05);
-            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .password-info {
-            font-size: 12px;
-            color: #555;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        /* Mejorar la visualización en pantallas pequeñas */
-        @media (max-width: 600px) {
-            .navbar h1 {
-                font-size: 18px;
-            }
-
-            .main-content {
-                padding: 15px;
-            }
-        }
-
         /* Estilos para el modal */
         .modal {
             display: none; /* Oculto por defecto */
@@ -205,6 +21,8 @@
             background-color: rgba(0, 0, 0, 0.5);
             justify-content: center;
             align-items: center;
+            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+
         }
         .modal-content {
             background-color: white;
@@ -217,15 +35,18 @@
             margin-top: 10px;
             cursor: pointer;
             color: white;
-            background-color:  {% if daltonismo %}#800080{% else %}#006400{% endif %};
+            background-color: #006400;
             border: none;
             padding: 10px 20px;
             border-radius: 5px;
+            font-size: 16px;
             font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
+
         }
     </style>
 </head>
-<body class="bg-light">
+<body <body class="{% if session.get('tamano_texto') == 'pequeño' %}texto-pequeno{% elif session.get('tamano_texto') == 'grande' %}texto-grande{% else %}texto-mediano{% endif %} 
+{% if daltonismo %}modo-daltonismo{% endif %}">
     <!-- Barra de navegación -->
     <div class="navbar">
         <h1>Greenmetrics</h1>
@@ -233,59 +54,58 @@
             <button>≡</button>
             <div class="dropdown-content">
                 <a href="{{ url_for('ajustes') }}">{{ textos.ajustes}}</a>
-                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion}}</a>
+                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion}}</a> 
             </div>
         </div>
     </div>
 
-    <div class="container">
-        <h1 class="text-center">{{ textos.tit_admin}}</h1>
-            <div class="card-body">
+    <div class="main-content">
+        <h2>{{ textos.tit_user}}</h2>
                 <form method="POST" enctype="multipart/form-data">
                     {{ form.hidden_tag() }}
                     
-                    <div >
-                        <label for="username" class="form-label">{{ textos.usuario}}</label>                        {{ form.username(class="form-control", id="username") }}
+                    <div>
+                        <label for="username" >{{ textos.usuario}}</label>
+                        {{ form.username(class="form-control", id="username") }}
                         {% if form.username.errors %}
-                            <div class="text-danger small">{{ form.username.errors[0] }}</div>
+                            <div class="mensaje_errores">{{ form.username.errors[0] }}</div>
                         {% endif %}
                     </div>
 
                     <div >
-                        <label for="email" class="form-label">{{ textos.correo}}</label>
+                        <label for="email" >{{ textos.correo}}</label>
                         {{ form.email(class="form-control", id="email") }}
                         {% if form.email.errors %}
-                            <div class="text-danger small">{{ form.email.errors[0] }}</div>
+                            <div class="mensaje_errores">{{ form.email.errors[0] }}</div>
                         {% endif %}
                     </div>
 
                     <div >
-                        <label for="password" class="form-label">{{ textos.nueva_contrasenha}}</label>
-                        <p class="password-info">{{textos.criterio_3}}</p>
+                        <label for="password" >{{ textos.nueva_contrasenha}}</label>
                         {{ form.password(class="form-control", id="password") }}
                         {% if form.password.errors %}
-                            <div class="text-danger small">{{ form.password.errors[0] }}</div>
+                            <div class="mensaje_errores">{{ form.password.errors[0] }}</div>
                         {% endif %}
+
                     </div>
                     
                     <div >
-                        <label for="confirm_password" class="form-label">{{ textos.confirmar_contrasenha}}</label>
+                        <label for="confirm_password" >{{ textos.confirmar_contrasenha}}</label>
                         {{ form.confirm_password(class="form-control", id="confirm_password") }}
                         {% if form.confirm_password.errors %}
-                            <div class="text-danger small">{{ form.confirm_password.errors[0] }}</div>
+                            <div class="mensaje_errores">{{ form.confirm_password.errors[0] }}</div>
                         {% endif %}
                     </div>
+                    <p >{{textos.criterio_3}}</p>
+                    <p>{{textos.criterio_1}}</p>
+                    <p>{{textos.criterio_2}}</p>
 
-                    <p class="password-info">{{textos.criterio_1}}</p>
-                    <p class="password-info">{{textos.criterio_2}}</p>
-
-
-                    <div class="d-flex justify-content-between">
-                        <button type="submit" class="btn btn-success">{{ textos.actualizar_perfil}}</button>
+                    <div >
+                        <button type="submit" class="btn btn-secondary">{{ textos.actualizar_perfil}}</button>
                         <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.cancelar}}</a>
                     </div>
                 </form>
-            </div>
+            
     </div>
 
     <!-- Modal -->
@@ -314,5 +134,5 @@
             modal.style.display = 'none';
         }
     </script>
- </body>
+</body>
 </html>

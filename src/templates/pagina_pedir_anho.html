@@ -123,7 +123,6 @@
         {
             font-size: var(--font-size-small);
             padding: 6px 10px;
-            width: 100%;
         }
 
         /* Tamaño mediano (opcional, si tienes uno por defecto) */
@@ -140,12 +139,6 @@
             padding: 12px 20px;
         }
           
-
-          
-        
-        
-
-        
     </style>
 </head>
 <body class="{% if session.get('tamano_texto') == 'pequeño' %}texto-pequeno{% elif session.get('tamano_texto') == 'grande' %}texto-grande{% else %}texto-mediano{% endif %} {% if daltonismo %}modo-daltonismo{% endif %}">   

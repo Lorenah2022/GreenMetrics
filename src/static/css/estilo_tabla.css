@@ -1,0 +1,219 @@
+
+#filtros-container {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.5s ease, max-height 0.5s ease;
+    margin-top: 20px;
+}
+
+#filtros-container.visible {
+    opacity: 1;
+    max-height: 600px;
+}
+
+select {
+    padding: 6px;
+    margin: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+table {
+    margin: 20px auto;
+    border-collapse: collapse;
+    width: 90%;
+    background-color: white; /* <--- Esto es lo nuevo */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* sombra para que "flote" un poco */
+    border-radius: 10px; /* bordes redondeados si quieres */
+    overflow: hidden; /* importante para que el border-radius funcione bien */
+}
+
+td {
+    border: 1px solid #888;
+    padding: 10px;
+}
+
+
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+th {
+    background-color: #D9F2E1;
+    color: black;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    padding: 10px;
+
+}
+
+th:hover {
+    transform: scale(1.05);  /* Efecto de agrandar un poco */
+    background-color: #35a670; /* Un verde más claro en hover */
+}
+
+
+.input-container {
+    position: relative;
+    max-width: 400px;
+    margin: 20px auto;
+}
+
+/* Estilo del input */
+#codigo_asignatura {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 2px solid #007F00;
+    font-size: 16px;
+    transition: box-shadow 0.3s ease;
+}
+
+#codigo_asignatura:focus {
+    outline: none;
+    box-shadow: 0 0 10px #88cc88;
+}
+
+/* Contenedor de sugerencias */
+#sugerencias-codigo {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: #f0fff0; /* color inicial */
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    margin-top: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    animation: fadeInBackground 0.4s ease-in-out;
+
+}
+
+/* Estilo de cada sugerencia */
+#sugerencias-codigo li {
+    padding: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+
+}
+
+#sugerencias-codigo li:hover {
+    background-color: #d4f4d4 !important;  /* verde claro */
+    color: #222 !important;
+    transform: scale(1.02);
+    font-weight: bold; /* NEGRITA */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Opcional: mensaje si no hay sugerencias */
+.no-suggestions {
+    padding: 10px;
+    color: #888;
+} 
+
+
+/* Estilo del los botones para pasar a la siguiente página de la tabla */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.pagination {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+}
+
+.pagination .page-item {
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    margin: 0 10px;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.pagination .page-item a.page-link {
+    text-decoration: none;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    padding: 8px 12px;
+    transition: all 0.3s ease;
+}
+
+.pagination .page-item a.page-link:hover {
+    background-color: #D9F2E1;  /* Cambia el color de fondo al pasar el ratón */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+    color: black;
+    cursor: pointer;
+    transform: scale(1.1);
+}
+
+.pagination .page-item.active a.page-link {
+    background-color: #35a670;
+    color: white;
+    cursor: default;
+    transform: scale(1.1);
+}
+
+.pagination .page-item.disabled a.page-link {
+    color: #cccccc;
+    cursor: not-allowed;
+}
+
+
+#mensaje-sin-resultados {
+    margin-top: 20px;
+    font-weight: bold;
+    color: red;
+    font-size: 16px;
+    text-align: center;
+    padding: 10px;
+    border: 2px solid red;
+    border-radius: 5px;
+    background-color: #f8d7da;
+}
+
+
+
+
+.texto-pequeno .btn-option {
+    font-size: var(--font-size-small); /* Aplicar tamaño pequeño */
+}
+
+.texto-grande .btn-option {
+    font-size: var(--font-size-large); /* Aplicar tamaño grande */
+}
+
+
+  /* Estilos para el modo daltonismo */
+  .modo-daltonismo th {
+    background-color:#d8b4fe ;
+  }
+
+  .modo-daltonismo th:hover, .modo-daltonismo .pagination .page-item a.page-link:hover{
+    color: white;
+    background-color: #581c87;
+  }
+ 
+  
+.modo-daltonismo .pagination .page-item.active a.page-link{
+    color: black;
+    background-color: #d8b4fe;
+  }
+ 
+
+
+

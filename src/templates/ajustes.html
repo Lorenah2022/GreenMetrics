@@ -1,167 +1,39 @@
 <!DOCTYPE html>
 <html >
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajustes</title>
-
+    <head>
+        <meta charset="UTF-8">
+        <title>Ajustes</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_cards.css') }}">
+        <!-- Incluir el archivo CSS de la barra de navegación -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_interfaces.css') }}">
     <style>
-        /* Estilo general para la página */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-image:url('/static/images/fondo.webp');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center;
-            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-
+        /* Tamaño pequeño */
+        .texto-pequeno .input-tamano
+        {
+            font-size: var(--font-size-small);
+            padding: 6px 10px;
         }
 
-        /* Filtro translúcido para mejorar la visibilidad del contenido */
-        .background-overlay {
-            position: absolute;
-            background: rgba(0, 0, 0, 0.4); /* Negro con 40% de opacidad */
-            z-index: -1; /* Asegura que el overlay esté detrás del contenido */
+        /* Tamaño mediano (opcional, si tienes uno por defecto) */
+        .texto-mediano .input-tamano
+        {
+            font-size: var(--font-size-medium);
+            padding: 8px 14px;
         }
 
-        .form-container {
-            background-color: rgba(255, 255, 255, 0.9); 
-            padding: 20px 40px;
-            border: 5px solid{% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: 400px;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        /* Tamaño grande */
+        .texto-grande .input-tamano
+         {
+            font-size: var(--font-size-large);
+            padding: 12px 20px;
         }
-
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            color: white;
-            padding: 10px 20px;
-        }
-
-        .navbar h1 {
-            margin: 0;
-            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-        }
-
-        /* Contenedor del menú */
-        .dropdown {
-            position: relative; /* Importante para posicionar el menú desplegable */
-        }
-
-        /* Botón del menú */
-        .dropdown button {
-            background-color:{% if daltonismo %}#800080{% else %}#006400{% endif %};
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        .dropdown button:hover {
-            background-color:{% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-        }
-
-        /* Elementos del menú desplegable */
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            top: 100%; /* Alineado justo debajo del botón */
-            right: 0; /* Alinea el texto al borde derecho del contenedor */
-            background-color: white;
-            color: black;
-            min-width: 150px;
-            box-shadow: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-            z-index: 1;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        .dropdown-content a {
-            color: black;
-            padding: 10px 15px;
-            text-decoration: none;
-            display: block;
-        }
-
-        .dropdown-content a:hover {
-            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-            color: white;
-        }
-
-        /* Mostrar el menú al pasar el ratón */
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-        /* Estilos de los formularios */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-            color: #333;
-        }
-
-        .form-group select {
-            padding: 10px;
-            width: 100%;
-            border-radius: 5px;
-            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-            border: 1px solid #ccc;
-        }
-
-        /* Contenedor para alinear los botones horizontalmente y distribuirlos equidistantemente */
-        .button-container {
-            display: flex;
-            justify-content: space-between; /* Espacio entre los botones */
-            gap: 20px; /* Espacio entre los botones */
-            margin-top: 20px;
-            padding: 0 20px; /* Añadir un poco de relleno a los lados del contenedor */
-        }
-
-        /* Estilo común para ambos botones (button y a) */
-        .form-container .back-button {
-            display: inline-block;
-            padding: 12px 30px;
-            background-color: {% if daltonismo %}#00FF00{% else %}#8fbc8f{% endif %};
-            color:  {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            border: none;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            text-align: center;
-            font-size: 16px;
-            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %}; /* Tamaño dinámico */
-
-            width: 45%;  /* Ajusta el ancho para que ambos botones ocupen el 45% del contenedor */
-        }
-
-        .form-container .back-button:hover {
-            background-color: {% if daltonismo %}#800080{% else %}#006400{% endif %};
-            color: #ffffff;
-        }
-    
-
-        
     </style>
+
 </head>
-<body>
+<body class="{% if session.get('tamano_texto') == 'pequeño' %}texto-pequeno{% elif session.get('tamano_texto') == 'grande' %}texto-grande{% else %}texto-mediano{% endif %} 
+{% if daltonismo %}modo-daltonismo{% endif %}">
+
 
      <!-- Barra de navegación -->
      <div class="navbar">
@@ -175,17 +47,15 @@
         </div>
     </div>
 
-    <div class="form-container">
         <!-- Contenido principal -->
         <div class="main-content">
             <h2>{{ textos.ajustes}}</h2>
-        </div>
 
         <!-- Formulario de cambio de idioma -->
         <form action="{{ url_for('ajustes') }}" method="POST">
             <div class="form-group">
                 <label for="idioma">{{ textos.sel_idioma}}:</label>
-                <select name="idioma" id="idioma">
+                <select name="idioma" id="idioma" class="input-tamano">
                     <option value="en" {% if session.get('idioma') == 'en' %}selected{% endif %}>{{ textos.ingles}}</option>
                     <option value="es" {% if session.get('idioma') == 'es' %}selected{% endif %}>{{ textos.espanol}}</option>
                 </select>
@@ -194,7 +64,7 @@
             <!-- Formulario de cambio de tamaño de texto -->
             <div class="form-group">
                 <label for="tamano_texto">{{ textos.sel_letra}}<label>
-                <select name="tamano_texto" id="tamano_texto">
+                <select name="tamano_texto" id="tamano_texto"  class="input-tamano">
                     <option value="pequeño" {% if session.get('tamano_texto') == 'pequeño' %}selected{% endif %}>{{ textos.pequeno}}</option>
                     <option value="normal" {% if session.get('tamano_texto') == 'normal' %}selected{% endif %}>{{ textos.normal}}</option>
                     <option value="grande" {% if session.get('tamano_texto') == 'grande' %}selected{% endif %}>{{ textos.grande}}</option>
@@ -208,11 +78,11 @@
             </div>
             
             <div class="button-container">
-                <button type="submit" class="back-button">{{ textos.guardar}}</button>
-                <button type="button" onclick="window.location.href='{{ url_for('pagina_principal') }}'" class="back-button"> {{ textos.volver_atras}}</button>
+                <button type="submit" class="btn btn-secondary">{{ textos.guardar}}</button>
+                <button type="button" onclick="window.location.href='{{ url_for('pagina_principal') }}'" class="btn btn-secondary"> {{ textos.volver_atras}}</button>
             </div>
         </form>
-      
     </div>
+
  </body>
 </html>
