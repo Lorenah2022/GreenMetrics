@@ -77,8 +77,10 @@ textos = {
         'archivo_requerido': 'Please, upload an excel file.',
         'base_url': 'URL base',
         'busquedas_anteriores':'Previous Searches',
+        'cambiar_fichero':'Change file',
         'cancelar': 'Cancel',
         'cerrar_sesion': 'Logout',
+        'crear_cuenta': 'Register',
         'confirmar_contrasenha': 'Confirm password',
         'contenido': 'Content visible only for visitors.',
         'codigo_Asignatura':'Subject code',
@@ -116,7 +118,7 @@ textos = {
         'ingrese_anho':'Introduce the year',
         'myModel': 'Model',
         'mensaje_cargando': 'Loading... This might take a few minutes...',
-        'modo_daltonismo': 'Daltonism',
+        'modo_daltonismo': 'Color blind',
         'modalidad':'Modality',
         'nueva_contrasenha': 'New password. *',
         'nombre_archivo':'File name',
@@ -157,8 +159,10 @@ textos = {
         'archivo_requerido': 'Por favor, añada un fichero excel',
         'base_url': 'Base URL',
         'busquedas_anteriores':'Búsquedas anteriores',
+        'cambiar_fichero':'Cambiar el fichero',
         'cancelar': 'Cancelar',
         'cerrar_sesion': 'Cerrar sesión',
+        'crear_cuenta': 'Crear cuenta',
         'confirmar_contrasenha': 'Confirmar contraseña',
         'contenido': 'Contenido solo visible para visitantes.',
         'codigo_Asignatura':'Código asignatura',
@@ -1220,6 +1224,13 @@ def subir_excel():
 
     flash('Tipo de archivo no permitido')
     return redirect(url_for('pagina_informe_6_4'))
+
+
+@app.route('/cancelar_fichero')
+def cancelar_fichero():
+    # Limpiar la clave de la ruta del archivo en la sesión
+    session.pop('ruta_excel', None)  # Eliminar 'ruta_excel' de la sesión si existe
+    return redirect(url_for('pagina_informe_6_4'))  # Redirigir a la página de informe 6_4
 
 
 #  ----------------------- INFORME 6_7 -------------------------------------- 

@@ -32,16 +32,23 @@
         
         <!-- Paso 1: Subida del Excel -->
         <form method="POST" action="{{ url_for('subir_excel') }}" enctype="multipart/form-data">
-            <label for="archivo_excel">{{ textos.subir_excel }}</label><br>
-            <input type="file" id="archivo_excel" name="archivo_excel" accept=".xlsx,.xls" required>
-            <button type="submit" class="btn-option">1. {{ textos.subir_archivo }}</button>
+            {% if not session.get('ruta_excel') %}
+                <label for="archivo_excel">{{ textos.subir_excel }}</label><br>
+                <input type="file" id="archivo_excel" name="archivo_excel" accept=".xlsx,.xls" required>
+                <button type="submit" class="btn-option">{{ textos.subir_excel }}</button>
+            {% endif %}
         </form>
 
         <!-- Paso 2: Solo mostrar si ya hay Excel subido -->
         {% if session.get('ruta_excel') %}
+            <p>Archivo subido: {{ session.get('ruta_excel') }}</p>
+
             <form method="GET" action="{{ url_for('pagina_pedir_IA') }}">
-                <button type="submit" class="btn-option">2. {{ textos.aceptar }}</button>
+                <button type="submit" class="btn-option">{{ textos.aceptar }}</button>
             </form>
+            <div class="button-container">
+                <a href="{{ url_for('cancelar_fichero') }}" class="btn btn-secondary">{{ textos.cambiar_fichero }}</a>
+            </div>
         {% endif %}
 
         

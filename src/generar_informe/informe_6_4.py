@@ -1,39 +1,27 @@
-def generar(excel):
-    print("EXCEL RECIBIDO", excel)
-    print("PROGRAMA LISTO PARA GENERAR INFORME")
-    
-    
-    
-    
 
-
-import csv
-import io
 import json
 import os
 import sys
-import time
-import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
 
+
+import re
+
+import os
 import pandas as pd
-import requests
-import xml.etree.ElementTree as ET
-from bs4 import BeautifulSoup
 from docx import Document
-from docx.shared import Inches
 from docx2pdf import convert
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.shared import Pt  # Asegúrate de tener esta importación al principio
+
+
+import pandas as pd
+import requests
+
 from dotenv import load_dotenv
-from fpdf import FPDF
-from PyPDF2 import PdfReader
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select, WebDriverWait
-from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import TimeoutException
+
+
+import numpy as np
 
 
 from datetime import datetime
@@ -333,6 +321,14 @@ def generar_tabla_resumen(path_salida_temp, path_salida_final):
     anios_normales = [col for col in columnas_despues if not col.endswith('_sostenible')]
     anios_sostenibles = [col for col in columnas_despues if col.endswith('_sostenible')]
 
+
+    # Eliminar primer y último año (solo intermedios)
+    if len(anios_normales) > 2:
+        anios_normales = anios_normales[1:-1]
+
+    if len(anios_sostenibles) > 2:
+        anios_sostenibles = anios_sostenibles[1:-1]
+        
     fila_total = df.iloc[-1]
 
     total_research_euros = [float(fila_total[a]) for a in anios_normales]
@@ -344,7 +340,7 @@ def generar_tabla_resumen(path_salida_temp, path_salida_final):
         if cambio is None:
             cambio = 0
 
-            print(f"⚠️ Advertencia: No se obtuvo el tipo de cambio para el año {a}, usando valor por defecto {cambio}")
+            print(f"Advertencia: No se obtuvo el tipo de cambio para el año {a}, usando valor por defecto {cambio}")
         tipos_cambio[a] = cambio
 
     total_research_usd = [round(e * tipos_cambio[a], 2) for e, a in zip(total_research_euros, anios_normales)]
@@ -453,14 +449,247 @@ def generar_tabla_resumen(path_salida_temp, path_salida_final):
                 result_cell.alignment = center_align
     
     wb.save(path_salida_final)
-    print(f"✅ Tabla de resumen exportada con éxito en el archivo: {path_salida_final}")
+    print(f"Tabla de resumen exportada con éxito en el archivo: {path_salida_final}")
+
+ 
+
+# ------------------ ELIMINA LAS TABLAS VACÍAS ------------------
+def eliminar_tablas_vacias(doc):
+    """Elimina las tablas vacías (sin contenido) del documento Word."""
+    tablas_a_eliminar = []
+
+    for table in doc.tables:
+        vacia = True
+        for row in table.rows:
+            for cell in row.cells:
+                if cell.text.strip():  # Si hay contenido en alguna celda
+                    vacia = False
+                    break
+            if not vacia:
+                break
+        if vacia:
+            tablas_a_eliminar.append(table)
+
+    for table in tablas_a_eliminar:
+        tbl_element = table._element
+        tbl_element.getparent().remove(tbl_element)
+
+    print(f"Se eliminaron {len(tablas_a_eliminar)} tabla(s) vacía(s).")
 
 
-if __name__ == "__main__":
+
+def fill_description(doc, ruta_archivo):
+    """Llena la descripción"""
+    anio_rango = re.search(r'(\d{4})-(\d{4})', ruta_archivo)
+
+    if anio_rango:
+        # Extraemos los años de inicio y fin del rango
+        anio_inicio = int(anio_rango.group(1))
+        anio_fin = int(anio_rango.group(2))
+        
+        # Generamos una lista con los años intermedios
+        anios_intermedios = list(range(anio_inicio + 1, anio_fin))  # excluyendo los límites
+        
+        print("Años intermedios:", anios_intermedios)
+        # Construcción de la descripción
+        description_text = (
+            f"The complete list of research projects (years {anio_rango.group(0)}), their amount, their start and end date and their distribution in annual amounts is provided as evidence. "
+            f"It also includes whether the project is sustainable research or not. "
+            f"For the calculation, the distribution has been made based on the days included in each year and the amount has been determined for the three-year evaluation period ({', '.join(map(str, anios_intermedios))})."
+        )
+
+    else:
+        print("No se encontró un rango de años.")
+        
+    
+    # Reemplazar el texto en el documento
+    for para in doc.paragraphs:
+        if "Description:" in para.text:
+            para.text = f"Description:\n\n{description_text}"
+            break
+
+
+def set_cell_background(cell, color_hex):
+    """Aplica color de fondo hexadecimal a una celda."""
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    shd = OxmlElement('w:shd')
+    shd.set(qn('w:val'), 'clear')
+    shd.set(qn('w:color'), 'auto')
+    shd.set(qn('w:fill'), color_hex)
+    tcPr.append(shd)
+
+   
+
+def insertar_tablas_en_documento(doc, df_resumen, df_datos):
+    if isinstance(df_resumen.columns, pd.MultiIndex):
+        df_resumen.columns = ['' if 'Unnamed' in str(col) else ' '.join([str(c) for c in col if 'Unnamed' not in str(c)]) for col in df_resumen.columns]
+
+    eliminar_tablas_vacias(doc)
+
+    colores_encabezado = {
+        "total research": "93c5fd",
+        "sustainability": "86efac",
+        "ratio": "fde68a",
+    }
+
+    colores_filas = {
+        "ratio of sustainability": "fde68a", 
+        "total research funds (in us dollars)": "dbeafe",
+        "total research funds dedicated to sustainability research": "dcfce7",
+    }
+
+    for paragraph in doc.paragraphs:
+        if 'Additional' in paragraph.text:
+            # Tabla resumen
+            new_paragraph_arriba = paragraph.insert_paragraph_before()
+            table_resumen = doc.add_table(rows=1, cols=len(df_resumen.columns))
+            table_resumen.style = 'Table Grid'
+
+            hdr_cells = table_resumen.rows[0].cells
+            columnas_verdes = set()
+            columnas_azules = set()
+            for j, col in enumerate(df_resumen.columns):
+                col_str = str(col).replace("\n", " ").strip()
+                hdr_cells[j].text = ""  # Limpiar texto anterior
+                run = hdr_cells[j].paragraphs[0].add_run(col_str)
+                run.bold = True
+
+                col_str_clean = col_str.lower()
+
+                # Color del encabezado
+                if "sustainability" in col_str_clean:
+                    color = colores_encabezado["sustainability"]
+                    columnas_verdes.add(j)
+
+                elif "total research" in col_str_clean:
+                    color = colores_encabezado["total research"]
+                    columnas_azules.add(j)
+
+                else:
+                    color = None
+
+                if color:
+                    set_cell_background(hdr_cells[j], color)
+
+            for _, row in df_resumen.iterrows():
+                row_cells = table_resumen.add_row().cells
+                fila_no_vacia = False
+                for j, value in enumerate(row):
+                    val = "" if pd.isna(value) else str(value)
+                    row_cells[j].text = val
+                    if val != "":
+                        fila_no_vacia = True
+
+                    # Pintar celdas según su columna (encabezados verdes o azules)
+                    if j in columnas_azules and val:
+                        set_cell_background(row_cells[j], "dbeafe")  # Azul
+                    elif j in columnas_verdes and val:
+                        set_cell_background(row_cells[j], "dcfce7")  # Verde
+
+                if fila_no_vacia:
+                    # Pintar toda la fila si la primera columna coincide con claves específicas
+                    texto = ' '.join(str(row.iloc[0]).split()).lower()
+                    for clave, color in colores_filas.items():
+                        clave_limpia = clave.strip().lower()
+                        if clave_limpia in texto:
+                            for cell in row_cells:
+                                if cell.text.strip():  # Solo pintar si no está vacía
+                                    set_cell_background(cell, color)
+                            break
+
+            new_paragraph_arriba._element.addnext(table_resumen._element)
+
+            # Tabla de datos sin colorear
+            new_paragraph_arriba = paragraph.insert_paragraph_before()            
+            table_datos = doc.add_table(rows=1, cols=len(df_datos.columns))
+            table_datos.style = 'Table Grid'
+
+            hdr_cells = table_datos.rows[0].cells
+
+            # Guardamos índices de columnas por color
+            columnas_verdes = set()
+            columnas_azules = set()
+
+            # Pintar encabezados según el contenido
+            for j, col in enumerate(df_datos.columns):
+                col_str = str(col).replace("\n", " ").strip()
+                hdr_cells[j].text = ""  # Limpiar texto anterior
+
+                # hdr_cells[j].text = col_str
+                run = hdr_cells[j].paragraphs[0].add_run(col_str)
+                run.bold = True
+                run.font.size = Pt(9)
+
+                col_str_clean = col_str.lower()
+
+                if re.search(r'\b20\d{2}\b', col_str_clean) and "sostenible " not in col_str_clean:
+                    set_cell_background(hdr_cells[j], "93c5fd")  # azul
+                    columnas_azules.add(j)
+                elif re.search(r'20\d{2}.*sostenible', col_str_clean):
+                    set_cell_background(hdr_cells[j], "86efac")  # verde
+                    columnas_verdes.add(j)
+
+            # Pintar celdas de cada columna que coincide
+            for _, row in df_datos.iterrows():
+                row_cells = table_datos.add_row().cells
+                for j, value in enumerate(row):
+                    val = "" if pd.isna(value) else str(value)
+                    row_cells[j].text = val
+
+                    # Pintar celdas según su columna
+                    if j in columnas_azules and val:
+                        set_cell_background(row_cells[j], "dbeafe")
+                    elif j in columnas_verdes and val:
+                        set_cell_background(row_cells[j], "dcfce7")
+            break
+
+        
+def generar_informe(excel_path, excel):
+    """Genera informe Word y PDF a partir de un Excel generado."""
+    base_dir = os.path.dirname(__file__)
+    plantilla_path = os.path.join(base_dir, 'informe_general.docx')
+
+    if not os.path.exists(plantilla_path) or not os.path.exists(excel_path):
+        print("❌ Plantilla o Excel no encontrado")
+        return
+
+    output_filename = "University_Country_6_4_Total Research Funds Dedicated to Sustainability Research (in US Dollars)"
+    docx_output = os.path.join(base_dir, f"{output_filename}.docx")
+    pdf_output = os.path.join(base_dir, f"{output_filename}.pdf")
+
+    doc = Document(plantilla_path)
+
+    # Reemplazo del texto
+    for p in doc.paragraphs:
+        if "[6] Education and Research (ED)" in p.text:
+            p.text = "[6] Education and Research (ED)\n\n[6.4] Total Research Funds Dedicated to Sustainability Research (in US Dollars)\n"
+
+    fill_description(doc, excel)
+    # Leer datos
+    df_resumen = pd.read_excel(excel_path, sheet_name='Resumen Financiero', header=[0, 1])
+    df_datos = pd.read_excel(excel_path, sheet_name='Datos Originales')
+
+    # Insertar tablas
+    insertar_tablas_en_documento(doc, df_resumen, df_datos)
+
+    # Guardar y convertir
+    doc.save(docx_output)
+    print(f"✅ Informe Word guardado: {docx_output}")
+
+    try:
+        convert(docx_output, pdf_output)
+        print(f"✅ Informe PDF guardado: {pdf_output}")
+    except Exception as e:
+        print(f"⚠️ Error al convertir a PDF: {e}")
+
+
+
+def generar(excel):
 
     columnas_esperadas = ['Fecha Inicio', 'Fecha Fin', 'CUANTÍA TOTAL']
-    df = cargar_excel_con_header_dinamico("Proyectos UBU (2020-2024)2.xlsx", columnas_esperadas)
-    df = df.head(5)
+    df = cargar_excel_con_header_dinamico(excel, columnas_esperadas)
+    df = df.head(5) #quitar
     df = preparar_fechas(df)
     df = calcular_imputacion_diaria(df)
     df = imputar_por_año(df)
@@ -471,128 +700,11 @@ if __name__ == "__main__":
     path_salida_final = "archivo_final.xlsx"
     generar_tabla_resumen(path_salida_temp, path_salida_final)
     os.remove(path_salida_temp)
-
-
-
-
-
-# # Función para reemplazar texto en un documento de Word
-# def replace_text_in_docx(doc, old_text, new_text):
-#     for paragraph in doc.paragraphs:
-#         if old_text in paragraph.text:
-#             paragraph.text = new_text
-
-# def remove_text_from_docx(doc, text_to_remove):
-#     """Elimina cualquier párrafo que contenga el texto especificado."""
-#     for paragraph in doc.paragraphs:
-#         if text_to_remove in paragraph.text:
-#             paragraph.text = ""  # Eliminar el texto
-
-# def fill_description(doc, year_range, anhos):
-#     """Llena la descripción"""
+    generar_informe(path_salida_final, excel)
     
-#     # Construcción de la descripción
-#     description_text = (
-#         f"The complete list of research projects (years {year_range}), their amount, their start and end date and their "
-#         f"distribution in annual amounts is provided as evidence. It also includes whether the project is sustainable "
-#         f"research or not. For the calculation, the distribution has been made based on the days included in each year "
-#         f"and the amount has been determined for the three‐year evaluation period ({anhos}).  "
-     
-#     )
-
-#     # Reemplazar el texto en el documento
-#     for para in doc.paragraphs:
-#         if "Description:" in para.text:
-#             para.text = f"Description:\n\n{description_text}"
-#             break
-
-
-
-
-# def initialize_table(doc, headers):
-#     """Inicializa la tabla en el documento de Word con los encabezados."""
-#     for table in doc.tables:
-#         while len(table.columns) < len(headers):
-#             table.add_column(width=Inches(1.5))
-#         for i, header in enumerate(headers):
-#             table.cell(0, i).text = header
-#         return table  # Retornamos la primera tabla encontrada
-#     return None
-
-# def fill_table(table, headers, data):
-#     """Llena la tabla con encabezados y datos, asegurando que no haya duplicados."""
+#     print("EXCEL RECIBIDO", excel)
+#     print("PROGRAMA LISTO PARA GENERAR INFORME")
     
-#     # Eliminar todas las filas existentes si la tabla está vacía
-#     while len(table.rows) > 0:
-#         table._element.remove(table.rows[0]._element)
-
-#     # Crear la fila de encabezados
-#     header_row = table.add_row()
-#     for i, header in enumerate(headers):
-#         header_row.cells[i].text = header
-
-#     # Agregar filas con datos
-#     for row_data in data:
-#         row = table.add_row()
-#         for col_idx, value in enumerate(row_data):
-#             cell = row.cells[col_idx]
-#             if isinstance(value, str) and (value.startswith("http://") or value.startswith("https://")):
-#                 add_hyperlink(cell.paragraphs[0], value, "Link")
-#             else:
-#                 cell.text = str(value)
-
- 
-     
-# # Función que genera el informe
-# def generar_informe(datos):
-#     """Genera el informe en memoria sin leer de Excel."""
-#     base_dir = os.path.dirname(__file__)
-#     template_path = os.path.join(base_dir, 'informe_general.docx')
-#     print("Datos recibidos ", datos)
-#     if not os.path.exists(template_path):
-#         print(f"Error: No se encontró la plantilla {template_path}")
-#         return
-
-#     output_filename = "University_Country_6_4_Total Research Funds Dedicated to Sustainability Research (in US Dollars)"
-#     output_docx_path = os.path.join(base_dir, f"{output_filename}.docx")
-#     output_pdf_path = os.path.join(base_dir, f"{output_filename}.pdf")
-
-#     doc = Document(template_path)
-
-#     # Reemplazar texto en la plantilla
-#     for paragraph in doc.paragraphs:
-#         paragraph.text = paragraph.text.replace(
-#             "[6] Education and Research (ED)", 
-#             "[6.4] Total Research Funds Dedicated to Sustainability Research (in US Dollars) \n\n"
-#         )
-
-#     # Crear la tabla
-#     headers = ["Building", "Contract", "Maintenance Type", "File", "Link"]
-#     table = initialize_table(doc, headers)
-
-#     fill_table(table, headers, [list(d.values()) for d in datos])
-
-
-#     doc.save(output_docx_path)
-
-#     try:
-#         convert(output_docx_path, output_pdf_path)
-#     except Exception as e:
-#         print(f"Error al convertir a PDF: {e}")
-
-#     print(f"Documento PDF generado en: {output_pdf_path}")
-
-
-    
-    
-# def generar():
-#     docx_path =os.path.join(base_dir, 'Campus_Building_Maintenance.docx')
-#     enlaces= ejecutar_busquedas(docx_path)
-#     "HA BUSCADO ENLACES"
-#     datos = ejecutar_API(enlaces)
-#     "GENERA DATOS"
-#     generar_informe(datos)
-
 
 
 
