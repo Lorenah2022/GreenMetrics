@@ -28,6 +28,10 @@ import sys
 
 from werkzeug.utils import secure_filename
 
+
+
+#Cargar el diccionario con los textos
+from textos import textos
 # Cargar variables desde .env
 load_dotenv()
 
@@ -64,174 +68,7 @@ lock = threading.Lock()  # Para controlar el acceso concurrente a estado_proceso
 google_bp = make_google_blueprint(client_id=os.getenv("GOOGLE_CLIENT_ID"), client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),  redirect_to='pagina_pedir_anho')
 app.register_blueprint(google_bp, url_prefix='/google_login')
 
- # Diccionario de traducciones
-textos = {
-    
-    'en': {
-        'aceptar': 'Accept',
-        'actualizar_perfil': 'Update profile',
-        'ajustes': 'Settings',
-        'anho':'Select the year range (start date - end date) e.g. 2022-2023',
-        'anho_tabla':'Year',
-        'api_key': 'API key',
-        'archivo_requerido': 'Please, upload an excel file.',
-        'base_url': 'URL base',
-        'busquedas_anteriores':'Previous Searches',
-        'cambiar_fichero':'Change file',
-        'cancelar': 'Cancel',
-        'cerrar_sesion': 'Logout',
-        'crear_cuenta': 'Register',
-        'confirmar_contrasenha': 'Confirm password',
-        'contenido': 'Content visible only for visitors.',
-        'codigo_Asignatura':'Subject code',
-        'criterio_1': 'The password must have at least one uppercase letter, one lowercase letter, and one number.',
-        'criterio_2': 'Additionally, a minimum of 8 characters.',
-        'criterio_3': '* If you do not fill in the password field, it will not be updated.',
-        'datos_IA': 'IA data',
-        'descargar_datos_nuevos': 'Download new data',
-        'descargar_informe':'Download report',
-        'ejecutando_grados': 'Downloading the links to the addresses of bachelors and masters degrees.',
-        'ejecutando_guias': 'Downloading guias....',
-        'ejecutando_asignaturas':'The subjects are being processed..... ',
-        'en': 'English',
-        'error_script': 'Error running the script:',
-        'espanol': 'Spanish',
-        'formato_incorrecto':'Incorrect format. Use the YYYY-YYYY format.',
-        'formato_excel_incorrecto':'Incorrect format. Make sure the file has one of the following extensions: .xlsx or .xls',
-        'filtrar': 'Filter',
-        'guardar':'Save changes',
-        'grande':'Big',
-        'introducir_rango_anho': 'Enter the range of three years (start year - end year) e.g. 2021-2023',
-        'introducir_anho': 'Enter the academic year for which you want to extract the metrics: (start year - end year) e.g. 2023-2024',
-        'introducir_datos_IA': 'Enter the following data, if not the default IA will be used (Llama-8B-GGUF)',
-        'introducir_codigo': 'Introduce the subject code',
-        'IA_tit': 'IA',
-        'ingles': 'English',
-        'iniciar_sesion': 'Login',
-        'informe_1_19':'Annual Operation Maintenance Percentage (1_19)',
-        'informe_6_1':'Number of Courses on Environment and Sustainability (6_1)',
-        'informe_6_2':'Total number of courses or modules offered (6_2)',
-        'informe_6_4':'Total Research Funds Dedicated to Sustainability Research (in US Dollars) (6_4)',
-        'informe_6_3':'Ratio of sustainability courses to total courses/subjects (6_3)',
-        'informe_6_7':'Number of Scholarly Publications on Sustainability (6_7)',
-        'informe_6_8':'Number of Events on Environment and Sustainability(6_8)',
-        'ingrese_anho':'Introduce the year',
-        'myModel': 'Model',
-        'mensaje_cargando': 'Loading... This might take a few minutes...',
-        'modo_daltonismo': 'Color blind',
-        'modalidad':'Modality',
-        'nueva_contrasenha': 'New password. *',
-        'nombre_archivo':'File name',
-        'normal': 'Medium',
-        'no_busquedas':'No previous searches were found.',
-        'no_resultados':'No results were found for the year ',
-        'opcion_ambos':'Both',
-        'opcion_grado':'Degree',
-        'opcion_master':'Master',
-        'pequeno': 'Small',
-        'perfil': 'Profile',
-        'proceso_completado': 'Process successfully completed for the year',
-        'progreso_titulo': 'Process Progress',
-        'rango_incorrecto': 'The year range must be exactly 3 years (Example: 2021-2023).',
-        'realizar_busqueda_nueva': 'Search',
-        'sel_idioma': 'Select language:',
-        'sel_letra': 'Select Font Size:',
-        'seleccionar_tipo_estudio' : 'Choose the type: ',
-        'seleccionar_informe':'Select the report:',
-        'sostenibilidad':'Sustainable',
-        'subir_excel': 'Upload your Excel file',
-        'texto_bienvenida': 'Welcome to Greenmetrics',
-        'tit_admin': 'Administrator profile',
-        'tit_user': 'User profile.',
-        'titulo_visit': 'Visitor profile',
-        'tipo':'Programme type',
-        'todos':'All',
-        'usuario': 'User name.',
-        'volver_atras': '← Go Back'
-        },
-    'es': {
-        'aceptar': 'Aceptar',
-        'actualizar_perfil': 'Actualizar perfil.',
-        'ajustes': 'Ajustes',
-        'anho':'Seleccione el rango de años (fecha inicial - fecha final) Ej. 2022-2023',
-        'anho_tabla':'Año',
-        'api_key': 'API key',
-        'archivo_requerido': 'Por favor, añada un fichero excel',
-        'base_url': 'Base URL',
-        'busquedas_anteriores':'Búsquedas anteriores',
-        'cambiar_fichero':'Cambiar el fichero',
-        'cancelar': 'Cancelar',
-        'cerrar_sesion': 'Cerrar sesión',
-        'crear_cuenta': 'Crear cuenta',
-        'confirmar_contrasenha': 'Confirmar contraseña',
-        'contenido': 'Contenido solo visible para visitantes.',
-        'codigo_Asignatura':'Código asignatura',
-        'criterio_1': 'La contraseña debe tener al menos una mayúscula, una minúscula y un número.',
-        'criterio_2': 'Además de un minimo de 8 caracteres.',
-        'criterio_3': '* Si no rellena el campo de la contraseña, esta no se actualizará.',
-        'datos_IA': 'Datos de la IA',
-        'descargar_datos_nuevos': 'Descargar datos nuevos',
-        'descargar_informe':'Descargar informe',
-        'ejecutando_grados': 'Descargando los enlaces a las direcciones de los grados y masteres.',
-        'ejecutando_guias': 'Descargando las guías docentes.....',
-        'ejecutando_asignaturas':'Se están procesando las asignaturas.... ',
-        'en': 'Inglés',
-        'error_script': 'Error al ejecutar el script:',
-        'espanol': 'Español',
-        'formato_incorrecto':'Formato incorrecto. Use el formato YYYY-YYYY.',
-        'formato_excel_incorrecto':'Formato incorrecto. Asegurese del que fichero tiene alguna de lantes extesiones .xlsx o .xls',
-        'filtrar': 'Filtrar',
-        'guardar':'Guardar cambios',
-        'grande':'Grande',
-        'introducir_anho': 'Introduzca el curso académico para el que desea extraer las métricas: (año inicio - año final) Ej. 2023-2024 ',
-        'introducir_rango_anho': 'Introduzca el rango de tres años  (año inicio - año final) Ej.2021-2023 ',
-        'introducir_datos_IA': 'Introduce los siguientes datos, sino se usará la IA predeterminada (Llama-8B-GGUF)',
-        'introducir_codigo': 'Introduce el código de asignatura',
-        'IA_tit': 'IA',
-        'ingles': 'Inglés',
-        'iniciar_sesion': 'Iniciar sesión',
-        'informe_1_19':'Porcentaje Anual de Operación y Mantenimiento (1_19)',
-        'informe_6_1':'Número de cursos sobre Medio Ambiente y Sostenibilidad (6_1)',
-        'informe_6_2':'Número total de cursos ofrecidos (6_2)',
-        'informe_6_3':'Ratio de cursos sostenibles (6_3)',
-        'informe_6_4':'Fondos totales de investigación dedicados a la investigación en sostenibilidad (en dólares estadounidenses) (6_4)',
-        'informe_6_7':'Número de publicaciones académicas sobre sostenibilidad (6_7)',
-        'informe_6_8':'Número de eventos relacionados con el Medio Ambiente y Sostenibilidad (6_8)',
-        'ingrese_anho':'Ingrese el año',
-        'myModel': 'Modelo',
-        'mensaje_cargando': 'Cargando... Esto puede tardar algunos minutos...',
-        'modo_daltonismo': 'Modo Daltonismo',
-        'modalidad':'Modalidad',
-        'nueva_contrasenha': 'Nueva contraseña. *',
-        'nombre_archivo':'Nombre del archivo:',
-        'normal': 'Medio',
-        'no_busquedas':'No se encontraron búsquedas anteriores.',
-        'no_resultados':'No se encontraron resultados para el año ',
-        'opcion_ambos':'Ambos',
-        'opcion_grado':'Grado',
-        'opcion_master':'Master',
-        'pequeno': 'Pequeño',
-        'perfil': 'Perfil',
-        'proceso_completado': 'Proceso completado exitosamente para el año',
-        'progreso_titulo': 'Progreso del Proceso',
-        'rango_incorrecto': 'El rango de años debe ser de exactamente 3 años (Ejemplo: 2021-2023).',
-        'realizar_busqueda_nueva': 'Realizar una búsqueda',
-        'sel_idioma': 'Seleccionar Idioma:',
-        'sel_letra': 'Seleccionar Tamaño de Letra:',
-        'seleccionar_tipo_estudio' : 'Selecciona el tipo de estudio',
-        'seleccionar_informe':'Selecciona el informe a generar:',
-        'sostenibilidad':'Sostenible',
-        'subir_excel': 'Suba su fichero excel',
-        'texto_bienvenida': 'Bienvenido a Greenmetrics',
-        'tit_admin': 'Perfil de administrador',
-        'tit_user': 'Perfil de usuario',
-        'titulo_visit': 'Perfil de Visitante',
-        'tipo':'Tipo de programa',
-        'todos':'Todos',
-        'usuario': 'Nombre de usuario',
-        'volver_atras': '← Volver atrás'
-        }
-    }
+ 
 
 
 # ----------------------- BASES DE DATOS -----------------------------------------------------
@@ -240,7 +77,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     google_id = db.Column(db.String(50), unique=True, nullable=True)  # Campo opcional
     username = db.Column(db.String(50), nullable=False , unique=True)
-    email = db.Column(db.String(100), nullable=False , unique=True)
+    email = db.Column(db.String(100), nullable=True, unique=True)
     password = db.Column(db.String(200), nullable=False)
     rol = db.Column(db.String(50), nullable=False, default='visitante')  # Default es 'usuario'
 
@@ -316,13 +153,16 @@ def login():
     google_client_id = app.config["GOOGLE_OAUTH_CLIENT_ID"]
 
     if request.method == 'POST':
-        email = request.form['email']
+        identifier = request.form['identifier']
         password = request.form['password']
         
-        user = User.query.filter_by(email=email).first()
-        
+        if re.match(r"[^@]+@[^@]+\.[^@]+", identifier):  # Si es un correo
+            user = User.query.filter_by(email=identifier).first()
+        else:  # Si no es un correo, tratamos como nombre de usuario
+            user = User.query.filter_by(username=identifier).first()
+
         if not user:
-            flash('Correo incorrecto.', 'error')  # Mensaje de error si no se encuentra el correo
+            flash('Correo/Usuario no encontrado.', 'error')  # Mensaje de error si no se encuentra el correo
         elif not check_password_hash(user.password, password):
             flash('Contraseña incorrecta.', 'error')  # Mensaje de error si la contraseña es incorrecta
         else:
@@ -1305,9 +1145,88 @@ def pagina_informe_6_8():
                                daltonismo=daltonismo,
                                nuevos_anhos_disponibles=nuevos_anhos_disponibles)  
 
+
+#  ----------------------- CREACIÓN DEL SUPERADMIN -------------------------------------- 
+
+def crear_admin_por_defecto():
+    admin_username = "admin"
+    admin_password = os.getenv("ADMIN_PASSWORD")
+
+    # Verifica si ya existe
+    admin = User.query.filter_by(username=admin_username).first()
+    if not admin:
+        nuevo_admin = User(
+            username=admin_username,
+            password=generate_password_hash(admin_password),
+            rol="admin",
+            email=None  # Ya no es necesario
+        )
+        db.session.add(nuevo_admin)
+        db.session.commit()
+        print("Usuario administrador creado.")
+    else:
+        print("El usuario administrador ya existe.")
+
+
+#  ----------------------- CAMBIO DE ROL -------------------------------------- 
+#  Función que verifica el nombre de usuario y el rol, para que solo los administradores puedan designar a nuevos administradores, y solo el root, pueda degradar administradores a roles de usuario.
+
+@app.route('/cambiar_a_admin', methods=['GET', 'POST'])
+def cambiar_a_admin():
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+
+    if 'rol' not in session or 'username' not in session:
+        flash('Debes iniciar sesión primero.', 'error')
+        return redirect(url_for('login'))
+
+    rol = session['rol']
+    username = session['username']
+
+    if rol != 'admin':
+        flash('No tienes permiso para realizar esta acción.', 'error')
+        return redirect(url_for('pagina_principal'))
+
+    if request.method == 'POST':
+        email = request.form['email']
+        nuevo_rol = request.form.get('nuevo_rol')  # 'admin' o 'usuario'
+        usuario = User.query.filter_by(email=email).first()
+
+        if not usuario:
+            flash('El correo no corresponde a ningún usuario.', 'error')
+            return redirect(url_for('cambiar_a_admin'))
+
+        if usuario.username == 'admin':
+            flash('No se puede modificar el rol del superadministrador.', 'error')
+            return redirect(url_for('cambiar_a_admin'))
+
+        # Si se intenta degradar a un admin a usuario, solo el superadmin puede hacerlo
+        if usuario.rol == 'admin' and nuevo_rol == 'usuario':
+            if username != 'admin':
+                flash('Solo el superadministrador puede degradar a otros administradores.', 'error')
+                return redirect(url_for('cambiar_a_admin'))
+
+        if usuario.rol != nuevo_rol:
+            usuario.rol = nuevo_rol
+            db.session.commit()
+            flash(f'El rol del usuario {email} ha sido cambiado a {nuevo_rol}.', 'success')
+        else:
+            flash(f'El usuario {email} ya tiene el rol {nuevo_rol}.', 'info')
+
+        return redirect(url_for('pagina_principal'))
+
+    return render_template('cambiar_a_admin.html', rol=rol, 
+                           textos=textos[idioma], 
+                           tamano_texto=tamano_texto, 
+                           daltonismo=daltonismo)
+
+
+
 #  ----------------------- MAIN  ----------------------------------------------------
 if __name__ == '__main__':
     # Crear las tablas de la base de datos
     with app.app_context():
         db.create_all()
+        crear_admin_por_defecto()  
     app.run(debug=True)

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil de Usuario</title>
+    <title>Perfil de administrador</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_cards.css') }}">
     <!-- Incluir el archivo CSS de la barra de navegación -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
@@ -60,7 +60,7 @@
     </div>
 
     <div class="main-content">
-        <h2>{{ textos.tit_user}}</h2>
+        <h2>{{ textos.tit_admin}}</h2>
                 <form method="POST" enctype="multipart/form-data">
                     {{ form.hidden_tag() }}
                     
@@ -103,6 +103,10 @@
                     <div >
                         <button type="submit" class="btn btn-secondary">{{ textos.actualizar_perfil}}</button>
                         <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.cancelar}}</a>
+                    </div>
+
+                    <div >
+                        <a href="{{ url_for('cambiar_a_admin') }}" class="btn btn-secondary">"Añadir/eliminar un administrador"</a>
                     </div>
                 </form>
             
