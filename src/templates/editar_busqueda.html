@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Búsqueda</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_cards.css') }}">
+    <!-- Incluir el archivo CSS de la barra de navegación -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_interfaces.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_tabla.css') }}">
+ 
+</head>
+<body class="{% if session.get('tamano_texto') == 'pequeño' %}texto-pequeno{% elif session.get('tamano_texto') == 'grande' %}texto-grande{% else %}texto-mediano{% endif %} 
+{% if daltonismo %}modo-daltonismo{% endif %}">
+
+    <!-- Barra de navegación -->
+    <div class="navbar">
+        <h1>Greenmetrics</h1>
+        <div class="dropdown">
+            <button>≡</button>
+            <div class="dropdown-content">
+                <a href="{{ url_for('perfil') }}">{{ textos.perfil }}</a>
+                <a href="{{ url_for('ajustes') }}">{{ textos.ajustes }}</a>
+                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion }}</a>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div class="main-content">
+        <h2>Editar Búsqueda</h2>
+        <form method="POST">
+            <label for="anho">{{textos.anho_tabla}}</label>
+            <input type="text" name="anho" value="{{ busqueda.anho }}" required>
+
+            <label for="tipo_programa">{{textos.tipo}}</label>
+            <input type="text" name="tipo_programa" value="{{ busqueda.tipo_programa }}" required>
+
+            <label for="codigo_asignatura">{{textos.codigo_Asignatura}}</label>
+            <input type="text" name="codigo_asignatura" value="{{ busqueda.codigo_asignatura }}" required>
+
+            <label for="modalidad">{{textos.modalidad}}</label>
+            <input type="text" name="modalidad" value="{{ busqueda.modalidad }}" required>
+           
+            <label for="sostenibilidad">{{textos.sostenibilidad}}</label>
+            <select name="sostenibilidad" required>
+                <option value="Sí" {% if busqueda.sostenibilidad == "Sí" %}selected{% endif %}>Sí</option>
+                <option value="No" {% if busqueda.sostenibilidad == "No" %}selected{% endif %}>No</option>
+            </select>
+        <div>
+            <button type="submit"  class="btn btn-secondary">{{textos.guardar}}</button>
+            <a href="{{ url_for('consultar_busquedas') }}"  class="btn btn-secondary">{{textos.cancelar}}</a>
+        </div>
+        </form>
+    </div>
+</body>
+</html>

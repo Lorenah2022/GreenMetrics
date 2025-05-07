@@ -24,64 +24,24 @@
 
     <div class="main-content">
         <h2>Cambiar Rol a Administrador</h2>
-
-        <!-- Mostrar los mensajes flash -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
         <form method="POST">
             <div>
-                <label for="email">Correo del Usuario</label>
+                <label for="email">{{textos.correo_usuario}}</label>
                 <input type="email" name="email" class="form-control" required>
             </div>
 
             <div>
-                <label for="nuevo_rol">Nuevo Rol</label>
+                <label for="nuevo_rol"> {{textos.nuevo_rol}}</label>
                 <select name="nuevo_rol" class="form-control" required>
-                    <option value="admin">Administrador</option>
-                    <option value="usuario">Usuario</option>
+                    <option value="admin">{{textos.rol_administrador}}</option>
+                    <option value="usuario">{{textos.rol_usuario}}</option>
                 </select>
             </div>
 
-            <button type="submit" class="btn btn-secondary">Cambiar Rol</button>
+            <button type="submit" class="btn btn-secondary"> {{textos.rol_cambiar}}</button>
         </form>
         
-        <a href="{{ url_for('ajustes') }}" class="btn btn-secondary">Cancelar</a>
+        <a href="{{ url_for('ajustes') }}" class="btn btn-secondary">{{textos.cancelar}}</a>
     </div>
-
-    <!-- Opcional: Estilos para los mensajes flash -->
-    <style>
-        .flash-messages {
-            margin-bottom: 20px;
-        }
-        .alert {
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .alert-info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-        .alert-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-    </style>
 </body>
 </html>

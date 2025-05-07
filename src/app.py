@@ -721,6 +721,73 @@ def consultar_busquedas():
         params=params
     )
 
+#  ----------------------- EDITAR BASE DE DATOS  ----------------------------------------------------
+# Editar búsqueda (solo admin)
+@app.route('/editar_busqueda/<int:id>', methods=['GET', 'POST'])
+def editar_busqueda(id):
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+
+    if session.get('rol') != 'admin':
+         return redirect(url_for('pagina_informe_6_1'))
+
+    busqueda = db.session.get(Busqueda, id)
+    if not busqueda:
+        return "No encontrada", 404
+
+    if request.method == 'POST':
+        busqueda.anho = request.form['anho']
+        busqueda.tipo_programa = request.form['tipo_programa']
+        busqueda.codigo_asignatura = request.form['codigo_asignatura']
+        busqueda.modalidad = request.form['modalidad']
+        busqueda.sostenibilidad = request.form['sostenibilidad']
+        db.session.commit()
+        flash("Búsqueda editada correctamente.", "succes")
+
+        return redirect(url_for('consultar_busquedas'))
+
+    return render_template('editar_busqueda.html', busqueda=busqueda, textos=textos[idioma],
+        tamano_texto=tamano_texto,
+        daltonismo=daltonismo)
+    
+
+@app.route('/eliminar_busqueda/<int:id>', methods=['POST'])
+def eliminar_busqueda(id):
+    
+    if session.get('rol') != 'admin':
+        return redirect(url_for('pagina_informe_6_1'))
+
+    busqueda = db.session.get(Busqueda, id)
+    if not busqueda:
+        flash("Búsqueda no encontrada.", "error")
+        return redirect(url_for('consultar_busquedas'))
+
+    db.session.delete(busqueda)
+    db.session.commit()
+    flash("Búsqueda eliminada correctamente.", "succes")
+    return redirect(url_for('consultar_busquedas'))
+
+@app.route('/confirmar_eliminacion/<int:id>')
+def confirmar_eliminacion(id):
+    if session.get('rol') != 'admin':
+        return "Acceso denegado", 403
+
+    busqueda = db.session.get(Busqueda, id)
+    if not busqueda:
+        flash("Búsqueda no encontrada.", "error")
+        return redirect(url_for('consultar_busquedas'))
+
+    idioma = session.get('idioma', 'es')
+    tamano_texto = session.get('tamano_texto', 'normal')
+    daltonismo = session.get('daltonismo', False)
+
+    return render_template("confirmar_eliminacion.html",
+                           busqueda=busqueda,
+                           textos=textos[idioma],
+                           tamano_texto=tamano_texto,
+                           daltonismo=daltonismo)
+
 
 
 #  ----------------------- BARRA DE PROGRESO  ----------------------------------------------------
@@ -1214,7 +1281,7 @@ def cambiar_a_admin():
         else:
             flash(f'El usuario {email} ya tiene el rol {nuevo_rol}.', 'info')
 
-        return redirect(url_for('pagina_principal'))
+        return redirect(url_for('perfil'))
 
     return render_template('cambiar_a_admin.html', rol=rol, 
                            textos=textos[idioma], 

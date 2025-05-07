@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmar eliminación</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_cards.css') }}">
+    <!-- Incluir el archivo CSS de la barra de navegación -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_interfaces.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_tabla.css') }}">
+ 
+</head>
+<body class="{% if session.get('tamano_texto') == 'pequeño' %}texto-pequeno{% elif session.get('tamano_texto') == 'grande' %}texto-grande{% else %}texto-mediano{% endif %} 
+{% if daltonismo %}modo-daltonismo{% endif %}">
+
+    <!-- Barra de navegación -->
+    <div class="navbar">
+        <h1>Greenmetrics</h1>
+        <div class="dropdown">
+            <button>≡</button>
+            <div class="dropdown-content">
+                <a href="{{ url_for('perfil') }}">{{ textos.perfil }}</a>
+                <a href="{{ url_for('ajustes') }}">{{ textos.ajustes }}</a>
+                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion }}</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h2>{{textos.confimar_eliminacion}}</h2>
+        <p>{{textos.confimar_eliminacion1}}<strong>{{ busqueda.codigo_asignatura }}</strong>{{textos.confimar_eliminacion2}} {{ busqueda.anho }}?</p>
+
+        <form method="POST" action="{{ url_for('eliminar_busqueda', id=busqueda.id) }}">
+            <button type="submit" class="btn btn-secondary">{{textos.aceptar}}</button>
+            <a href="{{ url_for('consultar_busquedas') }}" class="btn btn-secondary">{{textos.cancelar}}</a>
+        </form>
+    </div>
+</body>
+</html>
