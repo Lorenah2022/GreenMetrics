@@ -35,18 +35,26 @@
             <input type="text" name="anho" value="{{ busqueda.anho }}" required>
 
             <label for="tipo_programa">{{textos.tipo}}</label>
-            <input type="text" name="tipo_programa" value="{{ busqueda.tipo_programa }}" required>
-
+            <select name="tipo_programa" required>
+                    <option value="grado" {% if busqueda.tipo_programa == "grado" %}selected{% endif %}>{{textos.opcion_grado}}</option>
+                    <option value="master" {% if busqueda.tipo_programa == "master" %}selected{% endif %}>{{textos.opcion_master}}</option>
+                </select> 
+            
             <label for="codigo_asignatura">{{textos.codigo_Asignatura}}</label>
             <input type="text" name="codigo_asignatura" value="{{ busqueda.codigo_asignatura }}" required>
 
+            <label for="nombre_archivo">{{textos.nombre_archivo}}</label>
+            <input type="text" name="nombre_archivo" value="{{ busqueda.nombre_archivo }}" required>
+
             <label for="modalidad">{{textos.modalidad}}</label>
-            <input type="text" name="modalidad" value="{{ busqueda.modalidad }}" required>
-           
+            <select name="modalidad" required>
+                <option value="presencial" {% if busqueda.modalidad == "presencial" %}selected{% endif %}>{{textos.opcion_presencial}}</option>
+                <option value="online" {% if busqueda.modalidad == "online" %}selected{% endif %}>{{textos.opcion_online}}</option>
+            </select>           
             <label for="sostenibilidad">{{textos.sostenibilidad}}</label>
             <select name="sostenibilidad" required>
-                <option value="Sí" {% if busqueda.sostenibilidad == "Sí" %}selected{% endif %}>Sí</option>
-                <option value="No" {% if busqueda.sostenibilidad == "No" %}selected{% endif %}>No</option>
+                <option value="Sí" {% if busqueda.sostenibilidad == "Sí" %}selected{% endif %}>{{textos.si}}</option>
+                <option value="No" {% if busqueda.sostenibilidad == "No" %}selected{% endif %}>{{textos.no}}</option>
             </select>
         <div>
             <button type="submit"  class="btn btn-secondary">{{textos.guardar}}</button>

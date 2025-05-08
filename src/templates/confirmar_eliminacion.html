@@ -27,8 +27,8 @@
     </div>
 
     <div class="main-content">
-        <h2>{{textos.confimar_eliminacion}}</h2>
-        <p>{{textos.confimar_eliminacion1}}<strong>{{ busqueda.codigo_asignatura }}</strong>{{textos.confimar_eliminacion2}} {{ busqueda.anho }}?</p>
+        <h2>{{textos.confirmar_eliminacion}}</h2>
+        <p>{{textos.confirmar_eliminacion1}}<strong>{{ busqueda.codigo_asignatura }}</strong>{{textos.confimar_eliminacion2}} {{ busqueda.anho }}?</p>
 
         <form method="POST" action="{{ url_for('eliminar_busqueda', id=busqueda.id) }}">
             <button type="submit" class="btn btn-secondary">{{textos.aceptar}}</button>

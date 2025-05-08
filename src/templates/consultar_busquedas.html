@@ -9,10 +9,8 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_interfaces.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_tabla.css') }}">
     <style>
-
-        /* Estilos para el modal */
         .modal {
-            display: none; /* Oculto por defecto */
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
@@ -21,16 +19,47 @@
             background-color: rgba(0, 0, 0, 0.5);
             justify-content: center;
             align-items: center;
-            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-
+            z-index: 1000;
         }
+    
         .modal-content {
             background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 400px;
             text-align: center;
+            animation: fadeIn 0.3s ease-in-out;
         }
+    
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+    
+        .modal-content label {
+            display: block;
+            text-align: left;
+            margin: 5px 0;
+            color:black;
+        }
+    
+        .modal-content button {
+            margin: 10px 5px 0;
+        }
+    
+        @keyframes fadeIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    
         .close {
             margin-top: 10px;
             cursor: pointer;
@@ -40,10 +69,9 @@
             padding: 10px 20px;
             border-radius: 5px;
             font-size: 16px;
-            font-size: {% if tamano_texto == 'pequeño' %}12px{% elif tamano_texto == 'grande' %}20px{% else %}16px{% endif %};
-
         }
     </style>
+    
 </head>
 <body class="{% if session.get('tamano_texto') == 'pequeño' %}texto-pequeno{% elif session.get('tamano_texto') == 'grande' %}texto-grande{% else %}texto-mediano{% endif %} 
 {% if daltonismo %}modo-daltonismo{% endif %}">
@@ -77,6 +105,9 @@
         <div class="button-container">
             <a href="{{ url_for('pagina_informe_6_1') }}" class="btn btn-secondary">{{ textos.volver_atras }}</a>
         </div>
+        <!-- Este botón debería simplemente abrir el modal sin recargar -->
+        <button type="button" class="btn btn-secondary" onclick="abrirModalColumnas()">{{textos.seleccionar_columnas}}</button>
+
         <div id="filtros-container">
             <form method="get" action="{{ url_for('consultar_busquedas') }}">
                 <input type="hidden" name="anho" id="input-anho">
@@ -108,6 +139,7 @@
 
                 <br>
                 <button type="submit" class="btn btn-secondary" >{{textos.filtrar}}</button>
+                
             </form>
         </div>
         {% if selected_anho %}
@@ -116,11 +148,13 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>{{textos.anho_tabla}}</th>
-                                <th>{{textos.tipo}}</th>
-                                <th>{{textos.codigo_Asignatura}}</th>
-                                <th>{{textos.modalidad}}</th>
-                                <th>{{ textos.sostenibilidad }}</th>
+                                <th data-col="anho">{{textos.anho_tabla}}</th>
+                                <th data-col="tipo_programa">{{textos.tipo}}</th>
+                                <th  data-col="codigo_asignatura">{{textos.codigo_Asignatura}}</th>
+                                <th data-col="modalidad">{{textos.modalidad}}</th>
+                                <th data-col="sostenibilidad">{{ textos.sostenibilidad }}</th>
+                                <th data-col="nombre_archivo">{{ textos.nombre_archivo }}</th>
+
                                 {% if session.get('rol') == 'admin' %}
                                     <th>{{ textos.acciones }}</th>
                                 {% endif %}
@@ -130,15 +164,17 @@
                         <tbody>
                             {% for b in busquedas %}
                             <tr>
-                                <td>{{ b.anho }}</td>
-                                <td>{{ b.tipo_programa }}</td>
-                                <td>{{ b.codigo_asignatura }}</td>
-                                <td>{{ b.modalidad }}</td>
-                                <td>{{ b.sostenibilidad }}</td>
+                                <td data-col="anho">{{ b.anho }}</td>
+                                <td data-col="tipo_programa">{{ b.tipo_programa }}</td>
+                                <td data-col="codigo_asignatura">{{ b.codigo_asignatura }}</td>
+                                <td data-col="modalidad">{{ b.modalidad }}</td>
+                                <td data-col="sostenibilidad">{{ b.sostenibilidad }}</td>
+                                <td data-col="nombre_archivo">{{ b.nombre_archivo }}</td>
+
                                 {% if session.get('rol') == 'admin' %}
                                     <td>
-                                        <a href="{{ url_for('editar_busqueda', id=b.id) }}" class="btn btn-editar">Editar</a>
-                                        <a href="{{ url_for('confirmar_eliminacion', id=b.id) }}" class="btn btn-danger">Eliminar</a>
+                                        <a href="{{ url_for('editar_busqueda', id=b.id) }}" class="btn btn-editar">{{textos.editar}}</a>
+                                        <a href="{{ url_for('confirmar_eliminacion', id=b.id) }}" class="btn btn-danger">{{textos.eliminar}}</a>
 
                                     </td>
                                 {% endif %}
@@ -219,31 +255,133 @@
         });
         </script>   
         
-        <!-- Modal -->
-    <div id="successModal" class="modal">
+
+
+    
+    <!-- Modal de selección de columnas -->
+    <div id="modal" class="modal">
         <div class="modal-content">
-            <p id="modalMessage"></p>
-            <button class="close" onclick="closeModal()">{{ textos.aceptar}}</button>
+            <h3>Seleccionar Columnas</h3>
+            {% for col in columnas_disponibles%}
+                <div style="text-align: left; margin: 10px 0;">
+                    <label>
+                        <input type="checkbox" value="{{ col }}" class="column-checkbox"
+                            {% if col in columnas_seleccionadas %}checked{% endif %}>
+                        {{ col }}
+                    </label>
+                </div>
+                
+            {% endfor %}
+            <button  class = "btn btn-secondary" onclick="aplicarFiltro()">{{textos.aceptar}}</button>
+            <button class = "btn btn-secondary" onclick="cerrarModal()">{{textos.cancelar}}</button>
         </div>
     </div>
 
+
+    <!-- Modal de mensaje flash -->
+    <div id="successModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Mensaje</h3>
+            <p id="modalMessage"></p>
+            <button class = "btn btn-secondary" onclick="closeModal()">{{textos.cerrar}}</button>
+        </div>
+    </div>
+
+
     <script>
-        // Mostrar el modal si hay mensajes flash
-        document.addEventListener('DOMContentLoaded', () => {
-            const flashMessage = "{{ get_flashed_messages()[0] if get_flashed_messages() else '' }}";
+        function abrirModalColumnas() {
+            modalColumnasAbierto = true;
+            document.getElementById("modal").style.display = "flex";
+        }
+        
+        // Función para cerrar el modal de columnas
+        function cerrarModal() {
+            modalColumnasAbierto = false;
+            document.getElementById("modal").style.display = "none";
+        }
+        function closeModal() {
+            // Cierra el modal y lo oculta
+            document.getElementById('successModal').style.display = 'none';
+        }
+        
+        // Mostrar el modal de éxito solo si hay un mensaje flash
+        document.addEventListener("DOMContentLoaded", function () {
+            // Verifica si hay un mensaje flash
+            const flashMessage = "{{ get_flashed_messages()[0] if get_flashed_messages() else '' }}"; // Flask va a pasar el mensaje flash al JS
+        
             if (flashMessage) {
                 const modal = document.getElementById('successModal');
                 const modalMessage = document.getElementById('modalMessage');
-                modalMessage.textContent = flashMessage;
-                modal.style.display = 'flex';
+                
+                modalMessage.textContent = flashMessage; // Coloca el mensaje flash en el modal
+                modal.style.display = 'flex'; // Muestra el modal de éxito
             }
         });
-
-        // Cerrar el modal
-        function closeModal() {
-            const modal = document.getElementById('successModal');
-            modal.style.display = 'none';
+        document.addEventListener("DOMContentLoaded", function () {
+            // Recuperar las columnas seleccionadas desde el localStorage
+            const selectedColumns = JSON.parse(localStorage.getItem('selectedColumns')) || [];
+        
+            // Marcar los checkboxes correspondientes
+            const checkboxes = document.querySelectorAll('.column-checkbox');
+            checkboxes.forEach(cb => {
+                if (selectedColumns.includes(cb.value)) {
+                    cb.checked = true;
+                } else {
+                    cb.checked = false;
+                }
+            });
+        
+            // Mostrar u ocultar las columnas basándonos en las selecciones
+            checkboxes.forEach(cb => {
+                const col = cb.value;
+                const visible = cb.checked;
+        
+                document.querySelectorAll(`[data-col="${col}"]`).forEach(el => {
+                    el.style.display = visible ? '' : 'none';
+                });
+        
+                document.querySelectorAll(`th[data-col="${col}"]`).forEach(th => {
+                    th.style.display = visible ? '' : 'none';
+                });
+            });
+        });
+        
+        
+        // Función para aplicar el filtro de columnas seleccionadas
+        function aplicarFiltro() {
+            const checkboxes = document.querySelectorAll('.column-checkbox');
+            
+            // Guardar el estado de las columnas en el localStorage
+            const selectedColumns = [];
+            
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    selectedColumns.push(cb.value);
+                }
+            });
+            
+            // Almacenar las columnas seleccionadas en localStorage
+            localStorage.setItem('selectedColumns', JSON.stringify(selectedColumns));
+        
+            // Mostrar u ocultar las columnas según la selección
+            checkboxes.forEach(cb => {
+                const col = cb.value;
+                const visible = cb.checked;
+                
+                document.querySelectorAll(`[data-col="${col}"]`).forEach(el => {
+                    el.style.display = visible ? '' : 'none';
+                });
+        
+                document.querySelectorAll(`th[data-col="${col}"]`).forEach(th => {
+                    th.style.display = visible ? '' : 'none';
+                });
+            });
+        
+            cerrarModal(); // Cierra el modal de columnas al aplicar el filtro
         }
+        
     </script>
+    
+
 </body>
 </html>

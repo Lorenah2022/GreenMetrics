@@ -697,9 +697,15 @@ def consultar_busquedas():
     total_pages = busquedas_paginadas.pages
     start_page = max(1, page - 3)
     end_page = min(total_pages, page + 3)
+    
+    columnas_disponibles = ["anho", "tipo_programa", "codigo_asignatura", "modalidad", "sostenibilidad", "nombre_archivo"]
+    columnas_seleccionadas = request.args.getlist('columnas') or columnas_disponibles
+
 
     return render_template(
         'consultar_busquedas.html',
+        columnas_disponibles=columnas_disponibles,
+        columnas_seleccionadas=columnas_seleccionadas,
         textos=textos[idioma],
         tamano_texto=tamano_texto,
         daltonismo=daltonismo,
@@ -720,6 +726,9 @@ def consultar_busquedas():
         end_page=end_page,
         params=params
     )
+    
+    
+
 
 #  ----------------------- EDITAR BASE DE DATOS  ----------------------------------------------------
 # Editar búsqueda (solo admin)
@@ -740,6 +749,7 @@ def editar_busqueda(id):
         busqueda.anho = request.form['anho']
         busqueda.tipo_programa = request.form['tipo_programa']
         busqueda.codigo_asignatura = request.form['codigo_asignatura']
+        busqueda.nombre_archivo = request.form['nombre_archivo']
         busqueda.modalidad = request.form['modalidad']
         busqueda.sostenibilidad = request.form['sostenibilidad']
         db.session.commit()
@@ -751,7 +761,7 @@ def editar_busqueda(id):
         tamano_texto=tamano_texto,
         daltonismo=daltonismo)
     
-
+# Eliminar búsqueda (solo admin)
 @app.route('/eliminar_busqueda/<int:id>', methods=['POST'])
 def eliminar_busqueda(id):
     
@@ -767,6 +777,7 @@ def eliminar_busqueda(id):
     db.session.commit()
     flash("Búsqueda eliminada correctamente.", "succes")
     return redirect(url_for('consultar_busquedas'))
+
 
 @app.route('/confirmar_eliminacion/<int:id>')
 def confirmar_eliminacion(id):
@@ -787,6 +798,7 @@ def confirmar_eliminacion(id):
                            textos=textos[idioma],
                            tamano_texto=tamano_texto,
                            daltonismo=daltonismo)
+
 
 
 
