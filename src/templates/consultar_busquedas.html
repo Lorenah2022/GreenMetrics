@@ -85,6 +85,11 @@
             <div class="dropdown-content">
                 <a href="{{ url_for('perfil') }}">{{ textos.perfil }}</a>
                 <a href="{{ url_for('ajustes') }}">{{ textos.ajustes }}</a>
+                {% if idioma == 'es' %}
+                    <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#realizar-una-b%C3%BAsqueda ">Manual</a>
+                {% else %}
+                    <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#perform-a-search ">Manual</a>
+                {% endif %}
                 <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion }}</a>
             </div>
         </div>
@@ -261,17 +266,17 @@
     <!-- Modal de selección de columnas -->
     <div id="modal" class="modal">
         <div class="modal-content">
-            <h3>Seleccionar Columnas</h3>
-            {% for col in columnas_disponibles%}
+            <h3>{{ textos.seleccionar_columnas }}</h3>
+            {% for col in columnas_disponibles %}
                 <div style="text-align: left; margin: 10px 0;">
                     <label>
                         <input type="checkbox" value="{{ col }}" class="column-checkbox"
                             {% if col in columnas_seleccionadas %}checked{% endif %}>
-                        {{ col }}
+                        {{ textos[claves_columnas[col]] }}
                     </label>
                 </div>
-                
             {% endfor %}
+
             <button  class = "btn btn-secondary" onclick="aplicarFiltro()">{{textos.aceptar}}</button>
             <button class = "btn btn-secondary" onclick="cerrarModal()">{{textos.cancelar}}</button>
         </div>

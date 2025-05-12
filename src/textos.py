@@ -19,6 +19,7 @@ textos = {
         'correo':'Email',
         'correo_usuario':'User email',
         'crear_cuenta': 'Register',
+        'contrasenha':'Password:',
         'confirmar_contrasenha': 'Confirm password',
         'confirmar_eliminacion': 'Confirm deletion',
         'confirmar_eliminacion1': 'Are you sure you want to delete the search with code ',
@@ -32,6 +33,7 @@ textos = {
         'descargar_datos_nuevos': 'Download new data',
         'descargar_informe':'Download report',
         'editar':'Edit',
+        'Editar Búsqueda':'Edit search',
         'ejecutando_grados': 'Downloading the links to the addresses of bachelors and masters degrees.',
         'ejecutando_guias': 'Downloading guias....',
         'ejecutando_asignaturas':'The subjects are being processed..... ',
@@ -67,6 +69,7 @@ textos = {
         'nuevo_rol':'New role',
         'no':'No',
         'nombre_archivo':'File name',
+        'nombre_usuario':'User name',
         'normal': 'Medium',
         'no_busquedas':'No previous searches were found.',
         'no_resultados':'No results were found for the year ',
@@ -99,7 +102,12 @@ textos = {
         'tipo':'Programme type',
         'todos':'All',
         'usuario': 'User name.',
-        'volver_atras': '← Go Back'
+        'volver_atras': '← Go Back',
+        "email_username": "Email or Username",
+        "continue_without_login": "Continue without logging in",
+        "have_account": "Have an account?",
+        "dont_have_account": "Don't have an account?"
+
         },
     'es': {
         'aceptar': 'Aceptar',
@@ -119,6 +127,7 @@ textos = {
         'correo':'Correo',
         'correo_usuario':'Correo del usuario',
         'crear_cuenta': 'Crear cuenta',
+        'contrasenha':'Contraseña:',
         'confirmar_contrasenha': 'Confirmar contraseña',
         'confirmar_eliminacion':'Confirmar eliminación',
         'confirmar_eliminacion1':'¿Estás seguro de que deseas eliminar la búsqueda con código ',
@@ -132,6 +141,7 @@ textos = {
         'descargar_datos_nuevos': 'Descargar datos nuevos',
         'descargar_informe':'Descargar informe',
         'editar':'Editar',
+        'Editar Búsqueda':'Editar Búsqueda',
         'ejecutando_grados': 'Descargando los enlaces a las direcciones de los grados y masteres.',
         'ejecutando_guias': 'Descargando las guías docentes.....',
         'ejecutando_asignaturas':'Se están procesando las asignaturas.... ',
@@ -167,6 +177,7 @@ textos = {
         'nuevo_rol':'Nuevo rol',
         'no':'No',
         'nombre_archivo':'Nombre del archivo:',
+        'nombre_usuario':'Nombre de usuario',
         'normal': 'Medio',
         'no_busquedas':'No se encontraron búsquedas anteriores.',
         'no_resultados':'No se encontraron resultados para el año ',
@@ -199,6 +210,12 @@ textos = {
         'tipo':'Tipo de programa',
         'todos':'Todos',
         'usuario': 'Nombre de usuario',
-        'volver_atras': '← Volver atrás'
+        'volver_atras': '← Volver atrás',
+        "email_username": "Email o nombre de usuario",
+        "have_account": "¿Tienes cuenta?",
+
+        "continue_without_login": "Continuar sin iniciar sesión",
+        "dont_have_account": "¿No tienes cuenta?"
+
         }
     }

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html >
-<head>
+<html lang="{{ session.get('idioma', 'es') }}">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Greenmetrics</title>
@@ -10,33 +11,51 @@
 </head>
 <body>
     <div class="form-container">
-        <h1>Bienvenido a Greenmetrics </h1>
-        <h2>Crear cuenta</h2>
+         <div class="top-bar">
+            <!-- Botón con forma de interrogante -->
+             {% if idioma == 'es' %}
+                 <a class="manual" href="https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#registrarse">?</a>
+            {% else %}
+                 <a class="manual" href="https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#register">?</a>
+            {% endif %}
+
+            <!-- Desplegable de selección de idioma -->
+            <div class="idioma-container">
+                <label for="idioma">{{ textos.sel_idioma }}</label>
+                <select name="idioma" id="idioma" class="input-tamano">
+                    <option value="es" {% if session.get('idioma') == 'es' %}selected{% endif %}>{{ textos.espanol }}</option>
+                    <option value="en" {% if session.get('idioma') == 'en' %}selected{% endif %}>{{ textos.ingles }}</option>
+
+                </select>
+            </div>
+        </div>
+        <h1>{{textos.texto_bienvenida}}</h1>
+        <h2>{{textos.crear_cuenta}}</h2>
         <form method="POST">
             <div class="form-group">
-                <label for="username">Nombre de usuario:</label>
+                <label for="username">{{textos.nombre_usuario}}</label>
                 <input type="text" id="username" name="username" required>
             </div>
             <div class="form-group">
-                <label for="email">Correo:</label>
+                <label for="email">{{textos.correo}}</label>
                 <input type="email" id="email" name="email" required>
             </div>
             <div class="form-group">
-                <label for="password">Contraseña:</label>
-                <input type="password" id="password" name="password" required>
+                <label for="password">{{textos.contrasenha}}</label>
+                <input type="password" id="password" name="password" oninvalid="setMensajePersonalizado(this)" oninput="this.setCustomValidity('')"  required>
             </div>
             <div class="form-group">
-                <label for="password">Repita la contraseña:</label>
+                <label for="password">{{textos.confirmar_contrasenha}}</label>
                 <input type="password" id="password" name="confirm_password" required>
             </div>
-            <p class="password-info">La contraseña debe tener al menos una mayúscula, una minúscula y un número.</p>
-            <p class="password-info">Además de un minimo de 8 caracteres.</p>
-            <button type="submit">Registrarse</button>
+            <p class="password-info">{{textos.criterio_1}}</p>
+            <p class="password-info">{{textos.criterio_2}}</p>
+            <button type="submit">{{textos.crear_cuenta}}</button>
             <div class="link">
-                ¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión aquí.</a>
+                {{textos.have_account}} <a href="{{ url_for('login') }}">{{textos.iniciar_sesion}}</a>
             </div>           
             <div class="link">
-                <a href="{{ url_for('pagina_principal') }}">Continuar sin iniciar sesión</a>
+                <a href="{{ url_for('pagina_principal') }}">{{textos.continue_without_login}}</a>
              </div>
 
         </form>
@@ -47,10 +66,41 @@
         <div class="modal-content">
             <p id="modalMessage"></p>
 
-            <a href="{{ url_for('login') }}" class="close" onclick="closeModal()">Aceptar</a>
+            <a href="{{ url_for('login') }}" class="close" onclick="closeModal()">{{textos.aceptar}}</a>
 
         </div>
     </div>
+
+     <script>
+        document.getElementById('idioma').addEventListener('change', function() {
+            const selectedLang = this.value;
+            fetch('/cambiar_idioma', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ idioma: selectedLang })
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();  // recarga para aplicar el idioma nuevo
+                }
+            });
+        });
+    </script>
+
+    <script>
+    function setMensajePersonalizado(input) {
+        const idioma = document.documentElement.lang || 'es';  
+
+        const mensaje = idioma === 'en'
+            ? 'Please enter a valid email address.'
+            : 'Por favor, introduce una dirección de correo válida.';
+
+        input.setCustomValidity(mensaje);
+    }
+    </script>
+
 
     <script>
         // Mostrar el modal si hay mensajes flash

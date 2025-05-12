@@ -27,27 +27,29 @@ import threading
 import sys
 
 from werkzeug.utils import secure_filename
-
+from config import cargar_configuracion, guardar_configuracion
 
 
 #Cargar el diccionario con los textos
 from textos import textos
+from mensajes_flash import mensajes_flash
+
 # Cargar variables desde .env
 load_dotenv()
+
 
 app = Flask(__name__)
 
 
-os.environ["PYTHONUNBUFFERED"] = "1"
-sys.stdout.reconfigure(line_buffering=True)
 
 
 # Protege la aplicación Flask contra manipulaciones y ataques
 app.secret_key = secrets.token_hex(32)
 # Configuración de la base de datos PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+
 app.config['SQLALCHEMY_BINDS'] = {
-    'busqueda': os.getenv("DATABASE_BINDS")  # Base de datos secundaria para OAuth o auditoría
+    'busqueda': os.getenv("DATABASE_BINDS")  
 }
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -68,6 +70,16 @@ lock = threading.Lock()  # Para controlar el acceso concurrente a estado_proceso
 google_bp = make_google_blueprint(client_id=os.getenv("GOOGLE_CLIENT_ID"), client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),  redirect_to='pagina_pedir_anho')
 app.register_blueprint(google_bp, url_prefix='/google_login')
 
+
+# Definir el directorio de subida
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+
+# Configurar el directorio de subida
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Asegurarse de que la carpeta de subida exista
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
  
 
 
@@ -123,8 +135,9 @@ def index():
 # Cerrar sesión
 @app.route('/logout')
 def logout():
+    idioma = session.get('idioma', 'es')
     session.clear()
-    flash("Has cerrado sesión.", "info")
+    flash(textos[idioma]['flash_cerrado_sesion'], "info")
     return redirect(url_for('login'))
 
 # Ruta para la página principal
@@ -132,6 +145,7 @@ def logout():
 def pagina_principal():
     # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
     idioma = session.get('idioma', 'es')
+
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
     # Comprobar si el usuario está autenticado
@@ -153,6 +167,10 @@ def login():
     google_client_id = app.config["GOOGLE_OAUTH_CLIENT_ID"]
 
     if request.method == 'POST':
+        idioma = request.form.get('idioma', 'es')
+        session['idioma'] = idioma
+
+
         identifier = request.form['identifier']
         password = request.form['password']
         
@@ -162,22 +180,37 @@ def login():
             user = User.query.filter_by(username=identifier).first()
 
         if not user:
-            flash('Correo/Usuario no encontrado.', 'error')  # Mensaje de error si no se encuentra el correo
+            flash(mensajes_flash[idioma]['usuario_no_encontrado'], 'error')
         elif not check_password_hash(user.password, password):
-            flash('Contraseña incorrecta.', 'error')  # Mensaje de error si la contraseña es incorrecta
+            flash(mensajes_flash[idioma]['contrasena_incorrecta'], 'error')
         else:
             session['user_id'] = user.id
             session['username'] = user.username
             session['rol'] = user.rol
+
             return redirect(url_for('pagina_principal', 
                                rol=user.rol))
-    
-    return render_template('login.html',google_client_id=google_client_id)
+    idioma = session.get('idioma', 'es')
+    return render_template('login.html',google_client_id=google_client_id,textos=textos[idioma])
+
+
+
+
+@app.route('/cambiar_idioma', methods=['POST'])
+def cambiar_idioma():
+    data = request.get_json()
+    idioma = data.get('idioma', 'es')  # Obtener idioma enviado por el cliente
+    session['idioma'] = idioma  # Guardar el idioma en la sesión
+    return '', 200  # Respuesta exitosa
+
+
 
 # Ruta para el registro de nuevos usuarios
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+            idioma = request.form.get('idioma', 'es')
+            session['idioma'] = idioma
             # Obtener datos del formulario
             username = request.form['username'] 
             email = request.form['email']  
@@ -188,22 +221,22 @@ def register():
             error = validar_contrasena(password)
             if error:
                 flash(error, 'error')
-                return render_template('register.html')  # Detener el proceso si hay errores
+                return render_template('register.html', textos=textos[idioma])  # Detener el proceso si hay errores
             
             # Validar datos
             if not username or not email or not password:
-                flash('Por favor, completa todos los campos', 'error')
+                flash(mensajes_flash[idioma]['campos_incompletos'], 'error')
             elif password != confirm_password:
-                flash('Las contraseñas no coinciden', 'error')
+                flash(mensajes_flash[idioma]['contrasenas_no_coinciden'], 'error')
             else:
                 # Verificar si el nombre de usuario o el correo electrónico ya están en uso
                 existing_user_by_username = User.query.filter_by(username=username).first()
                 existing_user_by_email = User.query.filter_by(email=email).first()
 
                 if existing_user_by_username:
-                    flash('El nombre de usuario ya está en uso', 'error')
+                    flash(mensajes_flash[idioma]['usuario_existente'], 'error')
                 elif existing_user_by_email:
-                    flash('El correo electrónico ya está en uso', 'error')
+                    flash(mensajes_flash[idioma]['email_existente'], 'error')
                 else:
                     try:
                         # Hash de la contraseña con pbkdf2:sha256
@@ -211,14 +244,12 @@ def register():
                         new_user = User(username=username, email=email, password=hashed_password, rol ='usuario')  
                         db.session.add(new_user)
                         db.session.commit()
-                        flash('Cuenta creada exitosamente', 'success')
-                        print("Usuario guardado en la base de datos.")
+                        flash(mensajes_flash['cuenta_creada'], 'success')
                     except Exception as e:
                         db.session.rollback()
-                        flash(f'Error al guardar el usuario: {str(e)}', 'error')
-                        print(f"Error al guardar el usuario: {str(e)}")
-            
-    return render_template('register.html')
+                        flash(f"{mensajes_flash[idioma]['error_guardar']}{str(e)}", 'error')
+    idioma = session.get('idioma', 'es')
+    return render_template('register.html',textos=textos[idioma] )
 
 
 #  ----------------------- PÁGINAS DE MODIFICACIÓN DE PARÁMETROS ----------------------------------------------------
@@ -279,17 +310,13 @@ def perfil():
             # Guardar los cambios en la base de datos
             try:
                 db.session.commit()
-                if idioma=='es':
-                    flash("Perfil actualizado correctamente.", "success")
-                elif idioma=='en':
-                    flash("Profile updated successfully", "success")
-
+                flash(mensajes_flash[idioma]['perfil_actualizado'], 'success')
                 return redirect(url_for('pagina_principal'))
             except Exception as e:
                 db.session.rollback()
-                flash(f"Error al actualizar el perfil: {str(e)}", "error")
+                flash(f"{mensajes_flash[idioma]['error_actualizar']}{str(e)}", "error")
         else:
-            flash("Hay errores en el formulario. Por favor, corrígelos.", "error")
+            flash(mensajes_flash[idioma]['errores_formulario'], "error")
 
     # Rellenar los campos del formulario con los datos actuales del usuario
     form.username.data = usuario.username
@@ -304,14 +331,16 @@ def perfil():
 
 # Función de validación de contraseña
 def validar_contrasena(password):
+    idioma = session.get('idioma', 'es')
+    textos = mensajes_flash.get(idioma, mensajes_flash['es'])
     if len(password) < 8:
-        return "La contraseña debe tener al menos 8 caracteres."
+        return textos['contrasena_longitud']
     if not any(char.isupper() for char in password):
-        return "La contraseña debe incluir al menos una letra mayúscula."
+        return textos['contrasena_mayuscula']
     if not any(char.islower() for char in password):
-        return "La contraseña debe incluir al menos una letra minúscula."
+        return textos['contrasena_minuscula']
     if not any(char.isdigit() for char in password):
-        return "La contraseña debe incluir al menos un número."
+        return textos['contrasena_numero']
     return None
 
 
@@ -419,7 +448,6 @@ def pagina_pedir_anho():
 
 def verificar_si_existen_datos(anho, tipo_estudio):
     from sqlalchemy import or_
-    
     count = Busqueda.query.filter_by(anho=anho, tipo_programa=tipo_estudio).count()
     return count > 0
 
@@ -443,7 +471,7 @@ def procesar_anho():
 
         # Verificar el formato del año (####-####)
         if not anho_pattern(anho):
-            flash("El año debe tener el formato 2022-2023", "error")
+            flash(textos[idioma]['formato_anho_invalido'], "error")
             return redirect(url_for('pagina_pedir_anho'))
 
        
@@ -452,10 +480,10 @@ def procesar_anho():
 
         # Validar si el tipo de estudio es correcto
         if tipo_estudio not in ["grado", "master", "ambos"]:
-            flash("Opción de tipo de estudio no válida", "error")
+            flash(textos[idioma]['tipo_estudio_invalido'], "error")
             return redirect(url_for('pagina_pedir_anho'))
         if verificar_si_existen_datos(anho, tipo_estudio):
-            flash("Ya existen datos para ese año y tipo de estudio.", "info")
+            flash(textos[idioma]['datos_ya_existen'], "info")
             return redirect(url_for('pagina_pedir_anho'))
         with lock:
             estado_proceso["en_proceso"] = True
@@ -527,11 +555,6 @@ def pagina_pedir_IA():
     origen = session.get('origen', '')  # Obtiene el valor de sesión
     anho_seleccionado = request.form.get('anho')
     session['anho'] = anho_seleccionado
-    
-    
-
-    print("Año recibido: ", anho_seleccionado)
-
 
     # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
     idioma = session.get('idioma', 'es')
@@ -551,7 +574,6 @@ def pagina_pedir_IA():
                                tamano_texto=tamano_texto,daltonismo=daltonismo,anho_seleccionado=session.get('anho'))  # Contenido según el rol
     
 
-from config import cargar_configuracion, guardar_configuracion
 
 #Función donde se piden los paramétros para la configuración de la API.
 @app.route('/actualizar_api', methods=['GET','POST'])
@@ -701,11 +723,21 @@ def consultar_busquedas():
     columnas_disponibles = ["anho", "tipo_programa", "codigo_asignatura", "modalidad", "sostenibilidad", "nombre_archivo"]
     columnas_seleccionadas = request.args.getlist('columnas') or columnas_disponibles
 
+    mapeo_columnas_a_claves = {
+        "anho": "anho_tabla",
+        "tipo_programa": "tipo",
+        "codigo_asignatura": "codigo_Asignatura",
+        "modalidad": "modalidad",
+        "sostenibilidad": "sostenibilidad",
+        "nombre_archivo": "nombre_archivo"
+    }
+
 
     return render_template(
         'consultar_busquedas.html',
         columnas_disponibles=columnas_disponibles,
         columnas_seleccionadas=columnas_seleccionadas,
+        claves_columnas=mapeo_columnas_a_claves,
         textos=textos[idioma],
         tamano_texto=tamano_texto,
         daltonismo=daltonismo,
@@ -764,18 +796,19 @@ def editar_busqueda(id):
 # Eliminar búsqueda (solo admin)
 @app.route('/eliminar_busqueda/<int:id>', methods=['POST'])
 def eliminar_busqueda(id):
-    
+    idioma = session.get('idioma', 'es')
+
     if session.get('rol') != 'admin':
         return redirect(url_for('pagina_informe_6_1'))
 
     busqueda = db.session.get(Busqueda, id)
     if not busqueda:
-        flash("Búsqueda no encontrada.", "error")
+        flash(mensajes_flash[idioma]['busqueda_no_encontrada'], "error")
         return redirect(url_for('consultar_busquedas'))
 
     db.session.delete(busqueda)
     db.session.commit()
-    flash("Búsqueda eliminada correctamente.", "succes")
+    flash(mensajes_flash[idioma]['busqueda_eliminada'], "success")
     return redirect(url_for('consultar_busquedas'))
 
 
@@ -786,7 +819,7 @@ def confirmar_eliminacion(id):
 
     busqueda = db.session.get(Busqueda, id)
     if not busqueda:
-        flash("Búsqueda no encontrada.", "error")
+        flash(mensajes_flash[idioma]['busqueda_no_encontrada'], "error")
         return redirect(url_for('consultar_busquedas'))
 
     idioma = session.get('idioma', 'es')
@@ -831,17 +864,6 @@ def progreso():
                            tamano_texto=tamano_texto, 
                            daltonismo=daltonismo)
 
-#  ----------------------- SUBIDA DE FICHEROS  ----------------------------------------------------
-
-# @app.route('/sube_fichero', methods=['POST'])
-# def sube_fichero():
-#     archivo = request.files.get('archivo_excel')
-#     if archivo:
-        
-        
-        
-        
-#     return redirect(url_for('pagina_principal')) 
 
 #  ----------------------- GENERAR INFORMES ----------------------------------------------------
 # No es necesario seleccionar la API para generar el informe
@@ -852,9 +874,7 @@ def generar_informe():
         informe_seleccionado = determinar_tipo_informe()
         anho_seleccionado = ''
         excel = ''
-        print(informe_seleccionado)
         if informe_seleccionado == "6_1" or informe_seleccionado == "6_2" or informe_seleccionado=='6_3' :
-            print("entra en generar informe")
             # Obtener el año seleccionado desde el formulario
             anho_seleccionado = request.form.get('anho')
             if not anho_seleccionado:
@@ -862,7 +882,6 @@ def generar_informe():
         elif informe_seleccionado == "6_7":
             # Obtener el año seleccionado desde el formulario
             anho_seleccionado = request.form.get('anho')
-            print(anho_seleccionado)
             if not anho_seleccionado:
                 return "Error: No se seleccionaron todos los campos", 400
         # Iniciar un hilo para ejecutar el informe con el año como argumento
@@ -1110,25 +1129,19 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# Definir el directorio de subida
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 
-# Configurar el directorio de subida
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Asegurarse de que la carpeta de subida exista
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
 @app.route('/subir_excel', methods=['POST'])
 def subir_excel():
+    idioma = session.get('idioma', 'es')  
+
     if 'archivo_excel' not in request.files:
-        flash('No se encontró el archivo')
+        flash(mensajes_flash[idioma]['no_archivo_encontrado'], 'error')
         return redirect(url_for('pagina_informe_6_4'))
 
     archivo = request.files['archivo_excel']
 
     if archivo.filename == '':
-        flash('No se seleccionó ningún archivo')
+        flash(mensajes_flash[idioma]['no_seleccion_archivo'], 'error')
         return redirect(url_for('pagina_informe_6_4'))
 
     if archivo and allowed_file(archivo.filename):
@@ -1138,10 +1151,10 @@ def subir_excel():
 
         # Guarda la ruta del archivo en la sesión
         session['ruta_excel'] = filepath
-        flash('Archivo subido correctamente')
+        flash(mensajes_flash[idioma]['archivo_subido_correctamente'], 'success')
         return redirect(url_for('pagina_informe_6_4'))
 
-    flash('Tipo de archivo no permitido')
+    flash(mensajes_flash[idioma]['tipo_archivo_no_permitido'], 'error')
     return redirect(url_for('pagina_informe_6_4'))
 
 
@@ -1257,14 +1270,14 @@ def cambiar_a_admin():
     daltonismo = session.get('daltonismo', False)
 
     if 'rol' not in session or 'username' not in session:
-        flash('Debes iniciar sesión primero.', 'error')
+        flash(mensajes_flash[idioma]['debes_iniciar_sesion'], 'error')
         return redirect(url_for('login'))
 
     rol = session['rol']
     username = session['username']
 
     if rol != 'admin':
-        flash('No tienes permiso para realizar esta acción.', 'error')
+        flash(mensajes_flash[idioma]['no_tienes_permiso'], 'error')
         return redirect(url_for('pagina_principal'))
 
     if request.method == 'POST':
@@ -1273,25 +1286,25 @@ def cambiar_a_admin():
         usuario = User.query.filter_by(email=email).first()
 
         if not usuario:
-            flash('El correo no corresponde a ningún usuario.', 'error')
+            flash(mensajes_flash[idioma]['correo_no_encontrado'], 'error')
             return redirect(url_for('cambiar_a_admin'))
 
         if usuario.username == 'admin':
-            flash('No se puede modificar el rol del superadministrador.', 'error')
+            flash(mensajes_flash[idioma]['no_se_puede_modificar_admin'], 'error')
             return redirect(url_for('cambiar_a_admin'))
 
         # Si se intenta degradar a un admin a usuario, solo el superadmin puede hacerlo
         if usuario.rol == 'admin' and nuevo_rol == 'usuario':
             if username != 'admin':
-                flash('Solo el superadministrador puede degradar a otros administradores.', 'error')
+                flash(mensajes_flash[idioma]['solo_superadmin_degrada'], 'error')
                 return redirect(url_for('cambiar_a_admin'))
 
         if usuario.rol != nuevo_rol:
             usuario.rol = nuevo_rol
             db.session.commit()
-            flash(f'El rol del usuario {email} ha sido cambiado a {nuevo_rol}.', 'success')
+            flash(mensajes_flash[idioma]['rol_cambiado'].format(email, nuevo_rol), 'success')
         else:
-            flash(f'El usuario {email} ya tiene el rol {nuevo_rol}.', 'info')
+            flash(mensajes_flash[idioma]['rol_ya_tiene'], 'info')
 
         return redirect(url_for('perfil'))
 
@@ -1306,6 +1319,8 @@ def cambiar_a_admin():
 if __name__ == '__main__':
     # Crear las tablas de la base de datos
     with app.app_context():
+
         db.create_all()
+
         crear_admin_por_defecto()  
     app.run(debug=True)

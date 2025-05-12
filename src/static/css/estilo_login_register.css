@@ -152,3 +152,48 @@ body {
 .texto-grande .close  {
     font-size: var(--font-size-large); /* Aplicar tamaño grande */
 }
+
+
+
+
+.manual {
+     font-size: 30px;
+            color: #fff;
+            background-color: black;
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            border-radius: 50%;
+            display: inline-block;
+            line-height: 50px;
+            margin-right: 20px; /* Añade espacio entre el botón y el selector de idioma */
+            transition: transform 0.3s ease, background-color 0.3s ease;
+        }
+
+.manual:hover {
+    transform: scale(1.2);
+    background-color: #555; /* Cambia el color al pasar el mouse */
+}
+
+        /* Estilo para el selector de idioma */
+.idioma-container {
+    display: inline-block;
+    margin-left: 20px;
+    color:#35a670;
+    font-weight: bold; 
+
+
+}
+
+#idioma {
+    padding: 5px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #35a670;
+}
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px; /* ajusta según necesites */
+}

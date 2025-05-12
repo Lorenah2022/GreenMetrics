@@ -21,6 +21,11 @@
             <div class="dropdown-content">
                 <a href="{{ url_for('perfil') }}">{{ textos.perfil }}</a>
                 <a href="{{ url_for('ajustes') }}">{{ textos.ajustes }}</a>
+                {% if idioma == 'es' %}
+                    <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#realizar-una-b%C3%BAsqueda ">Manual</a>
+                {% else %}
+                    <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#perform-a-search ">Manual</a>
+                {% endif %}
                 <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion }}</a>
             </div>
         </div>
@@ -29,7 +34,7 @@
 
 
     <div class="main-content">
-        <h2>Editar Búsqueda</h2>
+        <h2>{{textos.editar_busqueda}}</h2>
         <form method="POST">
             <label for="anho">{{textos.anho_tabla}}</label>
             <input type="text" name="anho" value="{{ busqueda.anho }}" required>

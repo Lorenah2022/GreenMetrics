@@ -102,6 +102,21 @@
             <div class="dropdown-content">
                 <a href="{{ url_for('perfil') }}">{{ textos.perfil}}</a>
                 <a href="{{ url_for('ajustes') }}">{{ textos.ajustes}}</a>
+                {% if idioma == 'es' %}
+                    {% if origen == 'pagina_informe_6_1' or origen == 'pagina_informe_6_2'   or origen == 'pagina_informe_6_3' %}
+                        <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#p%C3%A1gina-que-solicita-a%C3%B1os ">Manual</a>
+                     {% elif origen == 'pagina_informe_6_7' or origen == 'pagina_informe_6_8' %}
+                        <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#p%C3%A1gina-que-solicita-un-rango-de-a%C3%B1os ">Manual</a>
+                    {% endif %}
+
+                {% else %}
+                    {% if origen == 'pagina_informe_6_1' or origen == 'pagina_informe_6_2'   or origen == 'pagina_informe_6_3' %}
+                        <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#page-requesting-years ">Manual</a>
+                     {% elif origen == 'pagina_informe_6_7' or origen == 'pagina_informe_6_8' %}
+                        <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#page-requesting-a-range-of-years">Manual</a>
+                    {% endif %}
+
+                {% endif %}
                 <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion}}</a> 
             </div>
         </div>

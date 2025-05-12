@@ -17,6 +17,11 @@
             <button>≡</button>
             <div class="dropdown-content">
                 <a href="{{ url_for('ajustes') }}">{{ textos.ajustes}}</a>
+                {% if idioma == 'es' %}
+                    <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#perfil-administrador ">Manual</a>
+                {% else %}
+                    <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#administrator-profile ">Manual</a>
+                {% endif %}
                 <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion}}</a> 
             </div>
         </div>
@@ -41,7 +46,7 @@
             <button type="submit" class="btn btn-secondary"> {{textos.rol_cambiar}}</button>
         </form>
         
-        <a href="{{ url_for('ajustes') }}" class="btn btn-secondary">{{textos.cancelar}}</a>
+        <a href="{{ url_for('perfil') }}" class="btn btn-secondary">{{textos.cancelar}}</a>
     </div>
 </body>
 </html>
