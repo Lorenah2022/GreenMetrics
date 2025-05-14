@@ -31,7 +31,7 @@ from deep_translator import GoogleTranslator
 # Obtener la ruta absoluta del directorio `src`
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Agregar `src` al sys.path para poder importar `config.py`
+# Agregar `src` al sys.path 
 if SRC_DIR not in sys.path:
     sys.path.append(SRC_DIR)
 
@@ -268,9 +268,7 @@ def generar_informe(datos):
         return
 
     output_filename = "University_Country_1_19_Percentage_of_operation_and_maintenance_activities_of_building_in_one_year"
-    output_docx_path = os.path.join(base_dir, f"{output_filename}.docx")
-    output_pdf_path = os.path.join(base_dir, f"{output_filename}.pdf")
-
+    
     doc = Document(template_path)
 
     # Reemplazar texto en la plantilla
@@ -288,6 +286,11 @@ def generar_informe(datos):
 
     fill_table(table, headers, [list(d.values()) for d in datos])
 
+    report_dir = os.path.join(SRC_DIR, "generated_reports", "report_1_19")
+    os.makedirs(report_dir, exist_ok=True)  # Crea la carpeta si no existe
+
+    output_docx_path = os.path.join(report_dir, f"{output_filename}.docx")
+    output_pdf_path = os.path.join(report_dir, f"{output_filename}.pdf")
 
     doc.save(output_docx_path)
 
@@ -397,9 +400,7 @@ def buscar(mantenimiento):
 def generar():
     docx_path =os.path.join(base_dir, 'Campus_Building_Maintenance.docx')
     enlaces= ejecutar_busquedas(docx_path)
-    "HA BUSCADO ENLACES"
     datos = ejecutar_API(enlaces)
-    "GENERA DATOS"
     generar_informe(datos)
 
 

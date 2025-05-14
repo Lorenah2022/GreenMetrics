@@ -15,6 +15,11 @@ from docx.oxml.ns import qn
 from docx.table import Table
 
 
+SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Agregar `src` al sys.path 
+if SRC_DIR not in sys.path:
+    sys.path.append(SRC_DIR)
+
 # ------------------ CONSULTA LA BASE DE DATOS ------------------
 def verificar_tipos_programa(anio, db_path):
     """
@@ -175,9 +180,7 @@ def generar_informe(total, anio):
         sys.exit(1)
 
     output_filename = "University_Country_6_2_Total_number_of_courses_or_modules_offered"
-    output_docx_path = os.path.join(base_dir, f"{output_filename}.docx")
-    output_pdf_path = os.path.join(base_dir, f"{output_filename}.pdf")
-
+    
     doc = Document(template_path)
 
     # 1. Eliminar cualquier tabla vacía en el documento
@@ -204,6 +207,12 @@ def generar_informe(total, anio):
 
     # 4. Añadir la descripción con tabla y datos
     fill_description(doc, anio, total)
+
+    report_dir = os.path.join(SRC_DIR, "generated_reports", "report_6_2", anio)
+    os.makedirs(report_dir, exist_ok=True)  # Crea la carpeta si no existe
+
+    output_docx_path = os.path.join(report_dir, f"{output_filename}.docx")
+    output_pdf_path = os.path.join(report_dir, f"{output_filename}.pdf")
 
     # 5. Guardar en Word
     doc.save(output_docx_path)

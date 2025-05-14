@@ -167,14 +167,13 @@ def extraer_datos_llm(texto):
         #  Eliminar `</think>` si existe
         if "</think>" in message_content:
             message_content = message_content.split("</think>")[-1].strip()
+        match = re.search(r"\d+", message_content)
+        if match:
+            return int(match.group())
+        print(f"⚠️ No se encontró un número válido en la respuesta del modelo:\n{message_content}")
+        return None
 
-        #  Procesar como CSV usando `csv.reader`
-        try:
-            return int(message_content)            
-        except Exception as e:
-            print(f"Error al leer CSV: {e}\nTexto recibido:\n{message_content}")
-            return None        
-        
+       
 
 def procesar_documentos(rango_cursos, carpeta):
     """Procesa los documentos en el rango de cursos y extrae la información relevante."""
@@ -209,9 +208,7 @@ def generar(anho):
         return
 
     output_filename = "University_Country_6_8_Number_of_events_related_to_environment_and_sustainability"
-    output_docx_path = os.path.join(base_dir, f"{output_filename}.docx")
-    output_pdf_path = os.path.join(base_dir, f"{output_filename}.pdf")
-
+    
     doc = Document(template_path)
 
     # Reemplazar texto en la plantilla
@@ -222,6 +219,12 @@ def generar(anho):
    
 
     fill_description(doc,anho, resultados)
+
+    report_dir = os.path.join(SRC_DIR, "generated_reports", "report_6_8", anho)
+    os.makedirs(report_dir, exist_ok=True)  # Crea la carpeta si no existe
+
+    output_docx_path = os.path.join(report_dir, f"{output_filename}.docx")
+    output_pdf_path = os.path.join(report_dir, f"{output_filename}.pdf")
 
     doc.save(output_docx_path)
 

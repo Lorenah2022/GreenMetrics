@@ -32,6 +32,10 @@ from selenium.webdriver.chrome.options import Options
 # Variable global
 base_dir = os.path.dirname(__file__)
 
+SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Agregar `src` al sys.path 
+if SRC_DIR not in sys.path:
+    sys.path.append(SRC_DIR)
 
 def generar_enlace (year_range) :
     start_year, end_year = map(int, year_range.split('-'))
@@ -137,8 +141,7 @@ def generar_informe(captura_pantalla,anho,numero_resultados):
         return
 
     output_filename = "University_Country_6_7_Number_of_scholarly_publications_on_sustainability_UBU"
-    output_docx_path = os.path.join(base_dir, f"{output_filename}.docx")
-    output_pdf_path = os.path.join(base_dir, f"{output_filename}.pdf")
+    
 
     doc = Document(template_path)
 
@@ -152,6 +155,12 @@ def generar_informe(captura_pantalla,anho,numero_resultados):
     agregar_imagen_a_tabla(doc, captura_pantalla)
 
     fill_description(doc,anho,numero_resultados)
+
+    report_dir = os.path.join(SRC_DIR, "generated_reports", "report_6_7", anho)
+    os.makedirs(report_dir, exist_ok=True)  # Crea la carpeta si no existe
+
+    output_docx_path = os.path.join(report_dir, f"{output_filename}.docx")
+    output_pdf_path = os.path.join(report_dir, f"{output_filename}.pdf")
 
     doc.save(output_docx_path)
 

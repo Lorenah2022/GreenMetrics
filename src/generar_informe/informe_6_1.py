@@ -7,6 +7,14 @@ from docx.oxml.ns import qn
 import os
 import sys
 
+
+SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Agregar `src` al sys.path 
+if SRC_DIR not in sys.path:
+    sys.path.append(SRC_DIR)
+
+
 # Función que crea un hipervínculo, para el correcto funcionamiento de los enlaces
 def add_hyperlink(paragraph, url, text):
     """Agrega un hipervínculo a un párrafo en un documento Word."""
@@ -63,8 +71,12 @@ def generar(anho):
         print(f"Error: No se encontró el archivo de datos {excel_data_path}")
         sys.exit(1)
     
-    output_docx_path = os.path.join(base_dir, f"{output_filename}.docx")
-    output_pdf_path = os.path.join(base_dir, f"{output_filename}.pdf")
+    report_dir = os.path.join(SRC_DIR, "generated_reports", "report_6_1", anho)
+    os.makedirs(report_dir, exist_ok=True)  # Crea la carpeta si no existe
+
+    output_docx_path = os.path.join(report_dir, f"{output_filename}.docx")
+    output_pdf_path = os.path.join(report_dir, f"{output_filename}.pdf")
+
     
     def extract_data_from_excel(path):
         df = pd.read_excel(path)
