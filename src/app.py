@@ -137,7 +137,7 @@ def index():
 def logout():
     idioma = session.get('idioma', 'es')
     session.clear()
-    flash(textos[idioma]['flash_cerrado_sesion'], "info")
+    flash(mensajes_flash[idioma]['cerrada_sesion'], "info")
     return redirect(url_for('login'))
 
 # Ruta para la página principal

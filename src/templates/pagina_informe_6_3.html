@@ -19,7 +19,7 @@
             <div class="dropdown-content">
                 <a href="{{ url_for('perfil') }}">{{ textos.perfil }}</a>
                 <a href="{{ url_for('ajustes') }}">{{ textos.ajustes }}</a>
-                {% if idioma == 'es' %}
+                {% if session.get('idioma') == 'es' %}
                     <a href=" https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#ratio-of-sustainability-courses-to-total-coursessubjects-6_3">Manual</a>
                 {% else %}
                     <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#ratio-of-sustainability-courses-to-total-coursessubjects-6_3 ">Manual</a>

@@ -16,7 +16,7 @@
 
         <div class="top-bar">
             <!-- Botón con forma de interrogante -->
-              {% if idioma == 'es' %}
+              {% if session.get('idioma') == 'es' %}
                  <a class="manual" href="https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#login">?</a>
             {% else %}
                  <a class="manual" href="https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#login">?</a>

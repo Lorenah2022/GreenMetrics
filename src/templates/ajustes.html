@@ -42,7 +42,7 @@
             <button>≡</button>
             <div class="dropdown-content">
                 <a href="{{ url_for('perfil') }}">{{ textos.perfil}}</a>
-                {% if idioma == 'es' %}
+                {% if session.get('idioma') == 'es' %}
                     <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#ajustes ">Manual</a>
                 {% else %}
                     <a href=" https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#settings">Manual</a>

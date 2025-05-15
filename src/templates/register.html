@@ -13,8 +13,8 @@
     <div class="form-container">
          <div class="top-bar">
             <!-- Botón con forma de interrogante -->
-             {% if idioma == 'es' %}
-                 <a class="manual" href="https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#registrarse">?</a>
+            {% if session.get('idioma') == 'es' %}              
+                <a class="manual" href="https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#registrarse">?</a>
             {% else %}
                  <a class="manual" href="https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#register">?</a>
             {% endif %}

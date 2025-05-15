@@ -54,7 +54,7 @@
             <button>≡</button>
             <div class="dropdown-content">
                 <a href="{{ url_for('ajustes') }}">{{ textos.ajustes}}</a>
-                {% if idioma == 'es' %}
+                {% if session.get('idioma') == 'es' %}
                     <a href=" https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#perfil-usuario">Manual</a>
                 {% else %}
                     <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#user-profile ">Manual</a>
