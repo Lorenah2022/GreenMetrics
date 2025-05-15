@@ -29,16 +29,12 @@ def procesar_asignaturas(tipo_estudio):
 
     elif tipo_estudio == 'ambos':
         # Cargar ambos archivos Excel para grados y másteres
-        ruta_excel_grados = os.path.join(ruta_data, "datos_asignaturas_grados.xlsx")
-        ruta_excel_masteres = os.path.join(ruta_data, "datos_asignaturas_masteres.xlsx")
-        # Verificar si ambos archivos existen
-        if not os.path.exists(ruta_excel_grados) or not os.path.exists(ruta_excel_masteres):
-            raise FileNotFoundError(f"No se encontraron los ficheros de grados o másteres.")
-        grados = pd.read_excel(ruta_excel_grados)
-        masteres = pd.read_excel(ruta_excel_masteres)
-        # Concatenar los DataFrames de grados y másteres
-        asignaturas = pd.concat([grados, masteres], ignore_index=True)
-  
+        ruta_excel = os.path.join(ruta_data, "datos_asignaturas_grados_masteres.xlsx")
+        # Verificar si el archivo Excel existe
+        if not os.path.exists(ruta_excel):
+            raise FileNotFoundError(f"No se encontró el archivo {ruta_excel}")
+        asignaturas = pd.read_excel(ruta_excel)
+
     # Agregar nuevas columnas para almacenar la información extraída
     asignaturas["titulacion"] = None
     asignaturas["denominacion"] = None
@@ -54,7 +50,12 @@ def procesar_asignaturas(tipo_estudio):
 
         try:
             # Obtener el nombre del archivo PDF desde la columna correspondiente
-            nombre_pdf = asignaturas.iloc[index, 4]
+            nombre_pdf = asignaturas.loc[index, "nombre_archivo"]
+
+            # Verificar que el nombre no sea None ni NaN
+            if pd.isna(nombre_pdf) or not isinstance(nombre_pdf, str):
+                raise ValueError(f"Nombre de PDF no válido para la fila {index}: {nombre_pdf}")
+
             ruta_pdf = os.path.join(ruta_guias, nombre_pdf)
 
             # Verificar si el archivo PDF existe antes de intentar leerlo

@@ -10,6 +10,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import app, Busqueda, db  
 from sqlalchemy.exc import IntegrityError
 
+
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
+import time
+
+
 """ Función principal que procesa las guías docentes utilizando el año proporcionado. """
 def procesar_guias(anho, tipo_estudio):
         
@@ -46,78 +54,70 @@ def procesar_guias(anho, tipo_estudio):
 
         basic_link = str(degrees.iloc[i, 0])
         modalidad = "online" if "online" in basic_link else "presencial"
+        
+        # Configuración de Selenium para modo headless
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")  # Habilitar el modo headless
+        chrome_options.add_argument("--disable-gpu")  # Deshabilitar el uso de GPU
+        chrome_options.add_argument("--no-sandbox")  # Deshabilitar el sandbox (útil en entornos virtuales)
 
-        urls = [
-            f"{basic_link}/informacion-basica/guias-docentes/guias-docentes-de-cursos-anteriores/guias-docentes-{anho}",
-            f"{basic_link}/informacion-basica/guias-docentes/guias-docentes-de-cursos-anteriores-0/guias-docentes-{anho}"
-        ]
+        # Iniciar el navegador con las opciones configuradas
+        driver = webdriver.Chrome(options=chrome_options)
 
-        page = None
-        for url in urls:
+        # Ir a la URL de la página
+        url = f"{basic_link}/informacion-basica/guias-docentes"
+        driver.get(url)
+
+        # Esperar un poco para que la página cargue completamente (ajustar si es necesario)
+        time.sleep(5)
+
+        # Encontrar los enlaces de las guías docentes
+        enlaces = driver.find_elements(By.XPATH, "//a[contains(@href, 'asignatura')]")
+
+        # Extraer los enlaces y procesarlos
+        for enlace in enlaces:
+            url_asignatura = enlace.get_attribute('href')
+            print(f"Enlace encontrado: {url_asignatura}")
+            anho2 = anho.split('-')[0]
+            # Construir la URL para descargar el archivo PDF
+            url_descarga = f"https://ubuvirtual.ubu.es/mod/guiadocente/get_guiadocente.php?asignatura={url_asignatura.split('asignatura=')[-1].split('&')[0]}&cursoacademico={anho2}"
+
+            # Intentar descargar el archivo de la asignatura
             try:
-                response = requests.get(url)
-                response.raise_for_status()
-                page = BeautifulSoup(response.content, "html.parser")
-                break
-            except requests.exceptions.RequestException:
-                print(f"Error al leer la página: {url} - Probando la siguiente opción.")
-                continue
+                response = requests.get(url_descarga)
+                response.raise_for_status()  # Lanza una excepción si la respuesta es un error
 
-        if page is None:
-            print(f"No se pudo acceder a una página válida para: {basic_link}")
-            continue
+                # Definir el nombre del archivo y guardarlo
+                codigo_asignatura = url_asignatura.split("asignatura=")[-1].split("&")[0]
+                nombre_archivo = f"{codigo_asignatura}_{modalidad}.pdf"
+                ruta_archivo = os.path.join(ruta_guias, nombre_archivo)
 
-        links = [a["href"] for a in page.find_all("a", href=True)]
-        subject_links = [link for link in links if "asignatura" in link]
+                with open(ruta_archivo, "wb") as f:
+                    f.write(response.content)
 
-        for link in subject_links:
+                print(f"Guía descargada: {nombre_archivo}")
 
-            if not link.startswith("http"):
-                enlace_completo = f"https://ubuvirtual.ubu.es{link}"
-            else:
-                enlace_completo = link
+            except requests.exceptions.RequestException as e:
+                print(f"Error al descargar la guía {url_asignatura}: {e}")
 
-            codigo_asignatura = enlace_completo.split("asignatura=")[-1].split("&")[0]
-            
-            if "_online" in codigo_asignatura:
-                codigo_asignatura = codigo_asignatura.replace("_online", "")
-
-            nombre_archivo = f"{codigo_asignatura}_{modalidad}.pdf"
-            ruta_archivo = os.path.join(ruta_guias, nombre_archivo)
-
-            success = False
-            for retry_count in range(3):
-                try:
-                    response = requests.get(enlace_completo)
-                    response.raise_for_status()
-                    with open(ruta_archivo, "wb") as f:
-                        f.write(response.content)
-                    success = True
-                    break
-                except requests.exceptions.RequestException:
-                    print(f"Error descargando: {enlace_completo} - Intento {retry_count + 1} de 3.")
-                    time.sleep(5)
-
-            if not success:
-                print(f"Fallo final al descargar: {enlace_completo} - Pasando al siguiente archivo.")
-
-            subject_data.append({
+        # Cerrar el navegador después de terminar
+        driver.quit()
+                
+        subject_data.append({
                 "basic_link": basic_link,
-                "enlace_completo": enlace_completo,
                 "codigo_asignatura": codigo_asignatura,
                 "modalidad": modalidad,
                 "nombre_archivo": nombre_archivo
-            })
+        })
 
-            print("Depuración de datos guardados:")
-            print(f"basic_link: {basic_link}")
-            print(f"enlace_completo: {enlace_completo}")
-            print(f"codigo_asignatura: {codigo_asignatura}")
-            print(f"modalidad: {modalidad}")
-            print(f"nombre_archivo: {nombre_archivo}")
-            print("-" * 50)
+        print("Depuración de datos guardados:")
+        print(f"basic_link: {basic_link}")
+        print(f"codigo_asignatura: {codigo_asignatura}")
+        print(f"modalidad: {modalidad}")
+        print(f"nombre_archivo: {nombre_archivo}")
+        print("-" * 50)
 
-            try:
+        try:
                 with app.app_context():
                     registro_existente = Busqueda.query.filter_by(
                         anho=anho,
@@ -139,10 +139,10 @@ def procesar_guias(anho, tipo_estudio):
                     else:
                         print(f"El registro para {codigo_asignatura} ({modalidad} {basic_link}) ya existe, ignorado.")
                         
-            except IntegrityError:
+        except IntegrityError:
                 print(f"Error de integridad para {codigo_asignatura} ({modalidad}).")
 
-            time.sleep(2)
+        time.sleep(2)
 
     df_subjects = pd.DataFrame(subject_data)
 
