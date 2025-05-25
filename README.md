@@ -28,6 +28,12 @@ La aplicación se encarga de extraer, procesar y consolidar los datos necesarios
 
 Puedes consultar el manual de usuario pinchando en el siguiente [enlace](https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario).
 
+O ver el videotutorial con una breve demostración del funcionamiento de la aplicación:
+[![Ejecución simple de la aplicación GreenMetrics.](https://img.youtube.com/vi/wxutHaGzC84/hqdefault.jpg)](https://www.youtube.com/watch?v=wxutHaGzC84)
+
+
+Si prefieres una explicación más detallada:
+[![Ejecución detallada de la aplicación GreenMetrics.](https://img.youtube.com/vi/cm8XQjadDGE/hqdefault.jpg)](https://youtu.be/cm8XQjadDGE)
 
 
 ***
@@ -48,3 +54,6 @@ The main function of **GreenMetrics** is to optimise the process of data collect
 The application takes care of extracting, processing and consolidating the data required for each indicator, which greatly speeds up reporting. This significantly reduces the time and effort involved in manual data collection and reporting, resulting in improved accuracy and speed of the process.
 
 You can consult the user manual by clicking on the following [link](https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual).
+
+Or watch the video tutorial with a brief demonstration of how the application works:
+[![Ejecución simple de la aplicación GreenMetrics.](https://img.youtube.com/vi/_aeeaMorgvk/hqdefault.jpg)](https://youtu.be/_aeeaMorgvk)
