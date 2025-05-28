@@ -1,31 +1,17 @@
-import csv
-import io
-import json
+
 import os
 import sys
-import time
-import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
 from io import BytesIO
-
-
 import re
-import pandas as pd
-import requests
-import xml.etree.ElementTree as ET
-from bs4 import BeautifulSoup
 from docx import Document
 from docx.shared import Inches
 from docx2pdf import convert
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from dotenv import load_dotenv
-from fpdf import FPDF
-from PyPDF2 import PdfReader
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select, WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 
 
@@ -38,11 +24,35 @@ if SRC_DIR not in sys.path:
     sys.path.append(SRC_DIR)
 
 def generar_enlace (year_range) :
+    """
+    Genera el enlace de búsqueda de Google Scholar para un rango de años y palabras clave.
+
+    Args:
+        year_range (str): Rango de años en formato "YYYY-YYYY".
+
+    Returns:
+        tuple: Una tupla que contiene:
+            - str: El enlace de búsqueda generado.
+            - int: El año de inicio del rango.
+            - int: El año de fin del rango.
+    """
     start_year, end_year = map(int, year_range.split('-'))
     enlace = f"https://scholar.google.es/scholar?hl=es&as_sdt=0%2C5&as_ylo={start_year}&as_yhi={end_year}&q=%22Universidad+de+Burgos%22+%26+%28%22green%22+OR+%22environment%22+OR+%22sustainability%22+OR+%22renewable+energy%22+OR+%22climate+change%22%29&btnG="
     return enlace, start_year, end_year
             
 def fill_description(doc, year_range, num_courses):
+    """
+    Llena la sección de descripción en el documento Word con información sobre la búsqueda.
+
+    Busca los párrafos que contienen "Description:" y "Additional evidence link",
+    reemplaza el texto de la descripción con los detalles de la búsqueda y el número
+    de resultados, y añade un hipervínculo al enlace de búsqueda.
+
+    Args:
+        doc (Document): Objeto Document de python-docx.
+        year_range (str): Rango de años utilizado en la búsqueda (ej. "2020-2022").
+        num_courses (int): Número total de resultados encontrados.
+    """
     enlace, start_year, end_year=generar_enlace(year_range)
     num_years = end_year - start_year + 1  # Calcular el número de años en el rango
 
@@ -67,6 +77,19 @@ def fill_description(doc, year_range, num_courses):
             break
 
 def agregar_imagen_a_tabla(doc, captura_pantalla):
+    """
+    Agrega una imagen (captura de pantalla) a la primera tabla del documento Word.
+
+    Inserta la imagen en la primera celda de la primera fila de la primera tabla
+    encontrada en el documento y ajusta su tamaño. Si la tabla tiene una segunda
+    fila, añade un texto descriptivo en la primera celda de esa fila; de lo contrario,
+    añade una nueva fila con el texto.
+
+    Args:
+        doc (Document): Objeto Document de python-docx.
+        captura_pantalla (bytes): Datos binarios de la imagen de la captura de pantalla.
+    """
+    
     # Buscar la tabla en el documento (se asume que es la primera tabla en el documento)
     table = doc.tables[0]  # Suponiendo que es la primera tabla en el documento
     rows = table.rows
@@ -96,9 +119,18 @@ def agregar_imagen_a_tabla(doc, captura_pantalla):
         new_row.cells[1].text = ''
 
 
-# Función que crea un hipervínculo, para el correcto funcionamiento de los enlaces
 def add_hyperlink(paragraph, url, text):
-    """Agrega un hipervínculo a un párrafo en un documento Word."""
+    """
+    Agrega un hipervínculo a un párrafo en un documento Word.
+
+    Configura el estilo del hipervínculo (color azul y subrayado) y añade el texto
+    visible del enlace al párrafo.
+
+    Args:
+        paragraph (docx.text.paragraph.Paragraph): El objeto párrafo de python-docx.
+        url (str): La URL de destino del hipervínculo.
+        text (str): El texto visible del hipervínculo.
+    """
     # Crear la relación del hipervínculo en el documento
     part = paragraph._element
     rId = paragraph._parent.part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
@@ -130,10 +162,21 @@ def add_hyperlink(paragraph, url, text):
     hyperlink.append(new_run)
     part.append(hyperlink)
 
-# Función que genera el informe
 def generar_informe(captura_pantalla,anho,numero_resultados):
+    """
+    Genera el informe Word y PDF para el reporte 6.7.
+
+    Carga una plantilla de documento Word, reemplaza el encabezado específico
+    del reporte 6.7, agrega la captura de pantalla a la tabla, llena la sección
+    de descripción, guarda el documento modificado como .docx, y luego intenta
+    convertirlo a .pdf.
+
+    Args:
+        captura_pantalla (bytes): Datos binarios de la imagen de la captura de pantalla.
+        anho (str): El rango de años para el cual se generó el informe (ej. "2020-2022").
+        numero_resultados (int): El número total de resultados encontrados en la búsqueda.
+    """    
         
-    """Genera el informe en memoria sin leer de Excel."""
     template_path = os.path.join(base_dir, 'informe_general.docx')
    
     if not os.path.exists(template_path):
@@ -173,6 +216,22 @@ def generar_informe(captura_pantalla,anho,numero_resultados):
 
 
 def buscar(anho):
+    """
+    Realiza una búsqueda en Google Scholar para un rango de años y palabras clave.
+
+    Utiliza Selenium para abrir un navegador (en modo headless), navega al enlace
+    de búsqueda generado, espera a que carguen los resultados, extrae el número
+    total de resultados y toma una captura de pantalla.
+
+    Args:
+        anho (str): El rango de años para la búsqueda (ej. "2020-2022").
+
+    Returns:
+        tuple: Una tupla que contiene:
+            - bytes: Datos binarios de la captura de pantalla.
+            - int: El número total de resultados encontrados.
+    """
+    
     # Configurar Selenium en modo headless
     chrome_options = Options()
     chrome_options.add_argument("--headless")  
@@ -216,6 +275,16 @@ def buscar(anho):
 
 
 def generar(anho):
+    """
+    Función principal para generar el reporte 6.7.
+
+    Realiza la búsqueda en Google Scholar para obtener la captura de pantalla
+    y el número de resultados, y luego llama a la función para generar el informe
+    Word y PDF.
+
+    Args:
+        anho (str): El rango de años para el cual se generará el informe (ej. "2020-2022").
+    """
     captura_pantalla, numero_resultados= buscar(anho)
     generar_informe(captura_pantalla,anho,numero_resultados)
 

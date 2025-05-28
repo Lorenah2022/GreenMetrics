@@ -1,6 +1,7 @@
 # --- Flask Core Modules ---
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
+from flask import request, session, jsonify
 
 # --- Flask Extensions ---
 from flask_wtf import FlaskForm
@@ -25,9 +26,11 @@ import subprocess
 import re
 import threading
 import sys
+from sqlalchemy import or_
 
 from werkzeug.utils import secure_filename
 from config import cargar_configuracion, guardar_configuracion
+
 
 
 #Cargar el diccionario con los textos
@@ -45,7 +48,6 @@ app = Flask(__name__)
 
 # Protege la aplicación Flask contra manipulaciones y ataques
 app.secret_key = secrets.token_hex(32)
-# Configuración de la base de datos PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
 
 app.config['SQLALCHEMY_BINDS'] = {
@@ -84,8 +86,10 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 
 # ----------------------- BASES DE DATOS -----------------------------------------------------
-# Modelo de Usuario
 class User(db.Model):
+    """
+    Modelo de base de datos para los usuarios.
+    """
     id = db.Column(db.Integer, primary_key=True)
     google_id = db.Column(db.String(50), unique=True, nullable=True)  # Campo opcional
     username = db.Column(db.String(50), nullable=False , unique=True)
@@ -93,8 +97,10 @@ class User(db.Model):
     password = db.Column(db.String(200), nullable=False)
     rol = db.Column(db.String(50), nullable=False, default='visitante')  # Default es 'usuario'
 
-# Modelo de Búsqueda
 class Busqueda(db.Model):
+    """
+    Modelo de base de datos para almacenar los resultados de las búsquedas de guías docentes.
+    """
     __bind_key__ = 'busqueda'
     id = db.Column(db.Integer, primary_key=True)
     anho = db.Column(db.String(20), nullable=False)
@@ -111,8 +117,10 @@ class Busqueda(db.Model):
 
 
 # ----------------------- FORMULARIOS -----------------------------------------------------
-# Formulario para editar el perfil
 class ProfileForm(FlaskForm):
+    """
+    Formulario WTForms para la edición del perfil de usuario.
+    """
     username = StringField('Nombre de usuario', validators=[
         DataRequired(), Length(min=3, max=50)
     ])
@@ -127,22 +135,30 @@ class ProfileForm(FlaskForm):
     
 
 #  ----------------------- PÁGINAS PRINCIPALES ----------------------------------------------------
-# Ruta principal
 @app.route('/')
 def index():
+    """
+    Ruta principal que redirige al usuario a la página de login.
+    """
     return redirect(url_for('login'))
 
-# Cerrar sesión
 @app.route('/logout')
 def logout():
-    idioma = session.get('idioma', 'es')
+    """
+    Ruta principal que redirige al usuario a la página de login.
+    """
+    idioma = session.get('idioma', 'es')  # Leer antes de limpiar sesión
     session.clear()
     flash(mensajes_flash[idioma]['cerrada_sesion'], "info")
-    return redirect(url_for('login'))
+    return redirect(url_for('login', idioma=idioma))  # Pasar idioma por URL
+
 
 # Ruta para la página principal
 @app.route('/pagina_principal')
 def pagina_principal():
+    """
+    Renderiza la página principal.
+    """
     # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
     idioma = session.get('idioma', 'es')
 
@@ -164,6 +180,9 @@ def pagina_principal():
 # Ruta principal: Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """
+    Maneja el proceso de login de usuarios, tanto con credenciales locales como con Google OAuth.
+    """
     google_client_id = app.config["GOOGLE_OAUTH_CLIENT_ID"]
 
     if request.method == 'POST':
@@ -190,7 +209,11 @@ def login():
 
             return redirect(url_for('pagina_principal', 
                                rol=user.rol))
-    idioma = session.get('idioma', 'es')
+    else:
+        # ✅ Restaurar idioma desde la URL si se pasó como argumento
+        idioma = session.get('idioma') or request.args.get('idioma', 'es') 
+        session['idioma'] = idioma  
+
     return render_template('login.html',google_client_id=google_client_id,textos=textos[idioma])
 
 
@@ -198,6 +221,12 @@ def login():
 
 @app.route('/cambiar_idioma', methods=['POST'])
 def cambiar_idioma():
+    """
+    Cambia el idioma de la sesión del usuario basado en la solicitud POST.
+
+    Returns:
+        tuple: Una tupla vacía y un código de estado 200 para indicar éxito.
+    """
     data = request.get_json()
     idioma = data.get('idioma', 'es')  # Obtener idioma enviado por el cliente
     session['idioma'] = idioma  # Guardar el idioma en la sesión
@@ -208,55 +237,125 @@ def cambiar_idioma():
 # Ruta para el registro de nuevos usuarios
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-            idioma = request.form.get('idioma', 'es')
-            session['idioma'] = idioma
-            # Obtener datos del formulario
-            username = request.form['username'] 
-            email = request.form['email']  
-            password = request.form['password']
-            confirm_password = request.form['confirm_password']
+    """
+    Maneja el registro de nuevos usuarios. Valida los datos del formulario,
+    verifica si el usuario o email ya existen y crea un nuevo usuario en la base de datos.
+    """
+    if request.method != 'POST':
+        idioma = session.get('idioma', 'es')
+        return render_template('register.html', idioma=idioma)
 
-            # Validar contraseña
-            error = validar_contrasena(password)
-            if error:
-                flash(error, 'error')
-                return render_template('register.html', textos=textos[idioma])  # Detener el proceso si hay errores
-            
-            # Validar datos
-            if not username or not email or not password:
-                flash(mensajes_flash[idioma]['campos_incompletos'], 'error')
-            elif password != confirm_password:
-                flash(mensajes_flash[idioma]['contrasenas_no_coinciden'], 'error')
-            else:
-                # Verificar si el nombre de usuario o el correo electrónico ya están en uso
-                existing_user_by_username = User.query.filter_by(username=username).first()
-                existing_user_by_email = User.query.filter_by(email=email).first()
+    username = request.form.get('username', '').strip()
+    email = request.form.get('email', '').strip()
+    password = request.form.get('password', '')
+    confirm_password = request.form.get('confirm_password', '')
 
-                if existing_user_by_username:
-                    flash(mensajes_flash[idioma]['usuario_existente'], 'error')
-                elif existing_user_by_email:
-                    flash(mensajes_flash[idioma]['email_existente'], 'error')
-                else:
-                    try:
-                        # Hash de la contraseña con pbkdf2:sha256
-                        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-                        new_user = User(username=username, email=email, password=hashed_password, rol ='usuario')  
-                        db.session.add(new_user)
-                        db.session.commit()
-                        flash(mensajes_flash['cuenta_creada'], 'success')
-                    except Exception as e:
-                        db.session.rollback()
-                        flash(f"{mensajes_flash[idioma]['error_guardar']}{str(e)}", 'error')
-    idioma = session.get('idioma', 'es')
-    return render_template('register.html',textos=textos[idioma] )
+    error = validar_contrasena(password)
+    if error:
+        flash(mensajes_flash[idioma]['contrasena_incorrecta'], 'error')
+        return render_template('register.html', idioma=idioma)
+
+    if is_form_incomplete(username, email, password):
+        flash(mensajes_flash[idioma]['campos_incompletos'], 'error')
+        return render_template('register.html', idioma=idioma)
+
+    if is_password_mismatch(password, confirm_password):
+        flash(mensajes_flash[idioma]['contrasenas_no_coinciden'], 'error')
+        return render_template('register.html', idioma=idioma)
+
+    existing_user, existing_email = is_username_or_email_taken(username, email)
+    if existing_user:
+        flash(mensajes_flash[idioma]['usuario_existente'], 'error')
+        return render_template('register.html', idioma=idioma)
+    if existing_email:
+        flash(mensajes_flash[idioma]['email_existente'], 'error')
+        return render_template('register.html', idioma=idioma)
+
+    try:
+        create_user(username, email, password)
+        flash(mensajes_flash[idioma]['cuenta_creada'], 'success')
+        print("Usuario guardado en la base de datos.")
+        return redirect(url_for('login'),textos=textos[idioma])
+    except Exception as e:
+        db.session.rollback()
+        flash(mensajes_flash[idioma]['error_guardar'] + str(e), 'error')
+        print(f"Error al guardar el usuario: {str(e)}")
+
+    return render_template('register.html', idioma=idioma)
+
+
+def is_form_incomplete(username, email, password):
+    """
+    Verifica si los campos obligatorios del formulario de registro están incompletos.
+
+    Args:
+        username (str): Nombre de usuario.
+        email (str): Correo electrónico.
+        password (str): Contraseña.
+
+    Returns:
+        bool: True si algún campo está vacío, False en caso contrario.
+    """
+    return not username or not email or not password
+
+def is_password_mismatch(password, confirm_password):
+    """
+    Verifica si la contraseña y la confirmación de contraseña coinciden.
+
+    Args:
+        password (str): Contraseña.
+        confirm_password (str): Confirmación de contraseña.
+
+    Returns:
+        bool: True si las contraseñas no coinciden, False en caso contrario.
+    """
+
+    return password != confirm_password
+
+def is_username_or_email_taken(username, email):
+    """
+    Verifica si un nombre de usuario o correo electrónico ya existen en la base de datos.
+
+    Args:
+        username (str): Nombre de usuario a verificar.
+        email (str): Correo electrónico a verificar.
+
+    Returns:
+        tuple: Una tupla conteniendo el objeto User si el nombre de usuario existe
+               y el objeto User si el correo electrónico existe.
+    """
+    return (
+    User.query.filter_by(username=username).first(),
+    User.query.filter_by(email=email).first()
+    )
+
+def create_user(username, email, password):
+    """
+    Crea un nuevo usuario en la base de datos con la contraseña hasheada.
+
+    Args:
+        username (str): Nombre de usuario para el nuevo usuario.
+        email (str): Correo electrónico para el nuevo usuario.
+        password (str): Contraseña para el nuevo usuario (se hasheará antes de guardar).
+    """
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+    user = User(username=username, email=email, password=hashed_password, rol='usuario')
+    db.session.add(user)
+    db.session.commit()
 
 
 #  ----------------------- PÁGINAS DE MODIFICACIÓN DE PARÁMETROS ----------------------------------------------------
 # Ruta para cambiar los ajustes (idioma, tamaño de la letra y habilitar la opción de daltonismo)
 @app.route('/ajustes', methods=['GET', 'POST'])
 def ajustes():
-    idioma = session.get('idioma', 'es')
+    """
+    Crea un nuevo usuario en la base de datos con la contraseña hasheada.
+
+    Args:
+        username (str): Nombre de usuario para el nuevo usuario.
+        email (str): Correo electrónico para el nuevo usuario.
+        password (str): Contraseña para el nuevo usuario (se hasheará antes de guardar).
+    """
 
     if request.method == 'POST':
         idioma = request.form.get('idioma')
@@ -271,66 +370,158 @@ def ajustes():
     daltonismo = session.get('daltonismo', False)  # Por defecto, el daltonismo está desactivado
     return render_template('ajustes.html', idioma=idioma, tamano_texto=tamano_texto,  daltonismo=daltonismo,textos=textos[idioma])
 
+
+
+def get_user_preferences():
+    """
+    Obtiene las preferencias de usuario (idioma, daltonismo, tamaño de texto, rol)
+    almacenadas en la sesión.
+
+    Returns:
+        dict: Un diccionario con las preferencias del usuario.
+    """
+    return {
+    'idioma': session.get('idioma', 'es'),
+    'daltonismo': session.get('daltonismo', False),
+    'tamano_texto': session.get('tamano_texto', 'normal'),
+    'rol': session.get('rol')
+    }
+
+def is_user_logged_in():
+    """
+    Verifica si hay un usuario logueado en la sesión.
+
+    Returns:
+        bool: True si 'user_id' está en la sesión, False en caso contrario.
+    """
+    return 'user_id' in session
+
+def get_logged_in_user():
+    """
+    Obtiene el objeto User del usuario logueado a partir del 'user_id' en la sesión.
+
+    Returns:
+        User | None: El objeto User si hay un usuario logueado, None en caso contrario.
+    """
+    return User.query.get(session['user_id'])
+
+def update_user_profile(form, user, idioma):
+    """
+    Actualiza el perfil de un usuario con los datos del formulario.
+
+    Valida la nueva contraseña si se proporciona y hashea antes de guardar.
+    Realiza un commit a la base de datos.
+
+    Args:
+        form (ProfileForm): El formulario con los datos actualizados.
+        user (User): El objeto User a actualizar.
+        idioma (str): El idioma actual del usuario para mensajes flash.
+
+    Returns:
+        tuple: Una tupla (success, response). Success es True si la actualización
+               fue exitosa, False en caso contrario. Response es la respuesta
+               (redirección o renderizado de plantilla) a devolver.
+    """
+    user.username = form.username.data
+    user.email = form.email.data
+    if form.password.data:
+        error = validar_contrasena(form.password.data)
+        if error:
+            flash(mensajes_flash[idioma]['error_contrasena'], 'error')
+            
+            return False, render_template('perfil_usuario.html', form=form, usuario=user,
+                                        tamano_texto=session.get('tamano_texto'),
+                                        textos=textos[idioma],
+                                        daltonismo=session.get('daltonismo'))
+        user.password = generate_password_hash(form.password.data)
+
+    try:
+        db.session.commit()
+        flash(mensajes_flash[idioma]['perfil_actualizado'], 'success')
+        return True, redirect(url_for('perfil'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f"{mensajes_flash[idioma]['error_actualizar']}{str(e)}", "error")
+        return False, None
+
+  
+def cargar_datos_formulario(form, user):
+    """
+    Carga los datos del usuario en el formulario de perfil.
+
+    Args:
+        form (ProfileForm): El formulario a llenar.
+        user (User): El objeto User con los datos a cargar.
+    """
+    form.username.data = user.username
+    form.email.data = user.email
+
+def render_perfil(form, user, prefs):
+    """
+    Renderiza la plantilla de perfil de usuario o administrador.
+
+    Selecciona la plantilla adecuada según el rol del usuario y pasa los datos
+    del formulario, usuario y preferencias.
+
+    Args:
+        form (ProfileForm): El formulario de perfil.
+        user (User): El objeto User del usuario logueado.
+        prefs (dict): Diccionario con las preferencias del usuario.
+
+    Returns:
+        str: El HTML renderizado de la plantilla de perfil.
+    """
+    template = 'perfil_admin.html' if prefs['rol'] == 'admin' else 'perfil_usuario.html'
+    return render_template(template, form=form, usuario=user,
+    tamano_texto=prefs['tamano_texto'],
+    textos=textos[prefs['idioma']],
+    daltonismo=prefs['daltonismo'])
+
 # Ruta para editar el perfil
 @app.route('/perfil', methods=['GET', 'POST'])
 def perfil():
-    idioma = session.get('idioma', 'es')
-    daltonismo = session.get('daltonismo', False)
-    tamano_texto = session.get('tamano_texto', 'normal')
-    rol = session.get('rol')
-    # Verificación de si el usuario está logueado en la sesión
-    if 'user_id' not in session:
-        # Página que muestra el perfil de visitante
-        return render_template('perfil_visitante.html', tamano_texto=tamano_texto,textos=textos[idioma],daltonismo=daltonismo)
-    
-    # Obtiene el usuario actual desde la sesión
-    usuario = User.query.get(session['user_id'])  # Usar 'user_id' en lugar de 'id'
-    
-    # Crear el formulario de perfil
+    """
+    Maneja la página de perfil del usuario. Permite a los usuarios logueados
+    ver y editar su información. Los visitantes ven una página de perfil de visitante.
+    """
+    prefs = get_user_preferences()
+    if not is_user_logged_in():
+        return render_template('perfil_visitante.html',
+                            tamano_texto=prefs['tamano_texto'],
+                            textos=textos[prefs['idioma']],
+                            daltonismo=prefs['daltonismo'])
+
+    user = get_logged_in_user()
     form = ProfileForm()
 
-    if request.method == 'POST':  # Validación explícita del método POST
-        if form.validate():  # Valida los datos del formulario sin necesidad de submit
-            # Actualizar solo los campos que se llenaron
-            usuario.username = form.username.data
-            usuario.email = form.email.data
-
-            # Si el campo de contraseña no está vacío, actualiza la contraseña
-            if form.password.data:
-                # Validar contraseña
-                error = validar_contrasena(form.password.data)
-                if error:
-                    flash(error, 'error')
-                    return render_template(
-                    'perfil_usuario.html', form=form, usuario=usuario,
-                    tamano_texto=tamano_texto, textos=textos[idioma]
-                    )
-                usuario.password = generate_password_hash(form.password.data)
-           
-            # Guardar los cambios en la base de datos
-            try:
-                db.session.commit()
-                flash(mensajes_flash[idioma]['perfil_actualizado'], 'success')
-                return redirect(url_for('pagina_principal'))
-            except Exception as e:
-                db.session.rollback()
-                flash(f"{mensajes_flash[idioma]['error_actualizar']}{str(e)}", "error")
+    if request.method == 'POST':
+        if form.validate():
+            success, response = update_user_profile(form, user, prefs['idioma'])
+            if success:
+                return response
+            elif response:
+                return response
         else:
-            flash(mensajes_flash[idioma]['errores_formulario'], "error")
+            flash(mensajes_flash[prefs['idioma']]['errores_formulario'], "error")
 
-    # Rellenar los campos del formulario con los datos actuales del usuario
-    form.username.data = usuario.username
-    form.email.data = usuario.email
-
-    # Pasar el tamaño de texto a las plantillas
-    if rol == 'admin':
-        return render_template('perfil_admin.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma],daltonismo=daltonismo)
-    else:
-        return render_template('perfil_usuario.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma],daltonismo=daltonismo)
+    cargar_datos_formulario(form, user)
+    return render_perfil(form, user, prefs)
 
 
 # Función de validación de contraseña
 def validar_contrasena(password):
+    """
+    Valida si una contraseña cumple con los requisitos mínimos de seguridad.
+
+    Requiere al menos 8 caracteres, una mayúscula, una minúscula y un número.
+
+    Args:
+        password (str): La contraseña a validar.
+
+    Returns:
+        str | None: Un mensaje de error si la contraseña no cumple los requisitos,
+                    o None si la contraseña es válida.
+    """
     idioma = session.get('idioma', 'es')
     textos = mensajes_flash.get(idioma, mensajes_flash['es'])
     if len(password) < 8:
@@ -347,6 +538,13 @@ def validar_contrasena(password):
 #  ----------------------- CONFIGURACIÓN DE INICION SESIÓN CON GOOGLE ----------------------------------------------------
 # Login con google
 def get_google_user_info():
+    """
+    Obtiene la información del usuario desde Google si la autenticación con Google está autorizada.
+
+    Returns:
+        dict | None: Un diccionario con la información del usuario de Google si la solicitud es exitosa,
+                     None en caso contrario.
+    """
     if not google.authorized:
         print("No autorizado con Google.")
         return None
@@ -367,6 +565,17 @@ def get_google_user_info():
 # Ruta de login con Google
 @app.route("/google_login", methods=["POST"])
 def google_login():
+    """
+    Maneja el proceso de autenticación con Google OAuth.
+    Verifica el token recibido del frontend, busca o crea el usuario en la base de datos
+    y establece la sesión del usuario.
+
+    Returns:
+        tuple: Una tupla conteniendo una respuesta JSON y un código de estado HTTP.
+               Retorna un mensaje de éxito y código 200 si la autenticación es exitosa,
+               o un mensaje de error y código 400 si el token es inválido o falta.
+    """
+
     # Carga el client_id desde las variables de entorno
     google_client_id = app.config["GOOGLE_OAUTH_CLIENT_ID"]
     print(f"Google Client ID: {google_client_id}")  # Verifica que el Client ID esté correcto
@@ -424,9 +633,11 @@ def google_login():
 
     
 #  ----------------------- PÁGINAS PARA DESCARGAR LAS GUÍAS DOCENTES PARA UN CURSO ACADÉMICO DETERMINADO ----------------------------------------------------
-# Ruta para la página para pedir el año
 @app.route('/pagina_pedir_anho')
 def pagina_pedir_anho():
+    """
+    Renderiza la página para solicitar el año académico y tipo de estudio para la descarga de guías.
+    """
     # Comprobar el idioma seleccionado en la sesión, por defecto 'en'
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
@@ -447,7 +658,16 @@ def pagina_pedir_anho():
 
 
 def verificar_si_existen_datos(anho, tipo_estudio):
-    from sqlalchemy import or_
+    """
+    Verifica si ya existen datos de búsqueda para un año y tipo de estudio dados en la base de datos.
+
+    Args:
+        anho (str): El año académico (ej. "2023-2024").
+        tipo_estudio (str): El tipo de estudio ("grado", "master", o "ambos").
+
+    Returns:
+        bool: True si existen datos para la combinación año/tipo, False en caso contrario.
+    """
     count = Busqueda.query.filter_by(anho=anho, tipo_programa=tipo_estudio).count()
     return count > 0
 
@@ -455,15 +675,40 @@ def verificar_si_existen_datos(anho, tipo_estudio):
 
 @app.route('/verificar_datos', methods=['POST'])
 def verificar_datos():
+    """
+    Para verificar si ya existen datos para un año y tipo de estudio.
+
+    Recibe el año y tipo de estudio de una solicitud POST (típicamente AJAX)
+    y llama a `verificar_si_existen_datos` para comprobar la base de datos.
+    Devuelve el resultado como un objeto JSON.
+
+    Returns:
+        json: Un objeto JSON indicando si existen datos (`datos_existentes`).
+    """
     anho = request.form.get('anho')
     tipo_estudio = request.form.get('tipo_estudio')
-
     datos_existentes = verificar_si_existen_datos(anho, tipo_estudio)
     return jsonify({'datos_existentes': datos_existentes})
 
 
 @app.route("/", methods=["GET", "POST"])
 def procesar_anho():
+    """
+    Maneja la solicitud POST para procesar un año académico y tipo de estudio.
+    Inicia un hilo para ejecutar los scripts de descarga y procesamiento de guías.
+
+    Si la solicitud es POST:
+    - Obtiene el año y tipo de estudio del formulario.
+    - Valida el formato del año y el tipo de estudio.
+    - Verifica si los datos para esa combinación ya existen en la base de datos.
+    - Si no existen y las validaciones pasan, actualiza el estado global del proceso
+      e inicia un nuevo hilo para ejecutar los scripts externos (`ejecutar_procesos`).
+    - Redirige a la página de solicitud de datos de IA.
+    Si la solicitud es GET, simplemente redirige a la página de solicitud de datos de IA.
+
+    Returns:
+        redirect: Redirige a la página de solicitud de datos de IA o a la página de solicitud de año si hay errores.
+    """
     global estado_proceso
     if request.method == "POST":
         anho = request.form.get("anho")
@@ -471,7 +716,7 @@ def procesar_anho():
 
         # Verificar el formato del año (####-####)
         if not anho_pattern(anho):
-            flash(textos[idioma]['formato_anho_invalido'], "error")
+            flash(mensajes_flash[idioma]['formato_anho_invalido'], "error")
             return redirect(url_for('pagina_pedir_anho'))
 
        
@@ -480,10 +725,10 @@ def procesar_anho():
 
         # Validar si el tipo de estudio es correcto
         if tipo_estudio not in ["grado", "master", "ambos"]:
-            flash(textos[idioma]['tipo_estudio_invalido'], "error")
+            flash(mensajes_flash[idioma]['tipo_estudio_invalido'], "error")
             return redirect(url_for('pagina_pedir_anho'))
         if verificar_si_existen_datos(anho, tipo_estudio):
-            flash(textos[idioma]['datos_ya_existen'], "info")
+            flash(mensajes_flash[idioma]['datos_ya_existen'], "info")
             return redirect(url_for('pagina_pedir_anho'))
         with lock:
             estado_proceso["en_proceso"] = True
@@ -496,18 +741,41 @@ def procesar_anho():
         hilo = threading.Thread(target=ejecutar_procesos, args=(anho, tipo_estudio, idioma))
         hilo.start()
         
-        return redirect(url_for('pagina_pedir_IA'))
+        return redirect(url_for('pagina_pedir_ia'))
 
-    return redirect(url_for('pagina_pedir_IA'))
+    return redirect(url_for('pagina_pedir_ia'))
 
 def anho_pattern(anho):
-    """ Verifica si el año tiene el formato correcto (####-####). """
+    """
+    Verifica si el año tiene el formato correcto (####-####).
+
+    Utiliza una expresión regular para validar el formato.
+
+    Args:
+        anho (str): El string del año a verificar.
+
+    Returns:
+        bool: True si el formato es correcto, False en caso contrario.
+    """
     return bool(re.match(r"\d{4}-\d{4}", anho))
 
 
 # Función que ejecuta los scripts en el orden correcto.
 def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
-    """ Función que ejecuta los scripts en orden y actualiza el estado. """
+    """
+    Ejecuta los scripts de descarga y procesamiento de guías docentes en un hilo separado.
+    Actualiza el estado global del proceso durante la ejecución.
+
+    Esta función se ejecuta en un hilo separado para no bloquear la aplicación Flask.
+    Llama a scripts externos (`grados.py`, `guias_docentes.py`, `procesadoAsignaturas.py`)
+    usando `subprocess.run` y actualiza el estado global (`estado_proceso`)
+    con mensajes y porcentajes de progreso. Maneja posibles errores en la ejecución de los scripts.
+
+    Args:
+        anho (str): El año académico a procesar.
+        tipo_estudio (str, optional): El tipo de estudio ("grado", "master", "ambos"). Por defecto es "ambos".
+        idioma (str, optional): El idioma actual para los mensajes de estado. Por defecto es 'es'.
+    """
     global estado_proceso
     try:
         # Ejecutar guias_docentes.py
@@ -549,9 +817,18 @@ def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
         
 
 #  ----------------------- PÁGINA PARA EJECUTAR LA API ----------------------------------------------------
-# Ruta para la página donde se solicitan los datos de la IA
-@app.route('/pagina_pedir_IA', methods=['GET','POST'])
-def pagina_pedir_IA():
+@app.route('/pagina_pedir_ia', methods=['GET','POST'])
+def pagina_pedir_ia():
+    """
+    Renderiza la página para solicitar los datos de configuración de la API de IA.
+
+    Obtiene el origen de la solicitud (para saber qué informe se quiere generar)
+    y el año seleccionado de la sesión. Renderiza la plantilla `pagina_pedir_ia.html`
+    pasando las preferencias del usuario y el año seleccionado.
+
+    Returns:
+        str: El HTML renderizado de la plantilla `pagina_pedir_ia.html`.
+    """
     origen = session.get('origen', '')  # Obtiene el valor de sesión
     anho_seleccionado = request.form.get('anho')
     session['anho'] = anho_seleccionado
@@ -562,77 +839,131 @@ def pagina_pedir_IA():
     daltonismo = session.get('daltonismo', False)
     # Comprobar si el usuario está autenticado
     if 'user_id' not in session:
-        return render_template('pagina_pedir_IA.html', origen=origen,
+        return render_template('pagina_pedir_ia.html', origen=origen,
                                rol='visitante', 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto,daltonismo=daltonismo,anho_seleccionado=session.get('anho'))  # Contenido para visitantes
     else:
         rol = session['rol']
-        return render_template('pagina_pedir_IA.html', origen=origen,
+        return render_template('pagina_pedir_ia.html', origen=origen,
                                rol=rol, 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto,daltonismo=daltonismo,anho_seleccionado=session.get('anho'))  # Contenido según el rol
     
 
+def obtener_configuracion_actualizada(config_actual):
+    """
+    Obtiene la configuración de la API (base_url, api_key, model) de la solicitud POST.
 
-#Función donde se piden los paramétros para la configuración de la API.
+    Si un campo no se proporciona en la solicitud, utiliza el valor de la configuración actual.
+
+    Args:
+        config_actual (dict): Diccionario con la configuración actual de la API.
+
+    Returns:
+        dict: Un diccionario con la configuración de la API actualizada.
+    """ 
+    base_url = request.form.get('base_url', '').strip() or config_actual.get("base_url")
+    api_key = request.form.get('api_key', '').strip() or config_actual.get("api_key")
+    model = request.form.get('model', '').strip() or config_actual.get("model")
+    return {"base_url": base_url, "api_key": api_key, "model": model}
+
+def validar_campos_por_informe(informe):
+    """
+    Valida que los campos necesarios para generar un informe específico estén presentes en la sesión.
+
+    Args:
+        informe (str): El tipo de informe a validar (ej. "6_8", "6_4").
+
+    Returns:
+        tuple | None: Una tupla (mensaje de error, código HTTP) si falta algún campo,
+                      o None si todos los campos necesarios están presentes.
+    """
+    if informe == "6_8":
+        anho = session.get('anho')
+        if not anho:
+            return "Error: No se seleccionaron todos los campos", 400
+        return None
+    elif informe == "6_4":
+        excel = session.get('ruta_excel')
+        if not excel:
+            return "Error: No se ha subido ningún fichero.", 400
+        return None
+    return None
+
+def manejar_informe_con_hilo(informe):
+    """
+    Inicia un hilo para ejecutar el script de generación de informe con los parámetros necesarios.
+
+    Valida los campos necesarios para el informe, obtiene los parámetros de la sesión
+    y lanza un nuevo hilo que ejecuta la función `ejecutar_informe`.
+
+    Args:
+        informe (str): El tipo de informe a generar.
+
+    Returns:
+        redirect | tuple: Redirige a la página principal si el hilo se inicia correctamente,
+                          o retorna una tupla (mensaje de error, código HTTP) si la validación falla.
+    """
+    anho_seleccionado = ''
+    excel = ''
+    error = validar_campos_por_informe(informe)
+    if error:
+        return error
+
+    if informe == "6_8":
+        anho_seleccionado = session.get('anho')
+    elif informe == "6_4":
+        excel = session.get('ruta_excel')
+
+    hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado, informe, excel))
+    hilo.start()
+    return redirect(url_for('pagina_principal'))
+
 @app.route('/actualizar_api', methods=['GET','POST'])
 def actualizar_api():
+    """
+    Maneja la solicitud POST para actualizar la configuración de la API y generar informes.
+
+    Carga la configuración actual, obtiene la configuración actualizada del formulario,
+    la guarda, determina el tipo de informe a generar y llama a la función
+    correspondiente (`ejecutar_api` o `manejar_informe_con_hilo`) en un hilo separado.
+
+    Returns:
+        redirect | tuple: Redirige a la página principal si la operación es exitosa,
+                          o retorna un mensaje de error y código HTTP si ocurre un problema.
+    """
     try:
         informe_seleccionado = determinar_tipo_informe()
-
-        # Obtener la configuración actual
         config_actual = cargar_configuracion()
-        # origen = session.get('origen', '')
 
-        # Obtener los datos del formulario y usar los valores actuales si están vacíos
-        base_url = request.form.get('base_url').strip() or config_actual["base_url"]
-        api_key = request.form.get('api_key').strip() or config_actual["api_key"]
-        model = request.form.get('model').strip() or config_actual["model"]
-
-        # Guardar la nueva configuración en config.json
-        guardar_configuracion({
-            "base_url": base_url,
-            "api_key": api_key,
-            "model": model
-        })
+        nueva_config = obtener_configuracion_actualizada(config_actual)
+        guardar_configuracion(nueva_config)
 
         if informe_seleccionado == "6_1":
-            # Reiniciar la API si es necesario
             hilo = threading.Thread(target=ejecutar_api)
             hilo.start()
             return redirect(url_for('pagina_principal'))
 
-        else:
-            # Para el 1_19 y el 6_8 es necesario seleccionar la API
-            try:
-                anho_seleccionado = ''
-                excel =''
-                if informe_seleccionado == "6_8":
-                    # Obtener el año seleccionado desde el formulario
-                    anho_seleccionado = session.get('anho')
-                    if not anho_seleccionado:
-                        return "Error: No se seleccionaron todos los campos", 400
-                elif informe_seleccionado == "6_4":
-                    excel =  session.get('ruta_excel')
-                    if not excel:
-                        return "Error: No se ha subido ningún fichero.", 400
-                # Iniciar un hilo para ejecutar el informe con el año como argumento
-                hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado,informe_seleccionado, excel))
-                hilo.start()
+        # Para otros informes: 1_19, 6_8, 6_4...
+        response = manejar_informe_con_hilo(informe_seleccionado)
+        if isinstance(response, tuple):  # Error con código HTTP
+            return response
+        return response
 
-                # Redirigir a la página principal después de iniciar el proceso
-                return redirect(url_for('pagina_principal'))
-
-            except Exception as e:
-                return f"Error al generar el informe: {str(e)}", 500
-    
     except Exception as e:
-        # En caso de error, devolver un mensaje
-        return f"Error al actualizar la API: {str(e)}"
+        return f"Error al actualizar la API o generar el informe: {str(e)}", 500
 
-# Función que ejecutará el script en segundo plano
+
 def ejecutar_api():
+    """
+    Ejecuta el script `API.py` en un hilo separado.
+
+    Este script es responsable de procesar las guías docentes y actualizar la base de datos
+    con información de sostenibilidad utilizando la API de IA.
+
+    Imprime mensajes de éxito o error en la consola.
+    """
     try:
         ruta_api = os.path.join(os.getcwd(), 'sostenibilidad', 'API.py')
         # Ejecutar el archivo API.py (esto puede tomar tiempo)
@@ -645,11 +976,20 @@ def ejecutar_api():
 
 
 #  ----------------------- PÁGINA PARA VISUALIZAR LA BASE DE DATOS ----------------------------------------------------
-#  Ruta para la página donde se muestra la base de datos
-from flask import request, session, render_template, jsonify
-
 @app.route('/consultar_busquedas', methods=['GET'])
 def consultar_busquedas():
+    """
+    Maneja la página de consulta de la base de datos de búsquedas.
+
+    Permite filtrar los resultados por año, tipo de programa, código de asignatura,
+    nombre de archivo y modalidad. También maneja la paginación y la selección de columnas.
+    Si la solicitud es AJAX, devuelve sugerencias para el autocompletado del código de asignatura.
+    Si no es AJAX, renderiza la plantilla `consultar_busquedas.html` con los datos filtrados y paginados.
+
+    Returns:
+        json | str: Un objeto JSON con sugerencias si es una solicitud AJAX,
+                    o el HTML renderizado de la página de consulta si no es AJAX.
+    """
     # --- Si es una petición AJAX, devolvemos JSON para autocompletar ---
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         codigo_asignatura = request.args.get('codigo_asignatura', '')
@@ -763,9 +1103,22 @@ def consultar_busquedas():
 
 
 #  ----------------------- EDITAR BASE DE DATOS  ----------------------------------------------------
-# Editar búsqueda (solo admin)
 @app.route('/editar_busqueda/<int:id>', methods=['GET', 'POST'])
 def editar_busqueda(id):
+    """
+    Maneja la edición de un registro de búsqueda en la base de datos.
+
+    Solo accesible para usuarios con rol 'admin'. Permite modificar los campos
+    de un registro de búsqueda específico.
+
+    Args:
+        id (int): El ID del registro de búsqueda a editar.
+
+    Returns:
+        redirect | str: Redirige a la página de consulta de búsquedas después de editar,
+                        o renderiza la plantilla de edición si es una solicitud GET
+                        o si hay un error. Retorna "No encontrada" con código 404 si el ID no existe.
+    """
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
@@ -785,7 +1138,7 @@ def editar_busqueda(id):
         busqueda.modalidad = request.form['modalidad']
         busqueda.sostenibilidad = request.form['sostenibilidad']
         db.session.commit()
-        flash("Búsqueda editada correctamente.", "succes")
+        flash(mensajes_flash[idioma]['busqueda_editada'], "succes")
 
         return redirect(url_for('consultar_busquedas'))
 
@@ -793,9 +1146,21 @@ def editar_busqueda(id):
         tamano_texto=tamano_texto,
         daltonismo=daltonismo)
     
-# Eliminar búsqueda (solo admin)
 @app.route('/eliminar_busqueda/<int:id>', methods=['POST'])
 def eliminar_busqueda(id):
+    """
+    Maneja la eliminación de un registro de búsqueda en la base de datos.
+
+    Solo accesible para usuarios con rol 'admin'. Elimina un registro de búsqueda
+    específico por su ID.
+
+    Args:
+        id (int): El ID del registro de búsqueda a eliminar.
+
+    Returns:
+        redirect: Redirige a la página de consulta de búsquedas después de eliminar,
+                  o si hay un error o acceso denegado.
+    """
     idioma = session.get('idioma', 'es')
 
     if session.get('rol') != 'admin':
@@ -814,6 +1179,20 @@ def eliminar_busqueda(id):
 
 @app.route('/confirmar_eliminacion/<int:id>')
 def confirmar_eliminacion(id):
+    """
+    Renderiza la página de confirmación antes de eliminar un registro de búsqueda.
+
+    Solo accesible para usuarios con rol 'admin'. Muestra los detalles del registro
+    a eliminar y pide confirmación al usuario.
+
+    Args:
+        id (int): El ID del registro de búsqueda a confirmar eliminación.
+
+    Returns:
+        str: El HTML renderizado de la página de confirmación, o redirige si no es admin
+             o si el registro no existe.
+    """
+
     if session.get('rol') != 'admin':
         return "Acceso denegado", 403
 
@@ -838,7 +1217,20 @@ def confirmar_eliminacion(id):
 #  ----------------------- BARRA DE PROGRESO  ----------------------------------------------------
 # Función para actualizar el estado del proceso
 def actualizar_estado(mensaje, porcentaje, en_proceso=False, completado=False):
-    """ Actualiza el estado del proceso con un mensaje, porcentaje de progreso y otros indicadores. """
+    """
+    Actualiza el estado global del proceso en segundo plano.
+
+    Esta función se utiliza para comunicar el progreso de una tarea de larga duración
+    (como la descarga y procesamiento de guías) al hilo principal de la aplicación web.
+    Utiliza un bloqueo (lock) para asegurar que solo un hilo pueda modificar
+    la variable global `estado_proceso` a la vez, evitando condiciones de carrera.
+
+    Args:
+        mensaje (str): Un mensaje descriptivo del estado actual (ej. "Descargando guías...").
+        porcentaje (int): El porcentaje de progreso de la tarea (0-100).
+        en_proceso (bool, optional): Indica si la tarea está actualmente en ejecución. Por defecto es False.
+        completado (bool, optional): Indica si la tarea ha finalizado con éxito. Por defecto es False.
+    """
     global estado_proceso
     with lock:
         estado_proceso["mensaje"] = mensaje
@@ -849,12 +1241,32 @@ def actualizar_estado(mensaje, porcentaje, en_proceso=False, completado=False):
 
 @app.route('/estado_proceso')
 def estado_proceso_api():
-    """ Devuelve el estado actual del proceso en formato JSON. """
+    """
+    Endpoint API que devuelve el estado actual del proceso en formato JSON.
+
+    Esta ruta es consultada periódicamente por el frontend (JavaScript) para
+    obtener las actualizaciones del estado del proceso en segundo plano y
+    actualizar la barra de progreso en la interfaz de usuario.
+    Utiliza un bloqueo (lock) para asegurar un acceso seguro a la variable global.
+
+    Returns:
+        json: Un objeto JSON que contiene el diccionario `estado_proceso` actual.
+    """
     with lock:
         return jsonify(estado_proceso)
 
 @app.route('/progreso')
 def progreso():
+    """
+    Renderiza la página HTML que muestra la barra de progreso.
+
+    Obtiene las preferencias de usuario (idioma, tamaño de texto, modo daltonismo)
+    de la sesión y las pasa a la plantilla `progreso.html` para asegurar que la
+    interfaz se muestre según las preferencias del usuario.
+
+    Returns:
+        str: El HTML renderizado de la plantilla `progreso.html`.
+    """
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
@@ -866,9 +1278,22 @@ def progreso():
 
 
 #  ----------------------- GENERAR INFORMES ----------------------------------------------------
-# No es necesario seleccionar la API para generar el informe
 @app.route('/generar_informe', methods=['POST'])
 def generar_informe():
+    """
+    Maneja la solicitud POST para generar un informe específico.
+
+    Determina el tipo de informe a generar basándose en la sesión,
+    obtiene los parámetros necesarios (año, archivo Excel) del formulario
+    si son requeridos por el informe, e inicia un hilo separado para
+    ejecutar el script de generación del informe. Redirige a la página
+    principal después de iniciar el proceso.
+
+    Returns:
+        redirect | tuple: Redirige a la página principal si el hilo se inicia correctamente,
+                          o retorna un mensaje de error y código HTTP si faltan campos
+                          o si ocurre una excepción.
+    """
     try:
         
         informe_seleccionado = determinar_tipo_informe()
@@ -894,8 +1319,20 @@ def generar_informe():
     except Exception as e:
         return f"Error al generar el informe: {str(e)}", 500
 
-# Función que ejecutará el script en segundo plano con el año seleccionado
 def ejecutar_informe(anho,informe,excel):
+    """
+    Ejecuta el script de generación de informe general en un hilo separado.
+
+    Construye la ruta al script `general.py` y lo ejecuta como un subproceso
+    de Python, pasando el año, el tipo de informe y la ruta del archivo Excel
+    como argumentos de línea de comandos. Imprime mensajes de éxito o error
+    en la consola.
+
+    Args:
+        anho (str): El año seleccionado para el informe (puede ser una cadena vacía si no aplica).
+        informe (str): El código del informe a generar (ej. "6_1", "6_4").
+        excel (str): La ruta al archivo Excel (puede ser una cadena vacía si no aplica).
+    """
     try:
         ruta_informe = os.path.join(os.getcwd(), 'generar_informe', 'general.py')
         if not os.path.exists(ruta_informe):
@@ -908,8 +1345,19 @@ def ejecutar_informe(anho,informe,excel):
     except Exception as e:
         print(f"Error en el hilo de ejecución: {str(e)}")
         
-# Función que devuelve el informe a descargar en función de la URL
 def determinar_tipo_informe():
+    """
+    Determina el código del informe a generar basándose en el valor de la sesión 'origen'.
+
+    El valor de 'origen' se establece en las rutas de las páginas de informe
+    para indicar qué informe se seleccionó. Esta función mapea ese valor a
+    un código de informe específico.
+
+    Returns:
+        str: El código del informe seleccionado (ej. "1_19", "6_1", "6_4").
+             Retorna una cadena vacía si el valor de sesión 'origen' no coincide
+             con ningún informe conocido.
+    """
     origen = session.get('origen', '')  # Obtiene el valor de sesión
     if origen == "pagina_informe_1_19":
         return "1_19"
@@ -932,6 +1380,15 @@ def determinar_tipo_informe():
 # Ruta para la página donde se realiza la descarga del informe
 @app.route('/pagina_informe_1_19')
 def pagina_informe_1_19():
+    """
+    Renderiza la página para generar el informe 1.19 (Policy on sustainability).
+
+    Establece el origen de la solicitud en la sesión como "1_19" y renderiza
+    la plantilla `pagina_informe_1_19.html` pasando las preferencias del usuario.
+
+    Returns:
+        str: El HTML renderizado de la plantilla `pagina_informe_1_19.html`.
+    """
     session['origen'] = 'pagina_informe_1_19'
 
     idioma = session.get('idioma', 'es')
@@ -955,6 +1412,15 @@ def pagina_informe_1_19():
 #  ----------------------- INFORME 6_1 --------------------------------------
 @app.route('/pagina_informe_6_1')
 def pagina_informe_6_1():
+    """
+    Renderiza la página para generar el informe 6.1 (Sustainability courses).
+
+    Establece el origen de la solicitud en la sesión como "6_1" y renderiza
+    la plantilla `pagina_informe_6_1.html` pasando las preferencias del usuario.
+
+    Returns:
+        str: El HTML renderizado de la plantilla `pagina_informe_6_1.html`.
+    """
     session['origen'] = 'pagina_informe_6_1'
 
     idioma = session.get('idioma', 'es')
@@ -991,6 +1457,15 @@ def pagina_informe_6_1():
          
 @app.route('/selecciona_anho_informe', methods=['GET', 'POST'])
 def selecciona_anho_informe():
+    """
+    Renderiza la página para seleccionar el año del informe.
+
+    Obtiene los años disponibles desde la base de datos y renderiza la plantilla
+    `selecciona_anho_informe.html`, incluyendo las preferencias del usuario.
+
+    Returns:
+        str: HTML renderizado de la plantilla `selecciona_anho_informe.html`.
+    """
     origen = session.get('origen', '')  # Obtiene el valor de sesión
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
@@ -1018,6 +1493,15 @@ def selecciona_anho_informe():
 
 @app.route('/pagina_informe_6_2')
 def pagina_informe_6_2():
+    """
+    Renderiza la página para generar el informe 6.2 (Total Number of Courses/Subjects Offered).
+
+    Establece el origen de la solicitud en la sesión como "6_2" y renderiza
+    la plantilla `pagina_informe_6_2.html` pasando las preferencias del usuario.
+
+    Returns:
+        str: El HTML renderizado de la plantilla `pagina_informe_6_2.html`.
+    """
     session['origen'] = 'pagina_informe_6_2'
 
     idioma = session.get('idioma', 'es')
@@ -1055,6 +1539,15 @@ def pagina_informe_6_2():
 
 @app.route('/pagina_informe_6_3')
 def pagina_informe_6_3():
+    """
+    Renderiza la página para generar el informe 6.3 (Ratio of sustainability courses to total courses/subjects).
+
+    Establece el origen de la solicitud en la sesión como "6_3" y renderiza
+    la plantilla `pagina_informe_6_3.html` pasando las preferencias del usuario.
+
+    Returns:
+        str: El HTML renderizado de la plantilla `pagina_informe_6_3.html`.
+    """
     session['origen'] = 'pagina_informe_6_3'
 
     idioma = session.get('idioma', 'es')
@@ -1091,6 +1584,15 @@ def pagina_informe_6_3():
 # Ruta para la página donde se realiza la descarga del informe
 @app.route('/pagina_informe_6_4')
 def pagina_informe_6_4():
+    """
+    Renderiza la página para generar el informe 6.4 (Total Research Funds Dedicated to Sustainability Research (in US Dollars)).
+
+    Establece el origen de la solicitud en la sesión como "6_4" y renderiza
+    la plantilla `pagina_informe_6_4.html` pasando las preferencias del usuario.
+
+    Returns:
+        str: El HTML renderizado de la plantilla `pagina_informe_6_4.html`.
+    """
     session['origen'] = 'pagina_informe_6_4'
 
     idioma = session.get('idioma', 'es')
@@ -1123,8 +1625,18 @@ def pagina_informe_6_4():
                                daltonismo=daltonismo,
                                nuevos_anhos_disponibles=nuevos_anhos_disponibles)  
 
-# Función para verificar si el archivo tiene una extensión permitida
 def allowed_file(filename):
+    """
+    Verifica si el archivo tiene una extensión permitida.
+
+    Permite únicamente archivos Excel con extensiones '.xlsx' o '.xls'.
+
+    Args:
+        filename (str): Nombre del archivo.
+
+    Returns:
+        bool: True si la extensión es válida, False en caso contrario.
+    """
     ALLOWED_EXTENSIONS = {'xlsx', 'xls'}  # Extensiones permitidas
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -1132,6 +1644,14 @@ def allowed_file(filename):
 
 @app.route('/subir_excel', methods=['POST'])
 def subir_excel():
+    """
+    Procesa la subida de un archivo Excel para el informe 6.4.
+
+    Guarda el archivo en el sistema y almacena su ruta en la sesión.
+
+    Returns:
+        str: Redirección a la página del informe con mensajes de éxito o error.
+    """
     idioma = session.get('idioma', 'es')  
 
     if 'archivo_excel' not in request.files:
@@ -1160,6 +1680,12 @@ def subir_excel():
 
 @app.route('/cancelar_fichero')
 def cancelar_fichero():
+    """
+    Elimina la ruta del archivo Excel previamente subido desde la sesión.
+
+    Returns:
+        str: Redirección a la página del informe 6.4.
+    """
     # Limpiar la clave de la ruta del archivo en la sesión
     session.pop('ruta_excel', None)  # Eliminar 'ruta_excel' de la sesión si existe
     return redirect(url_for('pagina_informe_6_4'))  # Redirigir a la página de informe 6_4
@@ -1169,6 +1695,15 @@ def cancelar_fichero():
 # Ruta para la página donde se realiza la descarga del informe
 @app.route('/pagina_informe_6_7')
 def pagina_informe_6_7():
+    """
+    Renderiza la página para generar el informe 6.7 (Number of scholarly publications on sustainability).
+
+    Establece el origen de la solicitud en la sesión como "6_7" y renderiza
+    la plantilla `pagina_informe_6_7.html` pasando las preferencias del usuario.
+
+    Returns:
+        str: El HTML renderizado de la plantilla `pagina_informe_6_7.html`.
+    """
     session['origen'] = 'pagina_informe_6_7'
 
     idioma = session.get('idioma', 'es')
@@ -1205,6 +1740,15 @@ def pagina_informe_6_7():
 # Ruta para la página donde se realiza la descarga del informe
 @app.route('/pagina_informe_6_8')
 def pagina_informe_6_8():
+    """
+    Renderiza la página para generar el informe 6.7 (Number of scholarly publications on sustainability).
+
+    Establece el origen de la solicitud en la sesión como "6_7" y renderiza
+    la plantilla `pagina_informe_6_7.html` pasando las preferencias del usuario.
+
+    Returns:
+        str: El HTML renderizado de la plantilla `pagina_informe_6_7.html`.
+    """
     session['origen'] = 'pagina_informe_6_8'
 
     idioma = session.get('idioma', 'es')
@@ -1241,6 +1785,13 @@ def pagina_informe_6_8():
 #  ----------------------- CREACIÓN DEL SUPERADMIN -------------------------------------- 
 
 def crear_admin_por_defecto():
+    """
+    Crea un usuario superadministrador por defecto si no existe.
+
+    Este usuario se crea con nombre de usuario 'admin' y una contraseña obtenida
+    desde una variable de entorno `ADMIN_PASSWORD`.
+
+    """
     admin_username = "admin"
     admin_password = os.getenv("ADMIN_PASSWORD")
 
@@ -1265,6 +1816,17 @@ def crear_admin_por_defecto():
 
 @app.route('/cambiar_a_admin', methods=['GET', 'POST'])
 def cambiar_a_admin():
+    """
+    Permite a un administrador cambiar el rol de otro usuario.
+
+    Solo los administradores pueden acceder a esta vista. Además, únicamente el usuario
+    superadministrador (`admin`) puede degradar a otros administradores al rol de usuario.
+
+    Renderiza la plantilla `cambiar_a_admin.html` y gestiona el formulario de cambio de rol.
+
+    Returns:
+        str: HTML renderizado o redirección según el resultado del proceso.
+    """
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)

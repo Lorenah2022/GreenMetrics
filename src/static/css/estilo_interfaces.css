@@ -120,6 +120,8 @@ label {
     margin-top: 5px; /* Espacio arriba */
     display: inline-block; /* Para que se ajuste al contenido */
     transition: all 0.3s ease; /* Suaviza el efecto al aparecer */
+    text-align: center;
+
 }
 
 .mensaje_errores:hover {

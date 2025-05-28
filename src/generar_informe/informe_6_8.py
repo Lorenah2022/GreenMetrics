@@ -1,32 +1,14 @@
-import csv
-import io
+
 import json
 import os
 import sys
-import time
-import tkinter as tk
-from tkinter import messagebox, simpledialog, ttk
-from io import BytesIO
-
-
 import re
-import pandas as pd
+from nbformat import convert
 import requests
-import xml.etree.ElementTree as ET
-from bs4 import BeautifulSoup
 from docx import Document
-from docx.shared import Inches
-from docx2pdf import convert
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
 from dotenv import load_dotenv
-from fpdf import FPDF
-from PyPDF2 import PdfReader
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select, WebDriverWait
-from selenium.webdriver.chrome.options import Options
+from config import cargar_configuracion
+
 
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -34,7 +16,6 @@ SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SRC_DIR not in sys.path:
     sys.path.append(SRC_DIR)
 
-from config import cargar_configuracion
 
 # Variable global
 base_dir = os.path.dirname(__file__)
@@ -52,7 +33,19 @@ carpeta = os.path.join(base_dir, 'UBU_Verde_informes')
 
 
 def extraer_anhos(year_range):
-    """Extrae los años desde un string tipo '2022-2025' y devuelve una lista [2022, 2023, 2024, 2025]."""
+    """
+    Extrae los años académicos desde un string tipo 'YYYY-YYYY'.
+
+    Convierte un rango de años como "2022-2025" en una lista de strings
+    representando años académicos, como ["2022-23", "2023-24", "2024-25"].
+
+    Args:
+        year_range (str): El rango de años en formato "YYYY-YYYY".
+
+    Returns:
+        list[str]: Una lista de strings representando los años académicos.
+                   Retorna una lista vacía si el formato de entrada no coincide.
+    """
     match = re.match(r"(\d{4})-(\d{4})", year_range)
     if match:
         inicio, fin = int(match.group(1)), int(match.group(2))
@@ -64,7 +57,20 @@ def extraer_anhos(year_range):
 
 
 def buscar_ficheros(cursos, carpeta):
-    """Busca archivos que terminan con _AÑO-AÑO.docx dentro de la carpeta."""
+    """
+    Busca archivos .docx dentro de una carpeta que contengan nombres de cursos.
+
+    Busca archivos que terminen con .docx y cuyo nombre contenga el formato
+    del curso (ej. "2022-23" o "202223").
+
+    Args:
+        cursos (list[str]): Lista de strings representando los años académicos (ej. ["2022-23", "2023-24"]).
+        carpeta (str): La ruta a la carpeta donde buscar los archivos.
+
+    Returns:
+        list[tuple[str, str]]: Una lista de tuplas, donde cada tupla contiene
+                                el nombre del curso encontrado y la ruta completa al archivo.
+    """
     archivos_encontrados = []
     for archivo in os.listdir(carpeta):
         for curso in cursos:
@@ -76,7 +82,15 @@ def buscar_ficheros(cursos, carpeta):
 
 
 def leer_contenido_docx(ruta_fichero):
-    """Lee el texto de un archivo Word (.docx)."""
+    """
+    Lee el texto completo de un archivo Word (.docx).
+
+    Args:
+        ruta_fichero (str): La ruta completa al archivo .docx.
+
+    Returns:
+        str | None: El texto extraído del documento, o None si ocurre un error.
+    """
     try:
         doc = Document(ruta_fichero)
         texto = "\n".join([p.text for p in doc.paragraphs])
@@ -87,7 +101,20 @@ def leer_contenido_docx(ruta_fichero):
 
 
 def fill_description(doc, year_range, resultados):
-    """Llena la descripción con los datos de eventos sostenibles por año."""
+    """
+    Llena la sección de descripción en el documento Word con los resultados del conteo.
+
+    Calcula el total y el promedio de actividades sostenibles por año y construye
+    un texto descriptivo que incluye estos datos y el desglose por año académico.
+    Reemplaza el párrafo que contiene "Description:" con este texto.
+
+    Args:
+        doc (Document): Objeto Document de python-docx.
+        year_range (str): El rango de años utilizado para la búsqueda (ej. "2022-2025").
+        resultados (dict[str, int]): Un diccionario donde las claves son los años
+                                     académicos y los valores son el número de
+                                     actividades sostenibles encontradas para ese año.
+    """
     
     # Calcular el número total de años y el total de actividades sostenibles
     num_years = len(resultados)
@@ -126,57 +153,100 @@ def fill_description(doc, year_range, resultados):
 
 
 
-# API para buscar en los ficheros en funcion del años introducidos, que saque el numeor de actividades sostenibles.
-
-  
+ 
 def extraer_datos_llm(texto):
-        if not texto:
-            return None
+    """
+    Extrae el número de actividades relacionadas con la sostenibilidad de un texto usando un modelo LLM.
 
-        body = {
-            "model": myModel,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "You will receive a text containing a list of activities. "
-                        "Identify which activities are related to environmental sustainability. "
-                        "Count only those activities and return the number.\n\n"
-                        "Return ONLY the number, with no extra text, explanation, or formatting."
-                    )
-                },
-                {
-                    "role": "user",
-                    "content": texto
-                }
-            ],
-            "temperature": 0.2
-        }
+    Envía el texto a un modelo de lenguaje a través de una API y le pide que cuente
+    las actividades relacionadas con los ODS.
+
+    Args:
+        texto (str): El texto que contiene la lista de actividades.
+
+    Returns:
+        int | None: El número de actividades sostenibles encontradas, o None si
+                    no se pudo extraer un número válido de la respuesta del modelo.
+    """
+    if not texto:
+       return None
+
+    body = {
+        "model": myModel,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You will receive a text containing a list of activities. "
+                    "Identify which activities are related to environmental sustainability, based on if they align with: "
+                    "1. Fin de la pobreza\n"
+                    "2. Hambre cero\n"
+                    "3. Salud y bienestar\n"
+                    "4. Educación de calidad\n"
+                    "5. Igualdad de género\n"
+                    "6. Agua limpia y saneamiento\n"
+                    "7. Energía asequible y no contaminante\n"
+                    "8. Trabajo decente y crecimiento económico\n"
+                    "9. Industria, innovación e infraestructura\n"
+                    "10. Reducción de las desigualdades\n"
+                    "11. Ciudades y comunidades sostenibles\n"
+                    "12. Producción y consumo responsables\n"
+                    "13. Acción por el clima\n"
+                    "14. Vida submarina\n"
+                    "15. Vida de ecosistemas terrestres\n"
+                    "16. Paz, justicia e instituciones sólidas\n"
+                    "17. Alianzas para lograr los objetivos\n"
+                    "Count only those activities and return the number.\n\n"
+                    "Return ONLY the number, with no extra text, explanation, or formatting."
+                )
+            },
+            {
+                "role": "user",
+                "content": texto
+            }
+        ],
+        "temperature": 0.2
+    }
         
-        body_json = json.dumps(body)
+    body_json = json.dumps(body)
 
-        response = requests.post(
-            f"{base_url}/v1/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            data=body_json
-        )    
+    response = requests.post(
+        f"{base_url}/v1/chat/completions",
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        data=body_json
+    )    
 
-        #  Obtener respuesta limpia
-        message_content = response.json().get('choices', [{}])[0].get('message', {}).get('content', '').strip()
+    #  Obtener respuesta limpia
+    message_content = response.json().get('choices', [{}])[0].get('message', {}).get('content', '').strip()
         
-        #  Eliminar `</think>` si existe
-        if "</think>" in message_content:
-            message_content = message_content.split("</think>")[-1].strip()
-        match = re.search(r"\d+", message_content)
-        if match:
-            return int(match.group())
-        print(f"⚠️ No se encontró un número válido en la respuesta del modelo:\n{message_content}")
-        return None
+    #  Eliminar `</think>` si existe
+    if "</think>" in message_content:
+        message_content = message_content.split("</think>")[-1].strip()
+    match = re.search(r"\d+", message_content)
+    if match:
+        return int(match.group())
+    print(f"No se encontró un número válido en la respuesta del modelo:\n{message_content}")
+    return None
 
        
 
 def procesar_documentos(rango_cursos, carpeta):
-    """Procesa los documentos en el rango de cursos y extrae la información relevante."""
+    """
+    Procesa los documentos de Word para un rango de años académicos y extrae el conteo de actividades sostenibles.
+
+    Busca los archivos de Word correspondientes a los años académicos especificados,
+    lee el contenido de cada archivo y utiliza `extraer_datos_llm` para contar
+    las actividades sostenibles en cada uno.
+
+    Args:
+        rango_cursos (str): El rango de años en formato "YYYY-YYYY".
+        carpeta (str): La ruta a la carpeta que contiene los archivos de Word.
+
+    Returns:
+        dict[str, int]: Un diccionario donde las claves son los años académicos
+                        y los valores son el número de actividades sostenibles
+                        encontradas para ese año.
+    """
     cursos = extraer_anhos(rango_cursos)
     archivos = buscar_ficheros(cursos, carpeta)
     
@@ -188,19 +258,27 @@ def procesar_documentos(rango_cursos, carpeta):
 
     return resultados
   
-
-
-
-      
+     
 
 # Función que genera el informe
 def generar(anho):
-    print(anho)
+    """
+    Genera el informe Word y PDF para el reporte 6.8.
+
+    Procesa los documentos de Word para el rango de años especificado, obtiene
+    los resultados del conteo de actividades sostenibles, carga una plantilla
+    de documento Word, reemplaza el encabezado y la descripción con los datos
+    obtenidos, guarda el documento modificado como .docx, y luego intenta
+    convertirlo a .pdf.
+
+    Args:
+        anho (str): El rango de años en formato "YYYY-YYYY" para el cual se
+                    generará el informe.
+    """
+    
     resultados = procesar_documentos(anho, carpeta)
 
-    print(resultados)  
 
-    """Genera el informe en memoria sin leer de Excel."""
     template_path = os.path.join(base_dir, 'informe_general.docx')
    
     if not os.path.exists(template_path):

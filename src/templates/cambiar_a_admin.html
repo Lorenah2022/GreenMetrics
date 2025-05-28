@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ session.get('idioma', 'es') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cambiar Rol a Administrador</title>
+    <title>{{textos.rol_cambiar}}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_cards.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/estilo_interfaces.css') }}">
@@ -28,7 +28,7 @@
     </div>
 
     <div class="main-content">
-        <h2>Cambiar Rol a Administrador</h2>
+        <h2>{{textos.rol_cambiar}}</h2>
         <form method="POST">
             <div>
                 <label for="email">{{textos.correo_usuario}}</label>
@@ -48,5 +48,36 @@
         
         <a href="{{ url_for('perfil') }}" class="btn btn-secondary">{{textos.cancelar}}</a>
     </div>
+    <div id="successModal" class="mensaje_errores" style="display: none;">
+        <div class="modal-content">
+            <p id="modalMessage"></p>
+        </div>
+    </div>
+
+
+
+    <script>
+    // Mostrar el modal si hay mensajes flash
+    document.addEventListener('DOMContentLoaded', () => {
+            const flashMessage = "{{ get_flashed_messages()[0] if get_flashed_messages() else '' }}";
+            if (flashMessage) {
+                const modal = document.getElementById('successModal');
+                const modalMessage = document.getElementById('modalMessage');
+                modalMessage.textContent = flashMessage;
+                modal.style.display = 'block';
+
+                // Auto-cierre a los 5 segundos
+                setTimeout(() => {
+                    closeModal();
+                }, 5000);
+            }
+        });
+
+        function closeModal() {
+            const modal = document.getElementById('successModal');
+            modal.style.display = 'none';
+        }
+</script>
+
 </body>
 </html>

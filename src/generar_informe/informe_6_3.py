@@ -20,14 +20,21 @@ SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SRC_DIR not in sys.path:
     sys.path.append(SRC_DIR)
 
-# ------------------ CONSULTA LA BASE DE DATOS ------------------
 def verificar_tipos_programa(anio, db_path):
     """
     Verifica si existen datos para los tipos de programa 'grado' y 'master' en un año dado.
     Además, cuenta cuántos programas son sostenibles ('sí' en la columna 'sostenible').
 
+    Parámetros:
+    - anio (int o str): El año que se desea verificar.
+    - db_path (str): Ruta a la base de datos SQLite.
+
     Retorna:
     - dict: Información de existencia, cantidad total y cantidad sostenible para cada tipo.
+            Ejemplo: {
+                'grado': {'existe': True, 'cantidad_total': 100, 'cantidad_sostenible': 50},
+                'master': {'existe': False, 'cantidad_total': 0, 'cantidad_sostenible': 0}
+            }
     """
     if not os.path.exists(db_path):
         raise FileNotFoundError(f"No se encontró la base de datos en {db_path}")
@@ -70,35 +77,40 @@ def verificar_tipos_programa(anio, db_path):
 
 
 
-# ------------------ AÑADE HIPERVINCULO ------------------
-# Función que crea un hipervínculo, para el correcto funcionamiento de los enlaces
 def add_hyperlink(paragraph, url, text):
-    """Agrega un hipervínculo a un párrafo en un documento Word."""
+    """
+    Agrega un hipervínculo a un párrafo en un documento Word.
+
+    Parámetros:
+    - paragraph (Paragraph): El objeto Paragraph al que se añadirá el hipervínculo.
+    - url (str): La URL del hipervínculo.
+    - text (str): El texto visible del hipervínculo.
+    """
     # Limpiar espacios no rompibles y espacios finales/iniciales
     url = url.replace("\u00A0", "").strip()
 
     # Crear la relación del hipervínculo en el documento
     part = paragraph._element
-    rId = paragraph._parent.part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
+    rid = paragraph._parent.part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
 
     hyperlink = OxmlElement("w:hyperlink")
-    hyperlink.set(qn("r:id"), rId)
+    hyperlink.set(qn("r:id"), rid)
 
     # Crear el run del enlace
     new_run = OxmlElement("w:r")
-    rPr = OxmlElement("w:rPr")
+    rpr = OxmlElement("w:rPr")
 
     # Color azul
     color = OxmlElement("w:color")
     color.set(qn("w:val"), "0000FF")  # Azul
-    rPr.append(color)
+    rpr.append(color)
 
     # Subrayado manual
     u = OxmlElement("w:u")
     u.set(qn("w:val"), "single")  # Subrayado
-    rPr.append(u)
+    rpr.append(u)
 
-    new_run.append(rPr)
+    new_run.append(rpr)
 
     # Agregar el texto visible
     text_element = OxmlElement("w:t")
@@ -109,9 +121,19 @@ def add_hyperlink(paragraph, url, text):
     part.append(hyperlink)
 
 
-# ------------------AÑADE LA DESCRIPCIÓN ------------------
 def insert_table_after_paragraph(paragraph: Paragraph, doc: Document, rows: int, cols: int) -> Table:
-    """Inserta una tabla justo después de un párrafo dado y con estilo visual."""
+    """
+    Inserta una tabla justo después de un párrafo dado y con estilo visual.
+
+    Parámetros:
+    - paragraph (Paragraph): El párrafo después del cual se insertará la tabla.
+    - doc (Document): El objeto Document de python-docx.
+    - rows (int): Número de filas para la nueva tabla.
+    - cols (int): Número de columnas para la nueva tabla.
+
+    Retorna:
+    - Table: El objeto Table recién creado.
+    """
     # Insertar un párrafo nuevo justo después del original
     new_para_element = OxmlElement("w:p")
     paragraph._element.addnext(new_para_element)
@@ -128,7 +150,19 @@ def insert_table_after_paragraph(paragraph: Paragraph, doc: Document, rows: int,
     return table
 
 def fill_description(doc, anho, total, total_sustainable):
-    """Llena la sección de descripción con texto, tabla y texto adicional."""
+    """
+    Llena la sección de descripción del documento con texto, una tabla y texto adicional.
+
+    Busca el párrafo que contiene "Description:" y lo reemplaza, insertando
+    una tabla con el año, total de cursos sostenibles y total de cursos,
+    seguida de un párrafo con el ratio calculado.
+
+    Parámetros:
+    - doc (Document): El objeto Document de python-docx.
+    - anho (str): El año a incluir en la descripción y tabla.
+    - total (int): El número total de cursos a incluir en la descripción y tabla.
+    - total_sustainable (int): El número total de cursos sostenibles a incluir.
+    """
     description_text = (
         "Ratio of sustainability courses to total courses/subjects"
     )
@@ -175,9 +209,18 @@ def fill_description(doc, anho, total, total_sustainable):
 
             break
 
-# ------------------ INSERTAR LOS ENLACES DESPUES DEL ENCABEZADO ------------------
 def insert_paragraph_after(paragraph: Paragraph, text: str = "", style: str = None) -> Paragraph:
-    """Inserta un nuevo párrafo justo después del párrafo dado."""
+    """
+    Inserta un nuevo párrafo justo después del párrafo dado.
+
+    Parámetros:
+    - paragraph (Paragraph): El párrafo después del cual se insertará el nuevo párrafo.
+    - text (str, optional): El texto inicial para el nuevo párrafo. Por defecto es "".
+    - style (str, optional): El estilo para el nuevo párrafo. Por defecto es None.
+
+    Retorna:
+    - Paragraph: El objeto Paragraph recién creado.
+    """
     new_p = OxmlElement("w:p")
     paragraph._element.addnext(new_p)
     new_paragraph = Paragraph(new_p, paragraph._parent)
@@ -188,9 +231,21 @@ def insert_paragraph_after(paragraph: Paragraph, text: str = "", style: str = No
     return new_paragraph
 
    
-# ------------------ GENERA EL INFORME ------------------
-# Función que genera el informe
+
 def generar_informe(total_general, anio, sostenible_total):
+    """
+    Genera el informe Word y PDF para el reporte 6.3.
+
+    Utiliza una plantilla .docx, reemplaza el encabezado, añade hipervínculos,
+    llena la sección de descripción con una tabla y el ratio calculado,
+    y guarda el resultado en formato .docx y .pdf.
+
+    Parámetros:
+    - total_general (int): El número total de cursos/materias a incluir en el informe.
+    - anio (str): El año para el cual se genera el informe.
+    - sostenible_total (int): El número total de cursos sostenibles a incluir.
+    """
+    
     base_dir = os.path.dirname(__file__)  # Directorio base donde se encuentra el script
     template_path = os.path.join(base_dir, 'informe_general.docx')
     
@@ -246,77 +301,100 @@ def generar_informe(total_general, anio, sostenible_total):
  
  
 
-# ------------------ ELIMINA LAS TABLAS VACÍAS ------------------
 def eliminar_tablas_vacias(doc):
-    """Elimina las tablas vacías (sin contenido) del documento Word."""
-    tablas_a_eliminar = []
+    """
+    Elimina las tablas vacías (sin contenido) del documento Word.
 
+    Parámetros:
+    - doc (Document): El objeto Document de python-docx.
+    """
     for table in doc.tables:
-        vacia = True
-        for row in table.rows:
-            for cell in row.cells:
-                if cell.text.strip():  # Si hay contenido en alguna celda
-                    vacia = False
-                    break
-            if not vacia:
-                break
-        if vacia:
-            tablas_a_eliminar.append(table)
-
-    for table in tablas_a_eliminar:
-        tbl_element = table._element
-        tbl_element.getparent().remove(tbl_element)
-
-    print(f"Se eliminaron {len(tablas_a_eliminar)} tabla(s) vacía(s).")
+        if es_tabla_vacia(table):
+            eliminar_tabla(table)
 
 
+def es_tabla_vacia(table):
+    """
+    Verifica si una tabla no contiene texto en ninguna de sus celdas.
 
-# ------------------ FUNCIÓN PRINCIPAL ------------------
+    Parámetros:
+    - table (Table): El objeto Table de python-docx.
+
+    Retorna:
+    - bool: True si la tabla está vacía, False en caso contrario.
+    """
+    for row in table.rows:
+        if fila_contiene_texto(row):
+            return False
+    return True
+
+
+def fila_contiene_texto(row):
+    """
+    Verifica si alguna celda de una fila contiene texto.
+
+    Parámetros:
+    - row: El objeto Row de python-docx.
+
+    Retorna:
+    - bool: True si la fila contiene texto, False en caso contrario.
+    """
+    return any(cell.text.strip() for cell in row.cells)
+
+
+def eliminar_tabla(table):
+    """
+    Elimina una tabla del documento.
+
+    Parámetros:
+    - table (Table): El objeto Table de python-docx a eliminar.
+    """
+    tbl_element = table._element
+    tbl_element.getparent().remove(tbl_element)
+
+
+
 def generar(anio):
+    """
+    Función principal para iniciar la generación del informe 6.3.
+
+    Verifica la existencia de datos de 'grado' y 'master' para el año especificado
+    en la base de datos, incluyendo el conteo de cursos sostenibles.
+    Si los datos están completos, calcula los totales y genera el informe Word y PDF.
+    Si faltan datos, informa al usuario.
+
+    Parámetros:
+    - anio (str): El año para el cual se desea generar el informe.
+    """
+    
     base_dir = os.path.dirname(__file__)  # carpeta actual (\src)
     db_path = os.path.join(base_dir, '..', 'instance', 'busqueda.db')
     db_path = os.path.abspath(db_path)    
-    max_intentos = 2
-    intento = 0
+  
+    resultados = verificar_tipos_programa(anio, db_path)
 
-    while intento < max_intentos:
-        resultados = verificar_tipos_programa(anio, db_path)
+    if all(info['existe'] for info in resultados.values()):
+        print("\nDatos completos. Generando informe...")
 
-        if all(info['existe'] for info in resultados.values()):
-            print("\nDatos completos. Generando informe...")
+        total_grado = resultados['grado']['cantidad_total']
+        total_master = resultados['master']['cantidad_total']
+        total_general = total_grado + total_master
 
-            total_grado = resultados['grado']['cantidad_total']
-            total_master = resultados['master']['cantidad_total']
-            total_general = total_grado + total_master
+        sostenible_grado = resultados['grado']['cantidad_sostenible']
+        sostenible_master = resultados['master']['cantidad_sostenible']
+        sostenible_total = sostenible_grado + sostenible_master
 
-            sostenible_grado = resultados['grado']['cantidad_sostenible']
-            sostenible_master = resultados['master']['cantidad_sostenible']
-            sostenible_total = sostenible_grado + sostenible_master
+        print(f"Total de cursos: {total_general}")
+        print(f"Cursos sostenibles: {sostenible_total}")
 
-            print(f"Total de cursos: {total_general}")
-            print(f"Cursos sostenibles: {sostenible_total}")
+        # Aquí podrías pasar también los datos de sostenibles a tu informe si quieres.
+        generar_informe(total_general, anio,sostenible_total)
 
-            # Aquí podrías pasar también los datos de sostenibles a tu informe si quieres.
-            generar_informe(total_general, anio,sostenible_total)
-
-            break
-        else:
-            print("\nFaltan datos para alguno de los tipos de programa:\n")
-            for tipo, info in resultados.items():
-                if not info['existe']:
-                    print(f"- No hay datos para '{tipo}'. Se procede a descargar las guías docentes.")
-
-                    # Ejecutar scripts de descarga
-                    ruta_grados = os.path.join(os.getcwd(), 'sostenibilidad', 'grados.py')
-                    subprocess.run(['python3', ruta_grados, anio, tipo], check=True)
-
-                    ruta_guias = os.path.join(os.getcwd(), 'sostenibilidad', 'guias_docentes.py')
-                    subprocess.run(['python3', ruta_guias, anio, tipo], check=True)
-
-        intento += 1
-
+            
     else:
-        print("\nAún faltan datos después de intentar descargar. Revisa manualmente.")
+        for tipo, info in resultados.items():
+            if not info['existe']:
+                print(f"- No hay datos para '{tipo}'. Descargue los datos faltantes.")
 
 
 

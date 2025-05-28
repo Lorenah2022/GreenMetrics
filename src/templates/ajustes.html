@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html >
+<html lang="{{ session.get('idioma', 'es') }}">
+
     <head>
         <meta charset="UTF-8">
         <title>Ajustes</title>
@@ -59,7 +60,7 @@
         <!-- Formulario de cambio de idioma -->
         <form action="{{ url_for('ajustes') }}" method="POST">
             <div class="form-group">
-                <label for="idioma">{{ textos.sel_idioma}}:</label>
+                <label for="idioma">{{ textos.sel_idioma}}</label>
                 <select name="idioma" id="idioma" class="input-tamano">
                     <option value="en" {% if session.get('idioma') == 'en' %}selected{% endif %}>{{ textos.ingles}}</option>
                     <option value="es" {% if session.get('idioma') == 'es' %}selected{% endif %}>{{ textos.espanol}}</option>

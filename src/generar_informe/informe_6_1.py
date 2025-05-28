@@ -17,32 +17,42 @@ if SRC_DIR not in sys.path:
 
 # Función que crea un hipervínculo, para el correcto funcionamiento de los enlaces
 def add_hyperlink(paragraph, url, text):
-    """Agrega un hipervínculo a un párrafo en un documento Word."""
+    """
+    Agrega un hipervínculo a un párrafo en un documento Word.
+
+    Configura el estilo del hipervínculo (color azul y subrayado) y añade el texto
+    visible del enlace al párrafo.
+
+    Args:
+        paragraph (docx.text.paragraph.Paragraph): El objeto párrafo de python-docx.
+        url (str): La URL de destino del hipervínculo.
+        text (str): El texto visible del hipervínculo.
+    """
     # Limpiar espacios no rompibles y espacios finales/iniciales
     url = url.replace("\u00A0", "").strip()
 
     # Crear la relación del hipervínculo en el documento
     part = paragraph._element
-    rId = paragraph._parent.part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
+    rid = paragraph._parent.part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
 
     hyperlink = OxmlElement("w:hyperlink")
-    hyperlink.set(qn("r:id"), rId)
+    hyperlink.set(qn("r:id"), rid)
 
     # Crear el run del enlace
     new_run = OxmlElement("w:r")
-    rPr = OxmlElement("w:rPr")
+    rpr = OxmlElement("w:rPr")
 
     # Color azul
     color = OxmlElement("w:color")
     color.set(qn("w:val"), "0000FF")  # Azul
-    rPr.append(color)
+    rpr.append(color)
 
     # Subrayado manual
     u = OxmlElement("w:u")
     u.set(qn("w:val"), "single")  # Subrayado
-    rPr.append(u)
+    rpr.append(u)
 
-    new_run.append(rPr)
+    new_run.append(rpr)
 
     # Agregar el texto visible
     text_element = OxmlElement("w:t")
@@ -54,7 +64,17 @@ def add_hyperlink(paragraph, url, text):
 
 
 def generar(anho):
-   
+    """
+    Genera el informe 6.1 sobre cursos relacionados con medio ambiente y sostenibilidad.
+
+    Combina datos de dos archivos Excel, extrae la información relevante,
+    llena una plantilla de documento Word con los datos y una descripción,
+    y guarda el resultado como archivo Word y PDF.
+
+    Args:
+        anho (str): El año académico para el cual se genera el informe.
+    """
+
     base_dir = os.path.dirname(__file__)  # Directorio base donde se encuentra el script
     template_path = os.path.join(base_dir, 'informe_general.docx')
     
@@ -79,6 +99,19 @@ def generar(anho):
 
     
     def extract_data_from_excel(path):
+        """
+        Extrae datos de un archivo Excel, filtrando por la columna 'Competences'.
+
+        Args:
+            path (str): La ruta al archivo Excel.
+
+        Returns:
+            tuple: Una tupla que contiene:
+                   - list: Encabezados de las columnas.
+                   - list: Datos extraídos como lista de listas.
+                   - str: El año proporcionado a la función `generar`.
+                   - int: El número de filas después del filtrado.
+        """
         df = pd.read_excel(path)
         df = df[df['Competences'].notna()]
         headers = df.columns.tolist() if headers_custom is None else headers_custom
@@ -86,6 +119,17 @@ def generar(anho):
     
    
     def fill_table(doc, headers, data):
+        """
+        Llena la primera tabla encontrada en un documento Word con los datos proporcionados.
+
+        Limpia la tabla existente, ajusta el número de columnas, inserta encabezados
+        y luego inserta los datos, manejando la creación de hipervínculos para URLs.
+
+        Args:
+            doc (docx.document.Document): El objeto documento de python-docx.
+            headers (list): Una lista de cadenas para usar como encabezados de la tabla.
+            data (list): Una lista de listas, donde cada sublista representa una fila de datos.
+        """
         for table in doc.tables:
             # Limpiar la tabla existente
             for row in table.rows:
@@ -117,6 +161,18 @@ def generar(anho):
 
     
     def fill_description(doc, year, num_courses):
+        """
+        Rellena el párrafo de descripción en el documento Word con información sobre el año
+        y el número total de cursos.
+
+        Busca un párrafo que contenga "Description:" y lo reemplaza con el texto
+        de descripción formateado.
+
+        Args:
+            doc (docx.document.Document): El objeto documento de python-docx.
+            year (str): El año académico.
+            num_courses (int): El número total de cursos.
+        """
         description_text = f"The list above includes courses directly related to sustainability offered by the University in the {year} academic year.\n\nTotal number of courses with sustainability embedded for courses running in {year}: {num_courses}"
         for para in doc.paragraphs:
             if "Description:" in para.text:
@@ -138,7 +194,18 @@ def generar(anho):
     print(f"Documento PDF generado en: {output_pdf_path}")
     
     
-def combinar_excels(debug=False):
+def combinar_excels():
+    """
+    Combina datos de dos archivos Excel ('datos_asignaturas_masteres.xlsx' y 'resultados_guias.xlsx').
+
+    Realiza un merge basado en códigos de asignatura, renombra una columna,
+    filtra filas donde la columna 'Competences' no está vacía, selecciona
+    columnas específicas y guarda el resultado en un nuevo archivo Excel
+    llamado 'resultados_guias_con_link.xlsx'.
+
+    Returns:
+        str: La ruta absoluta al archivo Excel combinado generado.
+    """
     base_dir = os.path.dirname(__file__)
     excel_courses = os.path.join(base_dir, '../sostenibilidad/data/datos_asignaturas_masteres.xlsx')
     excel_guias = os.path.join(base_dir, '../sostenibilidad/data/resultados_guias.xlsx')
@@ -157,7 +224,9 @@ def combinar_excels(debug=False):
 
     # Realizar el merge basado en la clave correcta
     df_combined = df_guias.merge(df_courses[['codigo_asignatura', 'basic_link']], 
-                                 left_on="Code", right_on="codigo_asignatura", how="right")
+                                 left_on="Code", 
+                                 right_on="codigo_asignatura", 
+                                 how="right")
 
     # Renombrar la columna "basic_link" a "Link"
     df_combined.rename(columns={"basic_link": "Link"}, inplace=True)

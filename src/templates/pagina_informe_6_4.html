@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ session.get('idioma', 'es') }}">
 <head>
   <meta charset="UTF-8">
   <title>Informe 6_4</title>
@@ -48,7 +48,7 @@
         {% if session.get('ruta_excel') %}
             <p>Archivo subido: {{ session.get('ruta_excel') }}</p>
 
-            <form method="GET" action="{{ url_for('pagina_pedir_IA') }}">
+            <form method="GET" action="{{ url_for('pagina_pedir_ia') }}">
                 <button type="submit" class="btn-option">{{ textos.aceptar }}</button>
             </form>
             <div class="button-container">

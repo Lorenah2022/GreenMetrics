@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ session.get('idioma', 'es') }}">
 <head>
   <meta charset="UTF-8">
   <title>Informe 1_19</title>
@@ -35,7 +35,7 @@
     <div class="main-content">
         <h2>{{  textos.informe_1_19 }}</h2>
         
-        <form method="POST" action="{{ url_for('pagina_pedir_IA') }}">
+        <form method="POST" action="{{ url_for('pagina_pedir_ia') }}">
             <button type="submit" class="btn-option">{{ textos.descargar_informe}}</button>
         </form>
 

@@ -49,12 +49,26 @@ myModel = config["model"]
 
 # Función para reemplazar texto en un documento de Word
 def replace_text_in_docx(doc, old_text, new_text):
+    """
+    Reemplaza todas las ocurrencias de un texto antiguo con un texto nuevo en un documento de Word.
+
+    Args:
+        doc (docx.document.Document): El objeto documento de python-docx.
+        old_text (str): El texto a buscar y reemplazar.
+        new_text (str): El texto con el que se reemplazará.
+    """
     for paragraph in doc.paragraphs:
         if old_text in paragraph.text:
             paragraph.text = new_text
 
 def remove_text_from_docx(doc, text_to_remove):
-    """Elimina cualquier párrafo que contenga el texto especificado."""
+    """
+    Elimina cualquier párrafo que contenga el texto especificado en un documento de Word.
+
+    Args:
+        doc (docx.document.Document): El objeto documento de python-docx.
+        text_to_remove (str): El texto a buscar en los párrafos para eliminarlos.
+    """
     for paragraph in doc.paragraphs:
         if text_to_remove in paragraph.text:
             paragraph.text = ""  # Eliminar el texto
@@ -62,6 +76,16 @@ def remove_text_from_docx(doc, text_to_remove):
 
 
 def obtener_html(url):
+    """
+    Obtiene el contenido HTML de una URL dada.
+
+    Args:
+        url (str): La URL de la página web.
+
+    Returns:
+        str or None: El contenido HTML de la página si la solicitud fue exitosa (código 200),
+                     de lo contrario, None.
+    """
     try:
         response = requests.get(url, timeout=10)
         return response.text if response.status_code == 200 else None
@@ -69,101 +93,136 @@ def obtener_html(url):
         return None
         
 def limpiar_html(html_content):
+    """
+    Limpia el contenido HTML extrayendo solo el texto y limitándolo a un número de palabras.
+
+    Args:
+        html_content (str): El contenido HTML a limpiar.
+
+    Returns:
+        str: El texto limpio y truncado.
+    """
     soup = BeautifulSoup(html_content, "html.parser")
     texto_limpio = soup.get_text(separator="\n", strip=True)
     return " ".join(texto_limpio.split()[:3500])
     
 def extraer_datos_llm(html_texto, url):
-        if not html_texto:
-            return None
+    """
+    Extrae datos estructurados de texto HTML utilizando un modelo de lenguaje grande (LLM).
 
-        body = {
-            "model": myModel,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "Extract and return only the following fields:\n"
-                        "1. Building: Extracted from Objeto. If the text mentions 'buildings', return 'All university buildings'.\n"
-                        "2. Contract: Extracted from the CPV section, including the text after the number [CPV Code]. This will be the detailed description of the contract, e.g., 'Servicios de reparación y mantenimiento de equipos eléctricos de edificios'.\n"
-                        "3. Maintenance Type:  Return the information following the format X(Y), where X is the type and Y the number\n"
-                            "Base on the type of contract chose to which one it belongs."
-                            "1. Preventive Maintenance --- Routine maintenance tasks performed to prevent equipment failures and extend the lifespan of building systems\n"
-                            "2. Corrective Maintenance --- Reactive maintenance tasks performed to correct issues as they arise\n"
-                            "3. Predictive Maintenance --- Maintenance activities based on the analysis of data and condition monitoring to predict and prevent potential failures \n"
-                            "4. Routine Maintenance --- Regular, often daily or weekly, maintenance tasks that ensure the smooth operation and cleanliness of campus buildings\n"
-                            "5. Emergency Maintenance --- Urgent maintenance tasks performed in response to unexpected breakdowns or safety hazards that require immediate attention\n"
-                            "6. Deferred Maintenance --- Maintenance tasks that are postponed due to budget constraints, resource limitations, or scheduling issues\n"
-                            "7. Sustainable Maintenance --- Maintenance activities focused on sustainability and energy efficiency to reduce environmental impact\n"
-                            "8. Capital Maintenance --- Large-scale maintenance projects that involve significant investments and are often planned and budgeted for in advance \n"
-                            "9. Seasonal Maintenance --- Maintenance tasks specific to certain times of the year to prepare buildings for seasonal changes \n"
-                            "10. Compliance Maintenance --- Maintenance activities conducted to ensure compliance with legal, safety, and regulatory standards\n"
-                            "11. Custodial Maintenance --- Daily cleaning and janitorial tasks that maintain the cleanliness and hygiene of campus buildings\n"
-                            "12. Technical Maintenance --- Specialized maintenance tasks that require technical knowledge and skills\n"
-                            "13. Grounds Maintenance --- Maintenance tasks focused on the outdoor areas and landscaping of the campus \n"
-                            "14. Building Services Maintenance --- Maintenance of essential building services and utilities \n"                     
-                        
-                        "4. File: Extracted from 'Expediente'. If the text appears in the format 'Expediente X UBU/2023/0018 (Company Name)', return only 'UBU/2023/0018' and ignore the company name inside parentheses.\n"
-                        "5. Link:"
-                        "Extract and return only the following fields in a single line, separated by commas in this format:\n"
-                        "Building,Contract,Maintenance Type,File,Link\n"
-                        "Do NOT include extra text (like the format), explanations, or headers.\n"
-                        "Ensure that you return ONLY these five fields in a single line, without extra text."
+    Envía el texto HTML a la API del LLM con instrucciones específicas para extraer
+    campos como Edificio, Contrato, Tipo de Mantenimiento, Expediente y Enlace.
 
-                            )
-                },
-                {
-                    "role": "user",
-                    "content": html_texto
-                }
-            ],
-            "temperature": 0.2
-        }
-        
-        body_json = json.dumps(body)
+    Args:
+        html_texto (str): El texto limpio extraído del HTML.
+        url (str): La URL de origen del HTML.
 
-        response = requests.post(
-            f"{base_url}/v1/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            data=body_json
-        )
+    Returns:
+        dict or None: Un diccionario con los datos extraídos si la API responde correctamente
+                      y los datos tienen el formato esperado, de lo contrario, None.
+    """
+    if not html_texto:
+        return None
 
-        if response.status_code != 200:
-            print(f"Error en la API para {url}: {response.status_code} - {response.text}")
-            return None
-       
+    body = {
+        "model": myModel,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "Extract and return only the following fields:\n"
+                    "1. Building: Extracted from Objeto. If the text mentions 'buildings', return 'All university buildings'.\n"
+                    "2. Contract: Extracted from the CPV section, including the text after the number [CPV Code]. This will be the detailed description of the contract, e.g., 'Servicios de reparación y mantenimiento de equipos eléctricos de edificios'.\n"
+                    "3. Maintenance Type:  Return the information following the format X(Y), where X is the type and Y the number\n"
+                        "Base on the type of contract chose to which one it belongs."
+                        "1. Preventive Maintenance --- Routine maintenance tasks performed to prevent equipment failures and extend the lifespan of building systems\n"
+                        "2. Corrective Maintenance --- Reactive maintenance tasks performed to correct issues as they arise\n"
+                        "3. Predictive Maintenance --- Maintenance activities based on the analysis of data and condition monitoring to predict and prevent potential failures \n"
+                        "4. Routine Maintenance --- Regular, often daily or weekly, maintenance tasks that ensure the smooth operation and cleanliness of campus buildings\n"
+                        "5. Emergency Maintenance --- Urgent maintenance tasks performed in response to unexpected breakdowns or safety hazards that require immediate attention\n"
+                        "6. Deferred Maintenance --- Maintenance tasks that are postponed due to budget constraints, resource limitations, or scheduling issues\n"
+                        "7. Sustainable Maintenance --- Maintenance activities focused on sustainability and energy efficiency to reduce environmental impact\n"
+                        "8. Capital Maintenance --- Large-scale maintenance projects that involve significant investments and are often planned and budgeted for in advance \n"
+                        "9. Seasonal Maintenance --- Maintenance tasks specific to certain times of the year to prepare buildings for seasonal changes \n"
+                        "10. Compliance Maintenance --- Maintenance activities conducted to ensure compliance with legal, safety, and regulatory standards\n"
+                        "11. Custodial Maintenance --- Daily cleaning and janitorial tasks that maintain the cleanliness and hygiene of campus buildings\n"
+                        "12. Technical Maintenance --- Specialized maintenance tasks that require technical knowledge and skills\n"
+                        "13. Grounds Maintenance --- Maintenance tasks focused on the outdoor areas and landscaping of the campus \n"
+                        "14. Building Services Maintenance --- Maintenance of essential building services and utilities \n"
 
-        #  Obtener respuesta limpia
-        message_content = response.json().get('choices', [{}])[0].get('message', {}).get('content', '').strip()
-        
-        #  Eliminar `</think>` si existe
-        if "</think>" in message_content:
-            message_content = message_content.split("</think>")[-1].strip()
+                    "4. File: Extracted from 'Expediente'. If the text appears in the format 'Expediente X UBU/2023/0018 (Company Name)', return only 'UBU/2023/0018' and ignore the company name inside parentheses.\n"
+                    "5. Link:"
+                    "Extract and return only the following fields in a single line, separated by commas in this format:\n"
+                    "Building,Contract,Maintenance Type,File,Link\n"
+                    "Do NOT include extra text (like the format), explanations, or headers.\n"
+                    "Ensure that you return ONLY these five fields in a single line, without extra text."
 
-        #  Procesar como CSV usando `csv.reader`
-        try:
-            csv_reader = csv.reader(io.StringIO(message_content))  # Convertir texto a archivo virtual
-            contenido_separado = next(csv_reader)  # Obtener la primera (y única) línea
-            
-        except Exception as e:
-            print(f"Error al leer CSV: {e}\nTexto recibido:\n{message_content}")
-            return None
-
-        #  Validar si tiene los 5 elementos requeridos
-        if len(contenido_separado) >= 5:
-            return {
-                "Building": contenido_separado[0].strip(),
-                "Contract": contenido_separado[1].strip(),
-                "Maintenance Type": contenido_separado[2].strip(),
-                "File": contenido_separado[3].strip(),
-                "Link": url
+                        )
+            },
+            {
+                "role": "user",
+                "content": html_texto
             }
-        else:
-            print(f" Error: La respuesta de la IA no tiene el formato correcto.\nRecibido:\n{message_content}")
-            return None
+        ],
+        "temperature": 0.2
+    }
+
+    body_json = json.dumps(body)
+
+    response = requests.post(
+        f"{base_url}/v1/chat/completions",
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        data=body_json
+    )
+
+    if response.status_code != 200:
+        print(f"Error en la API para {url}: {response.status_code} - {response.text}")
+        return None
+
+
+    #  Obtener respuesta limpia
+    message_content = response.json().get('choices', [{}])[0].get('message', {}).get('content', '').strip()
+
+    #  Eliminar `</think>` si existe
+    if "</think>" in message_content:
+        message_content = message_content.split("</think>")[-1].strip()
+
+    #  Procesar como CSV usando `csv.reader`
+    try:
+        csv_reader = csv.reader(io.StringIO(message_content))  # Convertir texto a archivo virtual
+        contenido_separado = next(csv_reader)  # Obtener la primera (y única) línea
+
+    except Exception as e:
+        print(f"Error al leer CSV: {e}\nTexto recibido:\n{message_content}")
+        return None
+
+    #  Validar si tiene los 5 elementos requeridos
+    if len(contenido_separado) >= 5:
+        return {
+            "Building": contenido_separado[0].strip(),
+            "Contract": contenido_separado[1].strip(),
+            "Maintenance Type": contenido_separado[2].strip(),
+            "File": contenido_separado[3].strip(),
+            "Link": url
+        }
+    else:
+        print(f" Error: La respuesta de la IA no tiene el formato correcto.\nRecibido:\n{message_content}")
+        return None
         
 def ejecutar_API(enlaces):
-    """Ejecuta la API sobre los enlaces y devuelve los resultados en memoria."""
+    """
+    Ejecuta la extracción de datos utilizando la API del LLM para una lista de enlaces.
+
+    Obtiene el HTML de cada enlace, lo limpia, extrae los datos con el LLM,
+    filtra los resultados nulos y elimina duplicados basados en el campo "File".
+
+    Args:
+        enlaces (list): Una lista de URLs para procesar.
+
+    Returns:
+        list: Una lista de diccionarios, donde cada diccionario contiene los datos
+              extraídos para un enlace único.
+    """
     # Paso 1: Obtener el HTML de los enlaces y extraer los datos
     resultados = []
     for enlace in enlaces:
@@ -191,7 +250,20 @@ def ejecutar_API(enlaces):
     return list(resultados_filtrados_unicos)
 
 def initialize_table(doc, headers):
-    """Inicializa la tabla en el documento de Word con los encabezados."""
+    """
+    Inicializa la primera tabla encontrada en el documento de Word con los encabezados especificados.
+
+    Asegura que la tabla tenga suficientes columnas para los encabezados y establece el texto
+    de la primera fila con los nombres de los encabezados.
+
+    Args:
+        doc (docx.document.Document): El objeto documento de python-docx.
+        headers (list): Una lista de cadenas para usar como encabezados de la tabla.
+
+    Returns:
+        docx.table._Table or None: El objeto tabla inicializado si se encuentra una tabla,
+                                   de lo contrario, None.
+    """
     for table in doc.tables:
         while len(table.columns) < len(headers):
             table.add_column(width=Inches(1.5))
@@ -201,7 +273,18 @@ def initialize_table(doc, headers):
     return None
 
 def fill_table(table, headers, data):
-    """Llena la tabla con encabezados y datos, asegurando que no haya duplicados."""
+    """
+    Llena una tabla de Word con datos, incluyendo encabezados y manejo de hipervínculos.
+
+    Elimina las filas existentes (excepto la de encabezados si ya existe) y agrega
+    nuevas filas con los datos proporcionados. Si un valor de dato es una URL,
+    crea un hipervínculo en la celda.
+
+    Args:
+        table (docx.table._Table): El objeto tabla de python-docx a llenar.
+        headers (list): Una lista de cadenas que representan los encabezados de la tabla.
+        data (list): Una lista de listas o diccionarios, donde cada elemento representa una fila de datos.
+    """
     
     # Eliminar todas las filas existentes si la tabla está vacía
     while len(table.rows) > 0:
@@ -225,7 +308,17 @@ def fill_table(table, headers, data):
  
 # Función que crea un hipervínculo, para el correcto funcionamiento de los enlaces
 def add_hyperlink(paragraph, url, text):
-    """Agrega un hipervínculo a un párrafo en un documento Word."""
+    """
+    Agrega un hipervínculo a un párrafo en un documento Word.
+
+    Crea la relación del hipervínculo, configura el estilo (color azul y subrayado)
+    y añade el texto visible del enlace al párrafo.
+
+    Args:
+        paragraph (docx.text.paragraph.Paragraph): El objeto párrafo de python-docx.
+        url (str): La URL de destino del hipervínculo.
+        text (str): El texto visible del hipervínculo.
+    """
     # Crear la relación del hipervínculo en el documento
     part = paragraph._element
     rId = paragraph._parent.part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
@@ -259,7 +352,17 @@ def add_hyperlink(paragraph, url, text):
      
 # Función que genera el informe
 def generar_informe(datos):
-    """Genera el informe en memoria sin leer de Excel."""
+    """
+    Genera el informe en formato Word y PDF utilizando una plantilla y los datos proporcionados.
+
+    Carga la plantilla 'informe_general.docx', reemplaza texto específico,
+    inicializa y llena una tabla con los datos, guarda el documento Word
+    y lo convierte a PDF.
+
+    Args:
+        datos (list): Una lista de diccionarios, donde cada diccionario contiene
+                      los datos para una fila de la tabla del informe.
+    """
     base_dir = os.path.dirname(__file__)
     template_path = os.path.join(base_dir, 'informe_general.docx')
     print("Datos recibidos ", datos)
@@ -303,13 +406,32 @@ def generar_informe(datos):
 
 
 def traducir_texto(texto):
-    """Traduce un texto del inglés al español."""
+    """
+    Traduce un texto del inglés al español utilizando Google Translator.
+
+    Args:
+        texto (str): El texto en inglés a traducir.
+
+    Returns:
+        str: El texto traducido al español.
+    """
     return GoogleTranslator(source="en", target="es").translate(texto)
 
 
   
 def obtener_tipos_mantenimiento(ruta_docx):
-    """Lee el archivo DOCX y extrae los tipos de mantenimiento de la última columna."""
+    """
+    Lee un archivo DOCX y extrae los tipos de mantenimiento de la última columna de cada tabla.
+
+    Asume que la última columna contiene una cadena con tipos de mantenimiento
+    separados por comas.
+
+    Args:
+        ruta_docx (str): La ruta al archivo DOCX.
+
+    Returns:
+        list: Una lista de cadenas únicas que representan los tipos de mantenimiento encontrados.
+    """
     doc = Document(ruta_docx)
     tipos_mantenimiento = set()
     
@@ -322,6 +444,20 @@ def obtener_tipos_mantenimiento(ruta_docx):
     return list(tipos_mantenimiento)
   
 def ejecutar_busquedas(ruta_docx):
+    """
+    Ejecuta búsquedas en un portal de contratación basadas en los tipos de mantenimiento
+    extraídos de un documento DOCX.
+
+    Obtiene los tipos de mantenimiento del DOCX, los traduce al español y realiza
+    búsquedas en el portal web utilizando Selenium para cada tipo traducido,
+    además de una búsqueda general por 'mantenimiento'.
+
+    Args:
+        ruta_docx (str): La ruta al archivo DOCX que contiene los tipos de mantenimiento.
+
+    Returns:
+        list: Una lista de URLs encontradas durante las búsquedas.
+    """
     tipos_mantenimiento = obtener_tipos_mantenimiento(ruta_docx)
     resultados_totales = []
     
@@ -337,6 +473,19 @@ def ejecutar_busquedas(ruta_docx):
 
 
 def buscar(mantenimiento):  
+    """
+    Realiza una búsqueda en el portal de contratación de la UBU utilizando Selenium.
+
+    Navega a la página de búsqueda avanzada, llena el campo "Objeto" con el término
+    de mantenimiento, marca la casilla de organismos dependientes y hace clic en buscar.
+    Extrae los enlaces de los resultados encontrados.
+
+    Args:
+        mantenimiento (str): El término de mantenimiento a buscar.
+
+    Returns:
+        list: Una lista de URLs de los resultados de la búsqueda.
+    """
     # El navegador no muestra su interfaz gráfica.
     chrome_options = Options()
     chrome_options.add_argument("--headless")  # Habilita el modo headless
@@ -398,6 +547,16 @@ def buscar(mantenimiento):
     
     
 def generar():
+    """
+    Función principal para generar el informe 1.19.
+
+    Coordina el proceso completo:
+    1. Obtiene la ruta del documento DOCX de mantenimiento de edificios.
+    2. Ejecuta búsquedas en el portal de contratación basadas en los tipos de mantenimiento
+       encontrados en el DOCX.
+    3. Ejecuta la API del LLM sobre los enlaces encontrados para extraer datos estructurados.
+    4. Genera el informe final en formato Word y PDF con los datos extraídos.
+    """
     docx_path =os.path.join(base_dir, 'Campus_Building_Maintenance.docx')
     enlaces= ejecutar_busquedas(docx_path)
     datos = ejecutar_API(enlaces)

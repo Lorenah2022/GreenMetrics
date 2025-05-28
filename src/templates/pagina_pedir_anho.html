@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html >
+<html lang="{{ session.get('idioma', 'es') }}">
 <head>
     <meta charset="UTF-8">
     <title>Introducir años</title>
@@ -48,7 +48,6 @@
             width: auto;
             padding: 10px;
             animation: slideDown 0.5s ease-in-out; /* Animación de entrada */
-            border: 2px solid red; /* Borde temporal para depuración */
 
         }
         
@@ -67,16 +66,17 @@
         }
         
         .flash.info {
-            background-color: #f8d7da; /* Fondo rojo claro */
-            color: #721c24; /* Texto rojo oscuro */
-            border-left: 8px solid #dc3545; /* Borde grueso rojo oscuro */
+            background-color: #d1ecf1; /* Fondo azul claro */
+            color: #0c5460;            /* Texto azul oscuro */
+            border-left: 8px solid #17a2b8; /* Borde azul */
         }
-        
+
         .flash.success {
-            background-color: #f8d7da; /* Fondo rojo claro */
-            color: #721c24; /* Texto rojo oscuro */
-            border-left: 8px solid #dc3545; /* Borde grueso rojo oscuro */
+            background-color: #d4edda; /* Fondo verde claro */
+            color: #155724;            /* Texto verde oscuro */
+            border-left: 8px solid #28a745; /* Borde verde */
         }
+
         
         .flash.error {
             background-color: #f8d7da; /* Fondo rojo claro */

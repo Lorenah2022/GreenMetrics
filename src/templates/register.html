@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<html >
 <html lang="{{ session.get('idioma', 'es') }}">
 
     <meta charset="UTF-8">
@@ -38,7 +37,8 @@
             </div>
             <div class="form-group">
                 <label for="email">{{textos.correo}}</label>
-                <input type="email" id="email" name="email" required>
+                <input type="email" id="email" name="email" required  oninvalid="setMensajePersonalizado(this)"
+           oninput="this.setCustomValidity('')">
             </div>
             <div class="form-group">
                 <label for="password">{{textos.contrasenha}}</label>
@@ -90,15 +90,15 @@
     </script>
 
     <script>
-    function setMensajePersonalizado(input) {
-        const idioma = document.documentElement.lang || 'es';  
+        function setMensajePersonalizado(input) {
+            const idioma = document.documentElement.lang || 'es';  
 
-        const mensaje = idioma === 'en'
-            ? 'Please enter a valid email address.'
-            : 'Por favor, introduce una dirección de correo válida.';
+            const mensaje = idioma === 'en'
+                ? 'Please enter a valid email address.'
+                : 'Por favor, introduce una dirección de correo válida.';
 
-        input.setCustomValidity(mensaje);
-    }
+            input.setCustomValidity(mensaje);
+        }
     </script>
 
 

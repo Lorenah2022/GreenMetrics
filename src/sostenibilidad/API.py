@@ -11,6 +11,17 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import app, Busqueda, db  
 from sqlalchemy import text
 
+"""
+Este script procesa guías docentes en formato PDF para extraer información sobre asignaturas,
+incluyendo su nombre, grado/máster, código y competencias curriculares de sostenibilidad.
+Utiliza una API externa para identificar competencias de sostenibilidad basándose en
+Objetivos de Desarrollo Sostenible (ODS) predefinidos. Los datos extraídos y clasificados
+se guardan luego en un archivo Excel y se actualizan en una base de datos.
+
+El script espera archivos PDF en una estructura de directorio específica y requiere
+la configuración de la API (URL base, clave API, modelo) cargada desde un archivo .env.
+"""
+
 
 # Configurar la base de datos manualmente si es necesario
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")  # O el nombre que tengas en .env

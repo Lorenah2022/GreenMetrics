@@ -13,8 +13,20 @@ if not os.path.exists(ruta_data):
 else:
     print(f"Carpeta 'data' ya existe en: {ruta_data}")
 
-# Función para obtener el contenido HTML de una página
 def obtener_html(host, path):
+    """
+    Recupera el contenido HTML de una página web usando HTTP/1.1 sobre HTTPS.
+
+    Args:
+        host (str): El nombre de host del sitio web (ej. "www.ubu.es").
+        path (str): La ruta a la página específica (ej. "/grados-ordenados-por-ramas-de-conocimiento").
+
+    Returns:
+        str: El contenido HTML de la página como una cadena decodificada en UTF-8.
+
+    Raises:
+        Exception: Si la solicitud HTTP falla (el código de estado no es 200).
+    """
     conn = http.client.HTTPSConnection(host)
     conn.request("GET", path)
     response = conn.getresponse()
@@ -23,8 +35,19 @@ def obtener_html(host, path):
     else:
         raise Exception(f"Error al obtener la página: {response.status}")
 
-# Función para procesar los enlaces
 def procesar_enlaces(host, path, filtro_incluir, filtro_excluir, archivo_salida):
+    """
+    Extrae enlaces de una URL dada, los filtra basándose en criterios de inclusión y exclusión,
+    convierte los enlaces relativos a absolutos y guarda los resultados en un archivo Excel.
+
+    Args:
+        host (str): El nombre de host del sitio web.
+        path (str): La ruta a la página específica.
+        filtro_incluir (list[str]): Una lista de cadenas; los enlaces deben contener al menos una de ellas.
+        filtro_excluir (list[str]): Una lista de cadenas; los enlaces no deben contener ninguna de ellas.
+        archivo_salida (str): El nombre del archivo Excel de salida (ej. "enlaces_filtrados_grados_ubu.xlsx").
+                              Este archivo se guardará en el directorio 'data'.
+    """
     # Verificar si la carpeta de salida existe antes de intentar guardar el archivo
     if not os.path.exists(ruta_data):
         print(f"Error: La carpeta de salida no existe: {ruta_data}")

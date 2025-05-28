@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ session.get('idioma', 'es') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -137,7 +137,7 @@
             {% elif origen == 'pagina_informe_6_8'%}
                 <h3>{{textos.informe_6_8}} </h3>
             {% endif %}
-            <form id="informeForm" method="POST" action="{% if origen == 'pagina_informe_6_8' %}{{ url_for('pagina_pedir_IA') }}{% else %}{{ url_for('generar_informe') }} {% endif %}">
+            <form id="informeForm" method="POST" action="{% if origen == 'pagina_informe_6_8' %}{{ url_for('pagina_pedir_ia') }}{% else %}{{ url_for('generar_informe') }} {% endif %}">
                 {% if origen == 'pagina_informe_6_1' or origen == 'pagina_informe_6_2'   or origen == 'pagina_informe_6_3' %}
                         <label for="anho">{{textos.anho}}:</label>
                         <select name="anho" id="anho" class="form-control" required>
