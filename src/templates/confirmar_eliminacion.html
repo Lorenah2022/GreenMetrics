@@ -14,22 +14,7 @@
 {% if daltonismo %}modo-daltonismo{% endif %}">
 
     <!-- Barra de navegación -->
-    <div class="navbar">
-        <h1>Greenmetrics</h1>
-        <div class="dropdown">
-            <button>≡</button>
-            <div class="dropdown-content">
-                <a href="{{ url_for('perfil') }}">{{ textos.perfil }}</a>
-                <a href="{{ url_for('ajustes') }}">{{ textos.ajustes }}</a>
-                {% if session.get('idioma') == 'es' %}
-                    <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#realizar-una-b%C3%BAsqueda ">Manual</a>
-                {% else %}
-                    <a href="https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#perform-a-search ">Manual</a>
-                {% endif %}
-                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion }}</a>
-            </div>
-        </div>
-    </div>
+    {% include 'navbar.html' %}
 
     <div class="main-content">
         <h2>{{textos.confirmar_eliminacion}}</h2>

@@ -164,18 +164,23 @@ def pagina_principal():
 
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#p%C3%A1gina-principal"
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#home-page"
+
     # Comprobar si el usuario está autenticado
     if 'user_id' not in session:
         return render_template('pagina_principal.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido para visitantes
+                               tamano_texto=tamano_texto,daltonismo=daltonismo,manual_url=manual_url)  # Contenido para visitantes
     else:
         rol = session['rol']
         return render_template('pagina_principal.html', 
                                rol=rol, 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol     
+                               tamano_texto=tamano_texto,daltonismo=daltonismo,manual_url=manual_url)  # Contenido según el rol     
 
 # Ruta principal: Login
 @app.route('/login', methods=['GET', 'POST'])
@@ -213,7 +218,7 @@ def login():
         # ✅ Restaurar idioma desde la URL si se pasó como argumento
         idioma = session.get('idioma') or request.args.get('idioma', 'es') 
         session['idioma'] = idioma  
-
+   
     return render_template('login.html',google_client_id=google_client_id,textos=textos[idioma])
 
 
@@ -243,7 +248,7 @@ def register():
     """
     if request.method != 'POST':
         idioma = session.get('idioma', 'es')
-        return render_template('register.html', idioma=idioma)
+        return render_template('register.html', idioma=idioma,textos=textos[idioma])
 
     username = request.form.get('username', '').strip()
     email = request.form.get('email', '').strip()
@@ -253,23 +258,23 @@ def register():
     error = validar_contrasena(password)
     if error:
         flash(mensajes_flash[idioma]['contrasena_incorrecta'], 'error')
-        return render_template('register.html', idioma=idioma)
+        return render_template('register.html', idioma=idioma,textos=textos[idioma])
 
     if is_form_incomplete(username, email, password):
         flash(mensajes_flash[idioma]['campos_incompletos'], 'error')
-        return render_template('register.html', idioma=idioma)
+        return render_template('register.html', idioma=idioma,textos=textos[idioma])
 
     if is_password_mismatch(password, confirm_password):
         flash(mensajes_flash[idioma]['contrasenas_no_coinciden'], 'error')
-        return render_template('register.html', idioma=idioma)
+        return render_template('register.html', idioma=idioma,textos=textos[idioma])
 
     existing_user, existing_email = is_username_or_email_taken(username, email)
     if existing_user:
         flash(mensajes_flash[idioma]['usuario_existente'], 'error')
-        return render_template('register.html', idioma=idioma)
+        return render_template('register.html', idioma=idioma,textos=textos[idioma])
     if existing_email:
         flash(mensajes_flash[idioma]['email_existente'], 'error')
-        return render_template('register.html', idioma=idioma)
+        return render_template('register.html', idioma=idioma,textos=textos[idioma])
 
     try:
         create_user(username, email, password)
@@ -281,7 +286,7 @@ def register():
         flash(mensajes_flash[idioma]['error_guardar'] + str(e), 'error')
         print(f"Error al guardar el usuario: {str(e)}")
 
-    return render_template('register.html', idioma=idioma)
+    return render_template('register.html', idioma=idioma,textos=textos[idioma])
 
 
 def is_form_incomplete(username, email, password):
@@ -368,7 +373,12 @@ def ajustes():
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)  # Por defecto, el daltonismo está desactivado
-    return render_template('ajustes.html', idioma=idioma, tamano_texto=tamano_texto,  daltonismo=daltonismo,textos=textos[idioma])
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#ajustes"
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#settings"
+
+    return render_template('ajustes.html', idioma=idioma, tamano_texto=tamano_texto,  daltonismo=daltonismo,textos=textos[idioma], manual_url=manual_url)
 
 
 
@@ -642,18 +652,24 @@ def pagina_pedir_anho():
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#descargar-datos-nuevos "
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#download-new-data"
+
+
     # Comprobar si el usuario está autenticado
     if 'user_id' not in session:
         return render_template('pagina_pedir_anho.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido para visitantes
+                               tamano_texto=tamano_texto,daltonismo=daltonismo,manual_url=manual_url)  # Contenido para visitantes
     else:
         rol = session['rol']
         return render_template('pagina_pedir_anho.html', 
                                rol=rol, 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo)  # Contenido según el rol
+                               tamano_texto=tamano_texto,daltonismo=daltonismo,manual_url=manual_url)  # Contenido según el rol
 
 
 
@@ -837,18 +853,25 @@ def pagina_pedir_ia():
     idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#datos-de-la-api"
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#api-data"
+
     # Comprobar si el usuario está autenticado
     if 'user_id' not in session:
         return render_template('pagina_pedir_ia.html', origen=origen,
                                rol='visitante', 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo,anho_seleccionado=session.get('anho'))  # Contenido para visitantes
+                               tamano_texto=tamano_texto,daltonismo=daltonismo,anho_seleccionado=session.get('anho'),manual_url=manual_url
+)  # Contenido para visitantes
     else:
         rol = session['rol']
         return render_template('pagina_pedir_ia.html', origen=origen,
                                rol=rol, 
                                textos=textos[idioma], 
-                               tamano_texto=tamano_texto,daltonismo=daltonismo,anho_seleccionado=session.get('anho'))  # Contenido según el rol
+                               tamano_texto=tamano_texto,daltonismo=daltonismo,anho_seleccionado=session.get('anho'),manual_url=manual_url
+)  # Contenido según el rol
     
 
 def obtener_configuracion_actualizada(config_actual):
@@ -1071,6 +1094,10 @@ def consultar_busquedas():
         "sostenibilidad": "sostenibilidad",
         "nombre_archivo": "nombre_archivo"
     }
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#realizar-una-b%C3%BAsqueda"
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#perform-a-search"
 
 
     return render_template(
@@ -1141,10 +1168,14 @@ def editar_busqueda(id):
         flash(mensajes_flash[idioma]['busqueda_editada'], "succes")
 
         return redirect(url_for('consultar_busquedas'))
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#realizar-una-b%C3%BAsqueda "
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#perform-a-search"
 
     return render_template('editar_busqueda.html', busqueda=busqueda, textos=textos[idioma],
         tamano_texto=tamano_texto,
-        daltonismo=daltonismo)
+        daltonismo=daltonismo,manual_url=manual_url)
     
 @app.route('/eliminar_busqueda/<int:id>', methods=['POST'])
 def eliminar_busqueda(id):
@@ -1193,6 +1224,8 @@ def confirmar_eliminacion(id):
              o si el registro no existe.
     """
 
+    idioma = session.get('idioma', 'es')
+
     if session.get('rol') != 'admin':
         return "Acceso denegado", 403
 
@@ -1201,15 +1234,19 @@ def confirmar_eliminacion(id):
         flash(mensajes_flash[idioma]['busqueda_no_encontrada'], "error")
         return redirect(url_for('consultar_busquedas'))
 
-    idioma = session.get('idioma', 'es')
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
+
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#realizar-una-b%C3%BAsqueda"
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#perform-a-search"
 
     return render_template("confirmar_eliminacion.html",
                            busqueda=busqueda,
                            textos=textos[idioma],
                            tamano_texto=tamano_texto,
-                           daltonismo=daltonismo)
+                           daltonismo=daltonismo,manual_url=manual_url)
 
 
 
@@ -1395,19 +1432,24 @@ def pagina_informe_1_19():
     tamano_texto = session.get('tamano_texto', 'normal')
     daltonismo = session.get('daltonismo', False)
 
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#annual-operation-maintenance-percentage-1_19"
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#annual-operation-maintenance-percentage-1_19"
+
     if 'user_id' not in session:
         return render_template('pagina_informe_1_19.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
-                               daltonismo=daltonismo)
+                               daltonismo=daltonismo,manual_url=manual_url)
     else:
         rol = session['rol']
         return render_template('pagina_informe_1_19.html', 
                                rol=rol, 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
-                               daltonismo=daltonismo)
+                               daltonismo=daltonismo,manual_url=manual_url)
 
 #  ----------------------- INFORME 6_1 --------------------------------------
 @app.route('/pagina_informe_6_1')
@@ -1437,13 +1479,18 @@ def pagina_informe_6_1():
         # Asegúrate de extraer el primer valor de cada tupla
         nuevos_anhos_disponibles.append(row[0])
 
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#number-of-courses-on-environment-and-sustainability-6_1"
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#number-of-courses-on-environment-and-sustainability-6_1"
+
     if 'user_id' not in session:
         return render_template('pagina_informe_6_1.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles, manual_url=manual_url)
     else:
         rol = session['rol']
         return render_template('pagina_informe_6_1.html', 
@@ -1451,7 +1498,7 @@ def pagina_informe_6_1():
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles,manual_url=manual_url)
    
    
          
@@ -1518,13 +1565,19 @@ def pagina_informe_6_2():
         # Asegúrate de extraer el primer valor de cada tupla
         nuevos_anhos_disponibles.append(row[0])
 
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#total-number-of-courses-or-modules-offered-6_2"
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#total-number-of-courses-or-modules-offered-6_2"
+
     if 'user_id' not in session:
         return render_template('pagina_informe_6_2.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles,        manual_url=manual_url
+)
     else:
         rol = session['rol']
         return render_template('pagina_informe_6_2.html', 
@@ -1532,7 +1585,8 @@ def pagina_informe_6_2():
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles,        manual_url=manual_url
+)
         
          
  #  ----------------------- INFORME 6_3 -------------------------------------- 
@@ -1564,13 +1618,18 @@ def pagina_informe_6_3():
         # Asegúrate de extraer el primer valor de cada tupla
         nuevos_anhos_disponibles.append(row[0])
 
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#ratio-of-sustainability-courses-to-total-coursessubjects-6_3"
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#ratio-of-sustainability-courses-to-total-coursessubjects-6_3 "
+
     if 'user_id' not in session:
         return render_template('pagina_informe_6_3.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles,manual_url=manual_url)
     else:
         rol = session['rol']
         return render_template('pagina_informe_6_3.html', 
@@ -1578,7 +1637,7 @@ def pagina_informe_6_3():
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles,manual_url=manual_url)
         
 #  ----------------------- INFORME 6_4 -------------------------------------- 
 # Ruta para la página donde se realiza la descarga del informe
@@ -1608,6 +1667,11 @@ def pagina_informe_6_4():
     for row in anhos_disponibles:
         # Asegúrate de extraer el primer valor de cada tupla
         nuevos_anhos_disponibles.append(row[0])
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#total-research-funds-dedicated-to-sustainability-research-in-us-dollars-6_4"
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#total-research-funds-dedicated-to-sustainability-research-in-us-dollars-6_4 "
+
 
     if 'user_id' not in session:
         return render_template('pagina_informe_6_4.html', 
@@ -1615,7 +1679,7 @@ def pagina_informe_6_4():
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles,manual_url=manual_url)
     else:
         rol = session['rol']
         return render_template('pagina_informe_6_4.html', 
@@ -1623,7 +1687,7 @@ def pagina_informe_6_4():
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)  
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles,manual_url=manual_url)  
 
 def allowed_file(filename):
     """
@@ -1720,13 +1784,18 @@ def pagina_informe_6_7():
         # Asegúrate de extraer el primer valor de cada tupla
         nuevos_anhos_disponibles.append(row[0])
 
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#number-of-scholarly-publications-on-sustainability-6_7 "
+    else:
+        manual_url = " https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#number-of-scholarly-publications-on-sustainability-6_7"
+
     if 'user_id' not in session:
         return render_template('pagina_informe_6_7.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles,manual_url=manual_url)
     else:
         rol = session['rol']
         return render_template('pagina_informe_6_7.html', 
@@ -1734,7 +1803,7 @@ def pagina_informe_6_7():
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles) 
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles,manual_url=manual_url) 
         
 #  ----------------------- INFORME 6_8 -------------------------------------- 
 # Ruta para la página donde se realiza la descarga del informe
@@ -1765,13 +1834,18 @@ def pagina_informe_6_8():
         # Asegúrate de extraer el primer valor de cada tupla
         nuevos_anhos_disponibles.append(row[0])
 
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#number-of-events-on-environment-and-sustainability6_8 "
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#number-of-events-on-environment-and-sustainability6_8  "
+
     if 'user_id' not in session:
         return render_template('pagina_informe_6_8.html', 
                                rol='visitante', 
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles,manual_url=manual_url)
     else:
         rol = session['rol']
         return render_template('pagina_informe_6_8.html', 
@@ -1779,7 +1853,7 @@ def pagina_informe_6_8():
                                textos=textos[idioma], 
                                tamano_texto=tamano_texto, 
                                daltonismo=daltonismo,
-                               nuevos_anhos_disponibles=nuevos_anhos_disponibles)  
+                               nuevos_anhos_disponibles=nuevos_anhos_disponibles,manual_url=manual_url)  
 
 
 #  ----------------------- CREACIÓN DEL SUPERADMIN -------------------------------------- 
@@ -1868,11 +1942,17 @@ def cambiar_a_admin():
             flash(mensajes_flash[idioma]['rol_ya_tiene'], 'info')
 
         return redirect(url_for('perfil'))
+    if idioma == 'es':
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#perfil-administrador "
+    else:
+        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#administrator-profile"
+
 
     return render_template('cambiar_a_admin.html', rol=rol, 
                            textos=textos[idioma], 
                            tamano_texto=tamano_texto, 
-                           daltonismo=daltonismo)
+                           daltonismo=daltonismo,
+                           manual_url=manual_url)
 
 
 

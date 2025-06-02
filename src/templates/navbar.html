@@ -1,0 +1,13 @@
+<div class="navbar">
+    <h1>Greenmetrics</h1>
+    <div class="dropdown">
+        <button>≡</button>
+        <div class="dropdown-content">
+            <a href="{{ url_for('perfil') }}">{{ textos.perfil }}</a>
+            <a href="{{ url_for('ajustes') }}">{{ textos.ajustes }}</a>
+            <a href="{{ manual_url }}">Manual</a>
+
+            <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion }}</a>
+        </div>
+    </div>
+</div>

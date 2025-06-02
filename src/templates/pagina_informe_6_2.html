@@ -12,22 +12,8 @@
 <body class="{% if session.get('tamano_texto') == 'pequeño' %}texto-pequeno{% elif session.get('tamano_texto') == 'grande' %}texto-grande{% else %}texto-mediano{% endif %}">
 
     <!-- Barra de navegación -->
-    <div class="navbar">
-        <h1>Greenmetrics</h1>
-        <div class="dropdown">
-            <button>≡</button>
-            <div class="dropdown-content">
-                <a href="{{ url_for('perfil') }}">{{ textos.perfil }}</a>
-                <a href="{{ url_for('ajustes') }}">{{ textos.ajustes }}</a>
-                {% if session.get('idioma') == 'es' %}
-                    <a href=" https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#total-number-of-courses-or-modules-offered-6_2">Manual</a>
-                {% else %}
-                    <a href=" https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#total-number-of-courses-or-modules-offered-6_2">Manual</a>
-                {% endif %}
-                <a href="{{ url_for('logout') }}">{{ textos.cerrar_sesion }}</a>
-            </div>
-        </div>
-    </div>
+  {% include 'navbar.html' %}
+
 
     <!-- Contenido principal -->
     <div class="main-content">
