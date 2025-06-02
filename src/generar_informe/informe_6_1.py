@@ -7,60 +7,13 @@ from docx.oxml.ns import qn
 import os
 import sys
 
+from helpers import add_hyperlink
 
 SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Agregar `src` al sys.path 
 if SRC_DIR not in sys.path:
     sys.path.append(SRC_DIR)
-
-
-# Función que crea un hipervínculo, para el correcto funcionamiento de los enlaces
-def add_hyperlink(paragraph, url, text):
-    """
-    Agrega un hipervínculo a un párrafo en un documento Word.
-
-    Configura el estilo del hipervínculo (color azul y subrayado) y añade el texto
-    visible del enlace al párrafo.
-
-    Args:
-        paragraph (docx.text.paragraph.Paragraph): El objeto párrafo de python-docx.
-        url (str): La URL de destino del hipervínculo.
-        text (str): El texto visible del hipervínculo.
-    """
-    # Limpiar espacios no rompibles y espacios finales/iniciales
-    url = url.replace("\u00A0", "").strip()
-
-    # Crear la relación del hipervínculo en el documento
-    part = paragraph._element
-    rid = paragraph._parent.part.relate_to(url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', is_external=True)
-
-    hyperlink = OxmlElement("w:hyperlink")
-    hyperlink.set(qn("r:id"), rid)
-
-    # Crear el run del enlace
-    new_run = OxmlElement("w:r")
-    rpr = OxmlElement("w:rPr")
-
-    # Color azul
-    color = OxmlElement("w:color")
-    color.set(qn("w:val"), "0000FF")  # Azul
-    rpr.append(color)
-
-    # Subrayado manual
-    u = OxmlElement("w:u")
-    u.set(qn("w:val"), "single")  # Subrayado
-    rpr.append(u)
-
-    new_run.append(rpr)
-
-    # Agregar el texto visible
-    text_element = OxmlElement("w:t")
-    text_element.text = text
-    new_run.append(text_element)
-
-    hyperlink.append(new_run)
-    part.append(hyperlink)
 
 
 def generar(anho):

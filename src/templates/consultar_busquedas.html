@@ -280,6 +280,8 @@
 
 
     <script>
+        let modalColumnasAbierto = false;
+
         function abrirModalColumnas() {
             modalColumnasAbierto = true;
             document.getElementById("modal").style.display = "flex";
@@ -295,6 +297,25 @@
             document.getElementById('successModal').style.display = 'none';
         }
         
+        function actualizarVisibilidadColumnas() {
+            const checkboxes = document.querySelectorAll('.column-checkbox');
+
+            checkboxes.forEach(cb => {
+                const col = cb.value;
+                const visible = cb.checked;
+
+                document.querySelectorAll(`[data-col="${col}"]`).forEach(el => {
+                    el.style.display = visible ? '' : 'none';
+                });
+
+                document.querySelectorAll(`th[data-col="${col}"]`).forEach(th => {
+                    th.style.display = visible ? '' : 'none';
+                });
+            });
+        }
+
+
+
         // Mostrar el modal de éxito solo si hay un mensaje flash
         document.addEventListener("DOMContentLoaded", function () {
             // Verifica si hay un mensaje flash
@@ -315,26 +336,10 @@
             // Marcar los checkboxes correspondientes
             const checkboxes = document.querySelectorAll('.column-checkbox');
             checkboxes.forEach(cb => {
-                if (selectedColumns.includes(cb.value)) {
-                    cb.checked = true;
-                } else {
-                    cb.checked = false;
-                }
+                cb.checked = selectedColumns.includes(cb.value);
             });
-        
-            // Mostrar u ocultar las columnas basándonos en las selecciones
-            checkboxes.forEach(cb => {
-                const col = cb.value;
-                const visible = cb.checked;
-        
-                document.querySelectorAll(`[data-col="${col}"]`).forEach(el => {
-                    el.style.display = visible ? '' : 'none';
-                });
-        
-                document.querySelectorAll(`th[data-col="${col}"]`).forEach(th => {
-                    th.style.display = visible ? '' : 'none';
-                });
-            });
+
+            actualizarVisibilidadColumnas();
         });
         
         
@@ -354,21 +359,8 @@
             // Almacenar las columnas seleccionadas en localStorage
             localStorage.setItem('selectedColumns', JSON.stringify(selectedColumns));
         
-            // Mostrar u ocultar las columnas según la selección
-            checkboxes.forEach(cb => {
-                const col = cb.value;
-                const visible = cb.checked;
-                
-                document.querySelectorAll(`[data-col="${col}"]`).forEach(el => {
-                    el.style.display = visible ? '' : 'none';
-                });
-        
-                document.querySelectorAll(`th[data-col="${col}"]`).forEach(th => {
-                    th.style.display = visible ? '' : 'none';
-                });
-            });
-        
-            cerrarModal(); // Cierra el modal de columnas al aplicar el filtro
+            actualizarVisibilidadColumnas();
+            cerrarModal();// Cierra el modal de columnas al aplicar el filtro
         }
         
     </script>

@@ -66,50 +66,8 @@
 
     <div class="main-content">
         <h2>{{ textos.tit_user}}</h2>
-                <form method="POST" enctype="multipart/form-data">
-                    {{ form.hidden_tag() }}
-                    
-                    <div>
-                        <label for="username" >{{ textos.usuario}}</label>
-                        {{ form.username(class="form-control", id="username") }}
-                        {% if form.username.errors %}
-                            <div class="mensaje_errores">{{ form.username.errors[0] }}</div>
-                        {% endif %}
-                    </div>
+        {% include "formulario_usuario.html" %}
 
-                    <div >
-                        <label for="email" >{{ textos.correo}}</label>
-                        {{ form.email(class="form-control", id="email") }}
-                        {% if form.email.errors %}
-                            <div class="mensaje_errores">{{ form.email.errors[0] }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div >
-                        <label for="password" >{{ textos.nueva_contrasenha}}</label>
-                        {{ form.password(class="form-control", id="password") }}
-                        {% if form.password.errors %}
-                            <div class="mensaje_errores">{{ form.password.errors[0] }}</div>
-                        {% endif %}
-
-                    </div>
-                    
-                    <div >
-                        <label for="confirm_password" >{{ textos.confirmar_contrasenha}}</label>
-                        {{ form.confirm_password(class="form-control", id="confirm_password") }}
-                        {% if form.confirm_password.errors %}
-                            <div class="mensaje_errores">{{ form.confirm_password.errors[0] }}</div>
-                        {% endif %}
-                    </div>
-                    <p >{{textos.criterio_3}}</p>
-                    <p>{{textos.criterio_1}}</p>
-                    <p>{{textos.criterio_2}}</p>
-
-                    <div >
-                        <button type="submit" class="btn btn-secondary">{{ textos.actualizar_perfil}}</button>
-                        <a href="{{ url_for('pagina_principal') }}" class="btn btn-secondary">{{ textos.cancelar}}</a>
-                    </div>
-                </form>
             
     </div>
 
