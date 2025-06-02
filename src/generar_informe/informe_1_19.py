@@ -328,19 +328,19 @@ def add_hyperlink(paragraph, url, text):
 
     # Crear el run del enlace
     new_run = OxmlElement("w:r")
-    rPr = OxmlElement("w:rPr")
+    rpr = OxmlElement("w:rPr")
 
     # Color azul
     color = OxmlElement("w:color")
     color.set(qn("w:val"), "0000FF")  # Azul
-    rPr.append(color)
+    rpr.append(color)
 
     # Subrayado manual
     u = OxmlElement("w:u")
     u.set(qn("w:val"), "single")  # Subrayado
-    rPr.append(u)
+    rpr.append(u)
 
-    new_run.append(rPr)
+    new_run.append(rpr)
 
     # Agregar el texto visible
     text_element = OxmlElement("w:t")

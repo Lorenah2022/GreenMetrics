@@ -15,6 +15,87 @@ SRC_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if SRC_DIR not in sys.path:
     sys.path.append(SRC_DIR)
 
+def extract_data_from_excel(path, headers_custom, anho):
+    """
+        Extrae datos de un archivo Excel, filtrando por la columna 'Competences'.
+
+        Args:
+            path (str): La ruta al archivo Excel.
+            headers_custom (list, optional): Lista de encabezados personalizados. Si None, se usan los encabezados del archivo.
+            anho (str): El año proporcionado a la función generar.
+
+        Returns:
+            tuple: Una tupla que contiene:
+                   - list: Encabezados de las columnas.
+                   - list: Datos extraídos como lista de listas.
+                   - str: El año proporcionado a la función generar.
+                   - int: El número de filas después del filtrado.
+    """
+    df = pd.read_excel(path)
+    df = df[df['Competences'].notna()]
+    headers = df.columns.tolist() if headers_custom is None else headers_custom
+    return headers, df.values.tolist(), anho, df.shape[0]
+
+
+def fill_table(doc, headers, data):
+    """
+        Llena la primera tabla encontrada en un documento Word con los datos proporcionados.
+
+        Limpia la tabla existente, ajusta el número de columnas, inserta encabezados
+        y luego inserta los datos, manejando la creación de hipervínculos para URLs.
+
+        Args:
+            doc (docx.document.Document): El objeto documento de python-docx.
+            headers (list): Una lista de cadenas para usar como encabezados de la tabla.
+            data (list): Una lista de listas, donde cada sublista representa una fila de datos.
+    """
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                cell.text = ""
+        
+        num_columns = len(headers)
+        while len(table.columns) < num_columns:
+            table.add_column(width=Inches(1.5))
+        
+        for i, header in enumerate(headers):
+            table.cell(0, i).text = header
+        
+        for row_idx, row in enumerate(data):
+            if row_idx + 1 >= len(table.rows):
+                table.add_row()
+            for col_idx, value in enumerate(row):
+                cell = table.cell(row_idx + 1, col_idx)
+                if col_idx == 2 and isinstance(value, str) and value.startswith("http"):
+                    cell.text = ""
+                    add_hyperlink(cell.paragraphs[0], value, "Link")
+                else:
+                    cell.text = str(value)
+        break
+
+
+def fill_description(doc, year, num_courses):
+    """
+        Rellena el párrafo de descripción en el documento Word con información sobre el año
+        y el número total de cursos.
+
+        Busca un párrafo que contenga "Description:" y lo reemplaza con el texto
+        de descripción formateado.
+
+        Args:
+            doc (docx.document.Document): El objeto documento de python-docx.
+            year (str): El año académico.
+            num_courses (int): El número total de cursos.
+    """
+    description_text = (
+        f"The list above includes courses directly related to sustainability offered by the University in the {year} academic year.\n\n"
+        f"Total number of courses with sustainability embedded for courses running in {year}: {num_courses}"
+    )
+    for para in doc.paragraphs:
+        if "Description:" in para.text:
+            para.text = f"Description:\n\n{description_text}"
+            break
+
 
 def generar(anho):
     """
@@ -27,125 +108,44 @@ def generar(anho):
     Args:
         anho (str): El año académico para el cual se genera el informe.
     """
-
-    base_dir = os.path.dirname(__file__)  # Directorio base donde se encuentra el script
+    base_dir = os.path.dirname(__file__)
     template_path = os.path.join(base_dir, 'informe_general.docx')
-    
+
     if not os.path.exists(template_path):
         print(f"Error: No se encontró la plantilla {template_path}")
         sys.exit(1)
-    
 
     excel_data_path = combinar_excels()
-    output_filename = f"University_Country_6_1_Number_of_courses_or_modules_related_to_environment_and_sustainability_offered"
+    output_filename = (
+        "University_Country_6_1_Number_of_courses_or_modules_related_to_environment_and_sustainability_offered"
+    )
     headers_custom = ["Course Title", "Degree", "Degree link", "Notes"]
-    
+
     if not os.path.exists(excel_data_path):
         print(f"Error: No se encontró el archivo de datos {excel_data_path}")
         sys.exit(1)
-    
+
     report_dir = os.path.join(SRC_DIR, "generated_reports", "report_6_1", anho)
-    os.makedirs(report_dir, exist_ok=True)  # Crea la carpeta si no existe
+    os.makedirs(report_dir, exist_ok=True)
 
     output_docx_path = os.path.join(report_dir, f"{output_filename}.docx")
     output_pdf_path = os.path.join(report_dir, f"{output_filename}.pdf")
 
-    
-    def extract_data_from_excel(path):
-        """
-        Extrae datos de un archivo Excel, filtrando por la columna 'Competences'.
-
-        Args:
-            path (str): La ruta al archivo Excel.
-
-        Returns:
-            tuple: Una tupla que contiene:
-                   - list: Encabezados de las columnas.
-                   - list: Datos extraídos como lista de listas.
-                   - str: El año proporcionado a la función `generar`.
-                   - int: El número de filas después del filtrado.
-        """
-        df = pd.read_excel(path)
-        df = df[df['Competences'].notna()]
-        headers = df.columns.tolist() if headers_custom is None else headers_custom
-        return headers, df.values.tolist(), anho, df.shape[0]
-    
-   
-    def fill_table(doc, headers, data):
-        """
-        Llena la primera tabla encontrada en un documento Word con los datos proporcionados.
-
-        Limpia la tabla existente, ajusta el número de columnas, inserta encabezados
-        y luego inserta los datos, manejando la creación de hipervínculos para URLs.
-
-        Args:
-            doc (docx.document.Document): El objeto documento de python-docx.
-            headers (list): Una lista de cadenas para usar como encabezados de la tabla.
-            data (list): Una lista de listas, donde cada sublista representa una fila de datos.
-        """
-        for table in doc.tables:
-            # Limpiar la tabla existente
-            for row in table.rows:
-                for cell in row.cells:
-                    cell.text = ""
-            
-            # Ajustar el número de columnas
-            num_columns = len(headers)
-            while len(table.columns) < num_columns:
-                table.add_column(width=Inches(1.5))
-            
-            # Insertar encabezados
-            for i, header in enumerate(headers):
-                table.cell(0, i).text = header
-            
-            # Insertar datos
-            for row_idx, row in enumerate(data):
-                if row_idx + 1 >= len(table.rows):
-                    table.add_row()
-                for col_idx, value in enumerate(row):
-                    cell = table.cell(row_idx + 1, col_idx)
-                    if col_idx == 2 and isinstance(value, str) and value.startswith("http"):
-                        cell.text = ""
-                        add_hyperlink(cell.paragraphs[0], value, "Link")
-                    else:
-                        cell.text = str(value)
-            break
-
-
-    
-    def fill_description(doc, year, num_courses):
-        """
-        Rellena el párrafo de descripción en el documento Word con información sobre el año
-        y el número total de cursos.
-
-        Busca un párrafo que contenga "Description:" y lo reemplaza con el texto
-        de descripción formateado.
-
-        Args:
-            doc (docx.document.Document): El objeto documento de python-docx.
-            year (str): El año académico.
-            num_courses (int): El número total de cursos.
-        """
-        description_text = f"The list above includes courses directly related to sustainability offered by the University in the {year} academic year.\n\nTotal number of courses with sustainability embedded for courses running in {year}: {num_courses}"
-        for para in doc.paragraphs:
-            if "Description:" in para.text:
-                para.text = f"Description:\n\n{description_text}"
-                break
-    
     doc = Document(template_path)
-    
-    headers, data_from_excel, year, num_courses = extract_data_from_excel(excel_data_path)
+
+    headers, data_from_excel, year, num_courses = extract_data_from_excel(
+        excel_data_path, headers_custom, anho
+    )
     fill_table(doc, headers, data_from_excel)
     fill_description(doc, year, num_courses)
     doc.save(output_docx_path)
-    
+
     try:
         convert(output_docx_path, output_pdf_path)
     except Exception as e:
         print(f"Error al convertir a PDF: {e}")
-    
+
     print(f"Documento PDF generado en: {output_pdf_path}")
-    
     
 def combinar_excels():
     """
@@ -196,4 +196,6 @@ def combinar_excels():
     df_combined.to_excel(combined_path, index=False)
     
     return combined_path
+
+
 

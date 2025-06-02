@@ -66,6 +66,9 @@ db = SQLAlchemy(app)
 # Variable global para el estado del proceso
 estado_proceso = {"en_proceso": False, "mensaje": "", "porcentaje": 0, "completado": False}
 lock = threading.Lock()  # Para controlar el acceso concurrente a estado_proceso
+ERROR_CAMPOS_INCOMPLETOS = "Error: No se seleccionaron todos los campos"
+ERROR_FICHERO_NO_SUBIDO = "Error: No se ha subido ningún fichero."
+USER_MANUAL_SEARCH_URL = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#perform-a-search"
 
 
 # Crear el blueprint de Google OAuth
@@ -246,9 +249,12 @@ def register():
     Maneja el registro de nuevos usuarios. Valida los datos del formulario,
     verifica si el usuario o email ya existen y crea un nuevo usuario en la base de datos.
     """
+    
+    template_response = lambda: render_template('register.html', idioma=idioma, textos=textos[idioma])
+
     if request.method != 'POST':
         idioma = session.get('idioma', 'es')
-        return render_template('register.html', idioma=idioma,textos=textos[idioma])
+        return template_response()
 
     username = request.form.get('username', '').strip()
     email = request.form.get('email', '').strip()
@@ -258,35 +264,35 @@ def register():
     error = validar_contrasena(password)
     if error:
         flash(mensajes_flash[idioma]['contrasena_incorrecta'], 'error')
-        return render_template('register.html', idioma=idioma,textos=textos[idioma])
+        return template_response()
 
     if is_form_incomplete(username, email, password):
         flash(mensajes_flash[idioma]['campos_incompletos'], 'error')
-        return render_template('register.html', idioma=idioma,textos=textos[idioma])
+        return template_response()
 
     if is_password_mismatch(password, confirm_password):
         flash(mensajes_flash[idioma]['contrasenas_no_coinciden'], 'error')
-        return render_template('register.html', idioma=idioma,textos=textos[idioma])
+        return template_response()
 
     existing_user, existing_email = is_username_or_email_taken(username, email)
     if existing_user:
         flash(mensajes_flash[idioma]['usuario_existente'], 'error')
-        return render_template('register.html', idioma=idioma,textos=textos[idioma])
+        return template_response()
     if existing_email:
         flash(mensajes_flash[idioma]['email_existente'], 'error')
-        return render_template('register.html', idioma=idioma,textos=textos[idioma])
+        return template_response()
 
     try:
         create_user(username, email, password)
         flash(mensajes_flash[idioma]['cuenta_creada'], 'success')
         print("Usuario guardado en la base de datos.")
-        return redirect(url_for('login'),textos=textos[idioma])
+        return redirect(url_for('login'))
     except Exception as e:
         db.session.rollback()
         flash(mensajes_flash[idioma]['error_guardar'] + str(e), 'error')
         print(f"Error al guardar el usuario: {str(e)}")
 
-    return render_template('register.html', idioma=idioma,textos=textos[idioma])
+    return template_response()
 
 
 def is_form_incomplete(username, email, password):
@@ -506,11 +512,7 @@ def perfil():
 
     if request.method == 'POST':
         if form.validate():
-            success, response = update_user_profile(form, user, prefs['idioma'])
-            if success:
-                return response
-            elif response:
-                return response
+            return update_user_profile(form, user, prefs['idioma'])
         else:
             flash(mensajes_flash[prefs['idioma']]['errores_formulario'], "error")
 
@@ -905,14 +907,13 @@ def validar_campos_por_informe(informe):
     if informe == "6_8":
         anho = session.get('anho')
         if not anho:
-            return "Error: No se seleccionaron todos los campos", 400
+            return ERROR_CAMPOS_INCOMPLETOS, 400
         return None
     elif informe == "6_4":
         excel = session.get('ruta_excel')
         if not excel:
-            return "Error: No se ha subido ningún fichero.", 400
+            return ERROR_FICHERO_NO_SUBIDO, 400       
         return None
-    return None
 
 def manejar_informe_con_hilo(informe):
     """
@@ -999,133 +1000,7 @@ def ejecutar_api():
 
 
 #  ----------------------- PÁGINA PARA VISUALIZAR LA BASE DE DATOS ----------------------------------------------------
-@app.route('/consultar_busquedas', methods=['GET'])
-def consultar_busquedas():
-    """
-    Maneja la página de consulta de la base de datos de búsquedas.
 
-    Permite filtrar los resultados por año, tipo de programa, código de asignatura,
-    nombre de archivo y modalidad. También maneja la paginación y la selección de columnas.
-    Si la solicitud es AJAX, devuelve sugerencias para el autocompletado del código de asignatura.
-    Si no es AJAX, renderiza la plantilla `consultar_busquedas.html` con los datos filtrados y paginados.
-
-    Returns:
-        json | str: Un objeto JSON con sugerencias si es una solicitud AJAX,
-                    o el HTML renderizado de la página de consulta si no es AJAX.
-    """
-    # --- Si es una petición AJAX, devolvemos JSON para autocompletar ---
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        codigo_asignatura = request.args.get('codigo_asignatura', '')
-
-        sugerencias = [a[0] for a in db.session.execute(
-            db.select(Busqueda.codigo_asignatura)
-              .distinct()
-              .filter(Busqueda.codigo_asignatura.like(f'%{codigo_asignatura}%'))
-              .execution_options(bind_key='busqueda')
-        ).all()]
-
-        return jsonify(sugerencias)
-
-    # --- Si no es AJAX, se continúa con el flujo normal para renderizar la página ---
-    idioma = session.get('idioma', 'es')
-    tamano_texto = session.get('tamano_texto', 'normal')
-    daltonismo = session.get('daltonismo', False)
-
-    # Filtros desde la URL
-    anho_seleccionado = request.args.get('anho')
-    tipo_programa = request.args.get('tipo_programa')
-    codigo_asignatura = request.args.get('codigo_asignatura')
-    nombre_archivo = request.args.get('nombre_archivo')
-    modalidad = request.args.get('modalidad')
-
-    # Paginación
-    page = request.args.get('page', 1, type=int)
-    per_page = 100
-
-    anhos_disponibles = [a[0] for a in db.session.execute(
-        db.select(Busqueda.anho).distinct().execution_options(bind_key='busqueda')
-    ).all()]
-
-    tipos_programa = ["grado", "master"]
-
-    codigo_asignaturas = [a[0] for a in db.session.execute(
-        db.select(Busqueda.codigo_asignatura).distinct().execution_options(bind_key='busqueda')
-    ).all()]
-
-    nombre_archivos = [a[0] for a in db.session.execute(
-        db.select(Busqueda.nombre_archivo).distinct().execution_options(bind_key='busqueda')
-    ).all()]
-
-    modalidad_disponibles = [a[0] for a in db.session.execute(
-        db.select(Busqueda.modalidad).distinct().execution_options(bind_key='busqueda')
-    ).all()]
-
-    query = db.session.query(Busqueda).execution_options(bind_key='busqueda')
-
-    if anho_seleccionado:
-        query = query.filter(Busqueda.anho == anho_seleccionado)
-        if tipo_programa and tipo_programa != "Todos":
-            query = query.filter(Busqueda.tipo_programa == tipo_programa)
-        if codigo_asignatura and codigo_asignatura != "Todos":
-            query = query.filter(Busqueda.codigo_asignatura == codigo_asignatura)
-        if nombre_archivo and nombre_archivo != "Todos":
-            query = query.filter(Busqueda.nombre_archivo == nombre_archivo)
-        if modalidad and modalidad != "Todos":
-            query = query.filter(Busqueda.modalidad == modalidad)
-
-    busquedas_paginadas = query.paginate(page=page, per_page=per_page, error_out=False)
-
-    params = request.args.to_dict(flat=False)
-    if 'page' in params:
-        del params['page']
-
-    total_pages = busquedas_paginadas.pages
-    start_page = max(1, page - 3)
-    end_page = min(total_pages, page + 3)
-    
-    columnas_disponibles = ["anho", "tipo_programa", "codigo_asignatura", "modalidad", "sostenibilidad", "nombre_archivo"]
-    columnas_seleccionadas = request.args.getlist('columnas') or columnas_disponibles
-
-    mapeo_columnas_a_claves = {
-        "anho": "anho_tabla",
-        "tipo_programa": "tipo",
-        "codigo_asignatura": "codigo_Asignatura",
-        "modalidad": "modalidad",
-        "sostenibilidad": "sostenibilidad",
-        "nombre_archivo": "nombre_archivo"
-    }
-    if idioma == 'es':
-        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#realizar-una-b%C3%BAsqueda"
-    else:
-        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#perform-a-search"
-
-
-    return render_template(
-        'consultar_busquedas.html',
-        columnas_disponibles=columnas_disponibles,
-        columnas_seleccionadas=columnas_seleccionadas,
-        claves_columnas=mapeo_columnas_a_claves,
-        textos=textos[idioma],
-        tamano_texto=tamano_texto,
-        daltonismo=daltonismo,
-        anhos=anhos_disponibles,
-        tipos_programa=tipos_programa,
-        codigo_asignaturas=codigo_asignaturas,
-        nombre_archivos=nombre_archivos,
-        modalidad=modalidad_disponibles,
-        selected_anho=anho_seleccionado,
-        selected_tipo_programa=tipo_programa,
-        selected_codigo_asignatura=codigo_asignatura,
-        selected_nombre_archivo=nombre_archivo,
-        selected_modalidad=modalidad,
-        busquedas=busquedas_paginadas.items,
-        page=page,
-        total_pages=total_pages,
-        start_page=start_page,
-        end_page=end_page,
-        params=params
-    )
-    
     
 
 
@@ -1171,7 +1046,7 @@ def editar_busqueda(id):
     if idioma == 'es':
         manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#realizar-una-b%C3%BAsqueda "
     else:
-        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#perform-a-search"
+        manual_url = USER_MANUAL_SEARCH_URL
 
     return render_template('editar_busqueda.html', busqueda=busqueda, textos=textos[idioma],
         tamano_texto=tamano_texto,
@@ -1240,7 +1115,7 @@ def confirmar_eliminacion(id):
     if idioma == 'es':
         manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#realizar-una-b%C3%BAsqueda"
     else:
-        manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#perform-a-search"
+        manual_url = USER_MANUAL_SEARCH_URL
 
     return render_template("confirmar_eliminacion.html",
                            busqueda=busqueda,
@@ -1340,12 +1215,13 @@ def generar_informe():
             # Obtener el año seleccionado desde el formulario
             anho_seleccionado = request.form.get('anho')
             if not anho_seleccionado:
-                return "Error: No se seleccionaron todos los campos", 400
+                return ERROR_CAMPOS_INCOMPLETOS, 400
         elif informe_seleccionado == "6_7":
             # Obtener el año seleccionado desde el formulario
             anho_seleccionado = request.form.get('anho')
             if not anho_seleccionado:
-                return "Error: No se seleccionaron todos los campos", 400
+                return ERROR_CAMPOS_INCOMPLETOS, 400
+
         # Iniciar un hilo para ejecutar el informe con el año como argumento
         hilo = threading.Thread(target=ejecutar_informe, args=(anho_seleccionado,informe_seleccionado,excel))
         hilo.start()
@@ -1867,7 +1743,7 @@ def crear_admin_por_defecto():
 
     """
     admin_username = "admin"
-    admin_password = "scrypt:32768:8:1$dEnb6jRIMdpd4KkJ$a55bb550722ebf5ffcc8b8af5a231f7c35c08c53657776a62131a6368cefbf3ea3acbd42dd7c23aca6ee6e16c753ea44a86ea441aae84ff7a086f8583e3580bd"
+    admin_password = os.getenv('OAUTH_SECRET')
     # Verifica si ya existe
     admin = User.query.filter_by(username=admin_username).first()
     if not admin:
@@ -1920,27 +1796,9 @@ def cambiar_a_admin():
         nuevo_rol = request.form.get('nuevo_rol')  # 'admin' o 'usuario'
         usuario = User.query.filter_by(email=email).first()
 
-        if not usuario:
-            flash(mensajes_flash[idioma]['correo_no_encontrado'], 'error')
-            return redirect(url_for('cambiar_a_admin'))
-
-        if usuario.username == 'admin':
-            flash(mensajes_flash[idioma]['no_se_puede_modificar_admin'], 'error')
-            return redirect(url_for('cambiar_a_admin'))
-
-        # Si se intenta degradar a un admin a usuario, solo el superadmin puede hacerlo
-        if usuario.rol == 'admin' and nuevo_rol == 'usuario':
-            if username != 'admin':
-                flash(mensajes_flash[idioma]['solo_superadmin_degrada'], 'error')
-                return redirect(url_for('cambiar_a_admin'))
-
-        if usuario.rol != nuevo_rol:
-            usuario.rol = nuevo_rol
-            db.session.commit()
-            flash(mensajes_flash[idioma]['rol_cambiado'].format(email, nuevo_rol), 'success')
-        else:
-            flash(mensajes_flash[idioma]['rol_ya_tiene'], 'info')
-
+        resultado = comprobar_permisos(usuario, idioma, nuevo_rol, email, username)
+        if resultado:
+            return resultado
         return redirect(url_for('perfil'))
     if idioma == 'es':
         manual_url = "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#perfil-administrador "
@@ -1954,8 +1812,30 @@ def cambiar_a_admin():
                            daltonismo=daltonismo,
                            manual_url=manual_url)
 
+def comprobar_permisos(usuario, idioma,nuevo_rol,email, username):
+    """
+    Comprueba si el usuario actual tiene permisos para cambiar el rol de otro usuario.
+    """
+    if not usuario:
+        flash(mensajes_flash[idioma]['correo_no_encontrado'], 'error')
+        return redirect(url_for('cambiar_a_admin'))
 
+    elif usuario.username == 'admin':
+        flash(mensajes_flash[idioma]['no_se_puede_modificar_admin'], 'error')
+        return redirect(url_for('cambiar_a_admin'))
 
+        # Si se intenta degradar a un admin a usuario, solo el superadmin puede hacerlo
+    elif usuario.rol == 'admin' and nuevo_rol == 'usuario' and username != 'admin':
+        flash(mensajes_flash[idioma]['solo_superadmin_degrada'], 'error')
+        return redirect(url_for('cambiar_a_admin'))
+
+    if usuario.rol != nuevo_rol:
+        usuario.rol = nuevo_rol
+        db.session.commit()
+        flash(mensajes_flash[idioma]['rol_cambiado'].format(email, nuevo_rol), 'success')
+    else:
+        flash(mensajes_flash[idioma]['rol_ya_tiene'], 'info')
+    return None
 #  ----------------------- MAIN  ----------------------------------------------------
 if __name__ == '__main__':
     # Crear las tablas de la base de datos

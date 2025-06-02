@@ -44,7 +44,7 @@ SUSTAIN_RESEARCH_LABEL = "Sustainability research"
 USD_LABEL = "US Dollar Spot Exchange Rates"
 CURRENCY_INDEX = ["Euros", USD_LABEL, "Dolars"]
 RESUMEN_FINANCIERO="Resumen Financiero"
-
+DAILY_IMPUTATION="Daily Imputation"
 
 
 
@@ -103,7 +103,7 @@ def calcular_imputacion_diaria(df):
         .str.replace(',', '.', regex=False)
         .astype(float)
     )
-    df['Daily Imputation'] = df['CUANTÍA TOTAL'] / df[DURATION_COL]
+    df[DAILY_IMPUTATION] = df['CUANTÍA TOTAL'] / df[DURATION_COL]
     return df
 
 def imputar_por_anho(df):
@@ -148,7 +148,7 @@ def imputar_por_anho(df):
 
             if effective_start <= effective_end:
                 days_in_year = (effective_end - effective_start).days + 1
-                imputacion = round(days_in_year * row['Daily Imputation'], 2)
+                imputacion = round(days_in_year * row[DAILY_IMPUTATION],2)
 
                 df.at[i, str(year)] = imputacion
 
@@ -365,7 +365,7 @@ def exportar_resultado(df, path_salida_temp):
         pd.DataFrame: DataFrame con los valores de imputación sostenible actualizados.
     """
 
-    columnas_base = ['Referencia Interna', 'Título', FECHA_INICIO_COL, FECHA_FIN_COL, 'CUANTÍA TOTAL', DURATION_COL, 'Daily Imputation']
+    columnas_base = ['Referencia Interna', 'Título', FECHA_INICIO_COL, FECHA_FIN_COL, 'CUANTÍA TOTAL', DURATION_COL, DAILY_IMPUTATION]
 
     # Años: solo números
     columnas_anhos = sorted([col for col in df.columns if col.isdigit()])
