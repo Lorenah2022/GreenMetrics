@@ -1793,14 +1793,13 @@ def crear_admin_por_defecto():
 
     """
     admin_username = "admin"
-    admin_password = os.getenv("ADMIN_PASSWORD")
-
+    admin_password = "scrypt:32768:8:1$dEnb6jRIMdpd4KkJ$a55bb550722ebf5ffcc8b8af5a231f7c35c08c53657776a62131a6368cefbf3ea3acbd42dd7c23aca6ee6e16c753ea44a86ea441aae84ff7a086f8583e3580bd"
     # Verifica si ya existe
     admin = User.query.filter_by(username=admin_username).first()
     if not admin:
         nuevo_admin = User(
             username=admin_username,
-            password=generate_password_hash(admin_password),
+            password=admin_password,
             rol="admin",
             email=None  # Ya no es necesario
         )
