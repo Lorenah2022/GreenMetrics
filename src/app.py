@@ -251,9 +251,9 @@ def register():
     """
     
     template_response = lambda: render_template('register.html', idioma=idioma, textos=textos[idioma])
+    idioma = session.get('idioma', 'es')
 
     if request.method != 'POST':
-        idioma = session.get('idioma', 'es')
         return template_response()
 
     username = request.form.get('username', '').strip()
@@ -386,138 +386,62 @@ def ajustes():
 
     return render_template('ajustes.html', idioma=idioma, tamano_texto=tamano_texto,  daltonismo=daltonismo,textos=textos[idioma], manual_url=manual_url)
 
-
-
-def get_user_preferences():
-    """
-    Obtiene las preferencias de usuario (idioma, daltonismo, tamaño de texto, rol)
-    almacenadas en la sesión.
-
-    Returns:
-        dict: Un diccionario con las preferencias del usuario.
-    """
-    return {
-    'idioma': session.get('idioma', 'es'),
-    'daltonismo': session.get('daltonismo', False),
-    'tamano_texto': session.get('tamano_texto', 'normal'),
-    'rol': session.get('rol')
-    }
-
-def is_user_logged_in():
-    """
-    Verifica si hay un usuario logueado en la sesión.
-
-    Returns:
-        bool: True si 'user_id' está en la sesión, False en caso contrario.
-    """
-    return 'user_id' in session
-
-def get_logged_in_user():
-    """
-    Obtiene el objeto User del usuario logueado a partir del 'user_id' en la sesión.
-
-    Returns:
-        User | None: El objeto User si hay un usuario logueado, None en caso contrario.
-    """
-    return User.query.get(session['user_id'])
-
-def update_user_profile(form, user, idioma):
-    """
-    Actualiza el perfil de un usuario con los datos del formulario.
-
-    Valida la nueva contraseña si se proporciona y hashea antes de guardar.
-    Realiza un commit a la base de datos.
-
-    Args:
-        form (ProfileForm): El formulario con los datos actualizados.
-        user (User): El objeto User a actualizar.
-        idioma (str): El idioma actual del usuario para mensajes flash.
-
-    Returns:
-        tuple: Una tupla (success, response). Success es True si la actualización
-               fue exitosa, False en caso contrario. Response es la respuesta
-               (redirección o renderizado de plantilla) a devolver.
-    """
-    user.username = form.username.data
-    user.email = form.email.data
-    if form.password.data:
-        error = validar_contrasena(form.password.data)
-        if error:
-            flash(mensajes_flash[idioma]['error_contrasena'], 'error')
-            
-            return False, render_template('perfil_usuario.html', form=form, usuario=user,
-                                        tamano_texto=session.get('tamano_texto'),
-                                        textos=textos[idioma],
-                                        daltonismo=session.get('daltonismo'))
-        user.password = generate_password_hash(form.password.data)
-
-    try:
-        db.session.commit()
-        flash(mensajes_flash[idioma]['perfil_actualizado'], 'success')
-        return True, redirect(url_for('perfil'))
-    except Exception as e:
-        db.session.rollback()
-        flash(f"{mensajes_flash[idioma]['error_actualizar']}{str(e)}", "error")
-        return False, None
-
-  
-def cargar_datos_formulario(form, user):
-    """
-    Carga los datos del usuario en el formulario de perfil.
-
-    Args:
-        form (ProfileForm): El formulario a llenar.
-        user (User): El objeto User con los datos a cargar.
-    """
-    form.username.data = user.username
-    form.email.data = user.email
-
-def render_perfil(form, user, prefs):
-    """
-    Renderiza la plantilla de perfil de usuario o administrador.
-
-    Selecciona la plantilla adecuada según el rol del usuario y pasa los datos
-    del formulario, usuario y preferencias.
-
-    Args:
-        form (ProfileForm): El formulario de perfil.
-        user (User): El objeto User del usuario logueado.
-        prefs (dict): Diccionario con las preferencias del usuario.
-
-    Returns:
-        str: El HTML renderizado de la plantilla de perfil.
-    """
-    template = 'perfil_admin.html' if prefs['rol'] == 'admin' else 'perfil_usuario.html'
-    return render_template(template, form=form, usuario=user,
-    tamano_texto=prefs['tamano_texto'],
-    textos=textos[prefs['idioma']],
-    daltonismo=prefs['daltonismo'])
-
-# Ruta para editar el perfil
 @app.route('/perfil', methods=['GET', 'POST'])
 def perfil():
-    """
-    Maneja la página de perfil del usuario. Permite a los usuarios logueados
-    ver y editar su información. Los visitantes ven una página de perfil de visitante.
-    """
-    prefs = get_user_preferences()
-    if not is_user_logged_in():
-        return render_template('perfil_visitante.html',
-                            tamano_texto=prefs['tamano_texto'],
-                            textos=textos[prefs['idioma']],
-                            daltonismo=prefs['daltonismo'])
-
-    user = get_logged_in_user()
+    idioma = session.get('idioma', 'es')
+    daltonismo = session.get('daltonismo', False)
+    tamano_texto = session.get('tamano_texto', 'normal')
+    rol = session.get('rol')
+    # Verificación de si el usuario está logueado en la sesión
+    if 'user_id' not in session:
+        # Página que muestra el perfil de visitante
+        return render_template('perfil_visitante.html', tamano_texto=tamano_texto,textos=textos[idioma],daltonismo=daltonismo)
+    
+    # Obtiene el usuario actual desde la sesión
+    usuario = User.query.get(session['user_id'])  # Usar 'user_id' en lugar de 'id'
+    
+    # Crear el formulario de perfil
     form = ProfileForm()
 
-    if request.method == 'POST':
-        if form.validate():
-            return update_user_profile(form, user, prefs['idioma'])
-        else:
-            flash(mensajes_flash[prefs['idioma']]['errores_formulario'], "error")
+    if request.method == 'POST':  # Validación explícita del método POST
+        if form.validate():  # Valida los datos del formulario sin necesidad de submit
+            # Actualizar solo los campos que se llenaron
+            usuario.username = form.username.data
+            usuario.email = form.email.data
 
-    cargar_datos_formulario(form, user)
-    return render_perfil(form, user, prefs)
+            # Si el campo de contraseña no está vacío, actualiza la contraseña
+            if form.password.data:
+                # Validar contraseña
+                error = validar_contrasena(form.password.data)
+                if error:
+                    flash(error, 'error')
+                    return render_template(
+                    'perfil_usuario.html', form=form, usuario=usuario,
+                    tamano_texto=tamano_texto, textos=textos[idioma]
+                    )
+                usuario.password = generate_password_hash(form.password.data)
+           
+            # Guardar los cambios en la base de datos
+            try:
+                db.session.commit()
+                flash(mensajes_flash[idioma]['perfil_actualizado'], 'success')
+                return redirect(url_for('perfil'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f"{mensajes_flash[idioma]['error_actualizar']}{str(e)}", "error")
+        else:
+            flash(mensajes_flash[idioma]['errores_formulario'], "error")
+
+    # Rellenar los campos del formulario con los datos actuales del usuario
+    form.username.data = usuario.username
+    form.email.data = usuario.email
+
+    # Pasar el tamaño de texto a las plantillas
+    if rol == 'admin':
+        return render_template('perfil_admin.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma],daltonismo=daltonismo)
+    else:
+        return render_template('perfil_usuario.html', form=form, usuario=usuario, tamano_texto=tamano_texto, textos=textos[idioma],daltonismo=daltonismo)
+
 
 
 # Función de validación de contraseña
@@ -1001,8 +925,143 @@ def ejecutar_api():
 
 #  ----------------------- PÁGINA PARA VISUALIZAR LA BASE DE DATOS ----------------------------------------------------
 
-    
+@app.route('/consultar_busquedas', methods=['GET'])
+def consultar_busquedas():
+    """
+    Maneja la página de consulta de la base de datos de búsquedas.
 
+    Permite filtrar los resultados por año, tipo de programa, código de asignatura,
+    nombre de archivo y modalidad. También maneja la paginación y la selección de columnas.
+    Si la solicitud es AJAX, devuelve sugerencias para el autocompletado del código de asignatura.
+    Si no es AJAX, renderiza la plantilla `consultar_busquedas.html` con los datos filtrados y paginados.
+
+    Returns:
+        json | str: Un objeto JSON con sugerencias si es una solicitud AJAX,
+                    o el HTML renderizado de la página de consulta si no es AJAX.
+    """
+    
+    if es_peticion_ajax():
+        return sugerencias_codigo_asignatura()
+
+    idioma = session.get('idioma', 'es')
+    preferencias = {
+        'tamano_texto': session.get('tamano_texto', 'normal'),
+        'daltonismo': session.get('daltonismo', False)
+    }
+
+    filtros = obtener_filtros()
+    paginacion = obtener_paginacion()
+    query = construir_query(filtros)
+
+    busquedas_paginadas = query.paginate(page=paginacion['page'], per_page=paginacion['per_page'], error_out=False)
+
+    columnas = obtener_columnas(idioma)
+
+    return render_template(
+        'consultar_busquedas.html',
+        textos=textos[idioma],
+        tamano_texto=preferencias['tamano_texto'],
+        daltonismo=preferencias['daltonismo'],
+        anhos=obtener_distintos(Busqueda.anho),
+        tipos_programa=["grado", "master"],
+        codigo_asignaturas=obtener_distintos(Busqueda.codigo_asignatura),
+        nombre_archivos=obtener_distintos(Busqueda.nombre_archivo),
+        modalidad=obtener_distintos(Busqueda.modalidad),
+        selected_anho=filtros['anho'],
+        selected_tipo_programa=filtros['tipo_programa'],
+        selected_codigo_asignatura=filtros['codigo_asignatura'],
+        selected_nombre_archivo=filtros['nombre_archivo'],
+        selected_modalidad=filtros['modalidad'],
+        busquedas=busquedas_paginadas.items,
+        page=paginacion['page'],
+        total_pages=busquedas_paginadas.pages,
+        start_page=max(1, paginacion['page'] - 3),
+        end_page=min(busquedas_paginadas.pages, paginacion['page'] + 3),
+        params=paginacion['params'],
+        columnas_disponibles=columnas['disponibles'],
+        columnas_seleccionadas=columnas['seleccionadas'],
+        claves_columnas=columnas['mapeo'],
+        manual_url=columnas['manual_url']
+    )
+
+# --------- Funciones auxiliares ---------
+
+def es_peticion_ajax():
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+def sugerencias_codigo_asignatura():
+    codigo = request.args.get('codigo_asignatura', '')
+    resultados = db.session.execute(
+        db.select(Busqueda.codigo_asignatura)
+          .distinct()
+          .filter(Busqueda.codigo_asignatura.like(f'%{codigo}%'))
+          .execution_options(bind_key='busqueda')
+    )
+    sugerencias = [fila[0] for fila in resultados.all()]
+    return jsonify(sugerencias)
+
+def obtener_distintos(columna):
+    return [r[0] for r in db.session.execute(
+        db.select(columna).distinct().execution_options(bind_key='busqueda')
+    ).all()]
+
+def obtener_filtros():
+    return {
+        'anho': request.args.get('anho'),
+        'tipo_programa': request.args.get('tipo_programa'),
+        'codigo_asignatura': request.args.get('codigo_asignatura'),
+        'nombre_archivo': request.args.get('nombre_archivo'),
+        'modalidad': request.args.get('modalidad')
+    }
+
+def obtener_paginacion():
+    page = request.args.get('page', 1, type=int)
+    params = request.args.to_dict(flat=False)
+    params.pop('page', None)
+    return {
+        'page': page,
+        'per_page': 100,
+        'params': params
+    }
+
+def construir_query(filtros):
+    query = db.session.query(Busqueda).execution_options(bind_key='busqueda')
+
+    if filtros['anho']:
+        query = query.filter(Busqueda.anho == filtros['anho'])
+        if filtros['tipo_programa'] and filtros['tipo_programa'] != "Todos":
+            query = query.filter(Busqueda.tipo_programa == filtros['tipo_programa'])
+        if filtros['codigo_asignatura'] and filtros['codigo_asignatura'] != "Todos":
+            query = query.filter(Busqueda.codigo_asignatura == filtros['codigo_asignatura'])
+        if filtros['nombre_archivo'] and filtros['nombre_archivo'] != "Todos":
+            query = query.filter(Busqueda.nombre_archivo == filtros['nombre_archivo'])
+        if filtros['modalidad'] and filtros['modalidad'] != "Todos":
+            query = query.filter(Busqueda.modalidad == filtros['modalidad'])
+
+    return query
+
+def obtener_columnas(idioma):
+    disponibles = ["anho", "tipo_programa", "codigo_asignatura", "modalidad", "sostenibilidad", "nombre_archivo"]
+    seleccionadas = request.args.getlist('columnas') or disponibles
+    mapeo = {
+        "anho": "anho_tabla",
+        "tipo_programa": "tipo",
+        "codigo_asignatura": "codigo_Asignatura",
+        "modalidad": "modalidad",
+        "sostenibilidad": "sostenibilidad",
+        "nombre_archivo": "nombre_archivo"
+    }
+    manual_url = (
+        "https://github.com/Lorenah2022/GreenMetrics/wiki/Manual-de-usuario#realizar-una-b%C3%BAsqueda"
+        if idioma == 'es' else
+        "https://github.com/Lorenah2022/GreenMetrics/wiki/User-manual#perform-a-search"
+    )
+    return {
+        'disponibles': disponibles,
+        'seleccionadas': seleccionadas,
+        'mapeo': mapeo,
+        'manual_url': manual_url
+    }
 
 #  ----------------------- EDITAR BASE DE DATOS  ----------------------------------------------------
 @app.route('/editar_busqueda/<int:id>', methods=['GET', 'POST'])
