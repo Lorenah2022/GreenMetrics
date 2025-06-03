@@ -24,7 +24,7 @@ la configuración de la API (URL base, clave API, modelo) cargada desde un archi
 
 
 # Configurar la base de datos manualmente si es necesario
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")  # O el nombre que tengas en .env
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")  
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Obtener la ruta absoluta del directorio `src`
@@ -48,12 +48,12 @@ archivo_salida = os.path.join("sostenibilidad","data", "resultados_guias.xlsx") 
 
 # Verificar si el directorio de los archivos PDF existe
 if not os.path.exists(directorio):
-    print(f"❌ El directorio de los archivos PDF no existe: {directorio}")
+    print(f"El directorio de los archivos PDF no existe: {directorio}")
     sys.exit(1)  # Salir del programa si no existe el directorio
 
 # Verificar si el archivo de salida es una ruta válida
 if not os.path.isdir(os.path.dirname(archivo_salida)):
-    print(f"❌ La carpeta de salida no existe: {os.path.dirname(archivo_salida)}")
+    print(f" La carpeta de salida no existe: {os.path.dirname(archivo_salida)}")
     sys.exit(1)  # Salir si no existe la carpeta
 
 
@@ -61,7 +61,7 @@ if not os.path.isdir(os.path.dirname(archivo_salida)):
 # Listar los archivos PDF en el directorio
 archivos_guias = [f for f in os.listdir(directorio) if f.endswith('.pdf')]
 if not archivos_guias:
-    print("❌ No se encontraron archivos PDF en el directorio especificado.")
+    print("No se encontraron archivos PDF en el directorio especificado.")
     sys.exit(1)  # Salir si no se encuentran archivos PDF
     
 # Configuración de la API
@@ -73,7 +73,7 @@ myModel = config["model"]
 
 # Verificar que las configuraciones se cargan correctamente
 if not base_url or not api_key or not myModel:
-    print("❌ Las configuraciones de la API no están completas. Verifica tu archivo .env.")
+    print(" Las configuraciones de la API no están completas. Verifica tu archivo .env.")
     sys.exit(1)
 
 
@@ -107,9 +107,11 @@ for pdf_file in archivos_guias:
                     "2. The degree\n"
                     "3. The code\n"
                     "4. The curricular sustainability competencies\n"
-                    "Find section with the following title  Competencias que debe adquirir el alumno/a al cursar la asignatura. Identify only the competencies listed there that have an asterisk (*). "
+                    "Find section with the following title  Competencias que debe adquirir el alumno/a al cursar la asignatura. Identify \n"
+                    "only the competencies listed there that have an asterisk (*). \n"
                     " If no competencies have an asterisk, return 'None'.\n"
-                    "If at least one competency has an asterisk, return only those that have one and for each competency, analyze its description and determine which of the following objectives it aligns with based on its content:\n"
+                    "If at least one competency has an asterisk, return only those that have one and for each competency, analyze its\n" 
+                    "description and determine which of the following objectives it aligns with based on its content:\n"
 
                         "1. Fin de la pobreza\n"
                         "2. Hambre cero\n"
@@ -214,7 +216,7 @@ with app.app_context():
     for _, row in resultados.iterrows():
         # Verificar que las columnas necesarias existen en el DataFrame
         if 'Code' not in row or 'FileName' not in row or 'Sostenibilidad' not in row:
-            print("❌ Columna faltante en la fila, asegurándose de que las columnas existan en el DataFrame")
+            print("Columna faltante en la fila, asegurándose de que las columnas existan en el DataFrame")
             continue
         print(f"{row['Code']},{row['FileName']}")
 
@@ -234,6 +236,6 @@ with app.app_context():
         if busqueda_existente:
             busqueda_existente.sostenibilidad = row["Sostenibilidad"]
         else:
-            print(f"❌ No encontrado para {row['Code']} {row['Name']}")
+            print(f"No encontrado para {row['Code']} {row['Name']}")
 
     db.session.commit()

@@ -41,8 +41,5 @@ def ejecutar_orden():
     # Paso 3: Ejecutar el script procesadoAsignaturas.py
     ejecutar_script('procesadoAsignaturas.py')
     
-    # Paso 4: Ejecutar el script Prueba API code5.py
-    ejecutar_script('Prueba API code5.py')
-
 if __name__ == "__main__":
     ejecutar_orden()
