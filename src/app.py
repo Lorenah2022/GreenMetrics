@@ -725,7 +725,7 @@ def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
         actualizar_estado(textos[idioma]['ejecutando_grados'], 10)
 
         # Ejecutar guias_docentes.py (un solo paso si no se necesita dividir)
-        subprocess.run(['python3', ruta_grados, anho, tipo_estudio], check=True)
+        subprocess.run(['python', ruta_grados, anho, tipo_estudio], check=True)
         actualizar_estado(textos[idioma]['ejecutando_grados'], 20)
 
         
@@ -734,7 +734,7 @@ def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
         actualizar_estado(textos[idioma]['ejecutando_guias'], 30)
 
         # Ejecutar guias_docentes.py (un solo paso si no se necesita dividir)
-        subprocess.run(['python3', ruta_guias, anho, tipo_estudio], check=True)
+        subprocess.run(['python', ruta_guias, anho, tipo_estudio], check=True)
         actualizar_estado(textos[idioma]['ejecutando_guias'], 60)
 
         # Ejecutar procesadoAsignaturas.py
@@ -742,7 +742,7 @@ def ejecutar_procesos(anho, tipo_estudio="ambos", idioma='es'):
         actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 70)
 
         # Ejecutar procesadoAsignaturas.py
-        subprocess.run(['python3', ruta_procesado, tipo_estudio], check=True)
+        subprocess.run(['python', ruta_procesado, tipo_estudio], check=True)
         actualizar_estado(textos[idioma]['ejecutando_asignaturas'], 90)
 
         # Marcar el proceso como completado
@@ -915,7 +915,7 @@ def ejecutar_api():
     try:
         ruta_api = os.path.join(os.getcwd(), 'sostenibilidad', 'API.py')
         # Ejecutar el archivo API.py (esto puede tomar tiempo)
-        subprocess.run(['python3', ruta_api], check=True)
+        subprocess.run(['python', ruta_api], check=True)
         print("Proceso completado correctamente.")
     except subprocess.CalledProcessError as e:
         print(f"Error ejecutando el script: {str(e)}")
@@ -1307,14 +1307,17 @@ def ejecutar_informe(anho,informe,excel):
     """
     try:
         ruta_informe = os.path.join(os.getcwd(), 'generar_informe', 'general.py')
+        print(f"Ruta del script a ejecutar: {ruta_informe}")
+
         if not os.path.exists(ruta_informe):
             raise FileNotFoundError(f"El archivo {ruta_informe} no existe.")
         
         # Ejecutar el script con el año seleccionado como argumento
-        subprocess.run(['python3', ruta_informe, anho, informe,excel], check=True)
+        subprocess.run(['python', ruta_informe, anho, informe,excel], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error ejecutando el script: {str(e)}")
     except Exception as e:
+        
         print(f"Error en el hilo de ejecución: {str(e)}")
         
 def determinar_tipo_informe():
